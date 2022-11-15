@@ -1,0 +1,26 @@
+ !Step 1: Geometry optimization and Hessian calculation of NH3 at MP2 level.
+ $system kdiag=3 mwords=250 memddi=8000 parall=.t. $end
+ $contrl runtyp=optimize ispher=1 $end
+ $scf    npunch=2 conv=1.0d-06 dirscf=.t.      $end
+ $contrl scftyp=rhf  mult=1 maxit=200 icharg=0 mplevl=2 $end
+ -guess  guess=moread norb=530 purify=.t. $end
+ $basis  gbasis=ccd $end
+ $statpt hssend=.t. nstep=200 $end
+ -mcscf  cistep=gmcci fullnr=.t. finci=mos
+         acurcy=1.d-6 maxit=100 $end
+ $force  method=seminum $end
+ $trans  dirtrf=.t. $end
+ -mrmp   mrpt=gmcpt rdvecs=.f. $end
+ -gmcpt  nmofzc=0 nmodoc=1 nmoact=7 nelact=8 stsym(1)=A1
+         reftyp=ormas nspace=1 mstart(1)=2 mine(1)=8 maxe(1)=8
+         kstate(1)=1,1,1
+         wstate(1)=1,1,1 
+         iwgt=0 thrwgt=-1.0 krot=.f. kszdoe=.f. knospn=.f.
+         thrde=-1.0 edshft=0.02 mxiter=800 maxbas=800 nsolut=30 $end
+ $data
+ NH3 MP2 Geometry Opt and Hessian
+ cnv 3
+
+ N     7.0   0.0  0.0  0.0
+ H     1.0   1.0  0.0  0.2
+ $end
