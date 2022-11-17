@@ -1,0 +1,2881 @@
+----- GAMESS execution script 'rungms' -----
+This job is running on host io002
+under operating system Linux at Wed 16 Nov 2022 06:53:21 PM EST
+Available scratch disk space (Kbyte units) at beginning of the job is
+Filesystem       1K-blocks       Used   Available Use% Mounted on
+/dev/sdc1      15378471580 3278917120 11318349060  23% /scratch
+GAMESS temporary binary files will be written to /scratch/bsonghao
+GAMESS supplementary output files will be written to /home/bsonghao/.gamess_ascii_files/267638
+Copying input file nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.inp to your run's scratch directory...
+cp nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.inp /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F05
+unset echo
+/home/bjb2chen/gamess/ddikick.x /home/bjb2chen/gamess/gamess.00.x nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1 -ddi 1 1 io002 -scr /scratch/bsonghao
+
+ Distributed Data Interface kickoff program.
+ Initiating 1 compute processes on 1 nodes to run the following command:
+ /home/bjb2chen/gamess/gamess.00.x nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1 
+
+          ******************************************************
+          *         GAMESS VERSION = 02 AUG 2018 (R2)         *
+          *             FROM IOWA STATE UNIVERSITY             *
+          * M.W.SCHMIDT, K.K.BALDRIDGE, J.A.BOATZ, S.T.ELBERT, *
+          *   M.S.GORDON, J.H.JENSEN, S.KOSEKI, N.MATSUNAGA,   *
+          *          K.A.NGUYEN, S.J.SU, T.L.WINDUS,           *
+          *       TOGETHER WITH M.DUPUIS, J.A.MONTGOMERY       *
+          *         J.COMPUT.CHEM.  14, 1347-1363(1993)        *
+          **************** 64 BIT LINUX VERSION ****************
+
+  SINCE 1993, STUDENTS AND POSTDOCS WORKING AT IOWA STATE UNIVERSITY
+  AND ALSO IN THEIR VARIOUS JOBS AFTER LEAVING ISU HAVE MADE IMPORTANT
+  CONTRIBUTIONS TO THE CODE:
+     IVANA ADAMOVIC, CHRISTINE AIKENS, YURI ALEXEEV, POOJA ARORA,
+     ANDREY ASADCHEV, ROB BELL, PRADIPTA BANDYOPADHYAY, JONATHAN BENTZ,
+     BRETT BODE, KURT BRORSEN, CALEB CARLIN, GALINA CHABAN, WEI CHEN,
+     CHEOL HO CHOI, PAUL DAY, ALBERT DEFUSCO, NUWAN DESILVA, TIM DUDLEY,
+     DMITRI FEDOROV, ALEX FINDLATER, GRAHAM FLETCHER, MARK FREITAG,
+     KURT GLAESEMANN, ANASTASIA GUININA,
+     DAN KEMP, GRANT MERRILL, NORIYUKI MINEZAWA, JONATHAN MULLIN,
+     TAKESHI NAGATA, SEAN NEDD, HEATHER NETZLOFF, BOSILJKA NJEGIC, RYAN OLSON,
+     MIKE PAK, BUU PHAM,
+     SPENCER PRUITT, LUKE ROSKOP, JIM SHOEMAKER, LYUDMILA SLIPCHENKO,
+     TONY SMITH, SAROM SOK LEANG, JIE SONG, TETSUYA TAKETSUGU, SIMON WEBB,
+     PENG XU, SOOHAENG YOO, FEDERICO ZAHARIEV
+
+  ADDITIONAL CODE HAS BEEN PROVIDED BY COLLABORATORS IN OTHER GROUPS:
+     IOWA STATE UNIVERSITY:
+          JOE IVANIC, AARON WEST, LAIMUTIS BYTAUTAS, KLAUS RUEDENBERG
+     UNIVERSITY OF TOKYO: KIMIHIKO HIRAO, TAKAHITO NAKAJIMA,
+          TAKAO TSUNEDA, MUNEAKI KAMIYA, SUSUMU YANAGISAWA,
+          KIYOSHI YAGI, MAHITO CHIBA, SEIKEN TOKURA, NAOAKI KAWAKAMI
+     UNIVERSITY OF AARHUS: FRANK JENSEN
+     UNIVERSITY OF IOWA: VISVALDAS KAIRYS, HUI LI
+     NATIONAL INST. OF STANDARDS AND TECHNOLOGY: WALT STEVENS, DAVID GARMER
+     UNIVERSITY OF PISA: BENEDETTA MENNUCCI, JACOPO TOMASI
+     UNIVERSITY OF MEMPHIS: HENRY KURTZ, PRAKASHAN KORAMBATH
+     UNIVERSITY OF ALBERTA: TOBY ZENG, MARIUSZ KLOBUKOWSKI
+     UNIVERSITY OF NEW ENGLAND: MARK SPACKMAN
+     MIE UNIVERSITY: HIROAKI UMEDA
+     NAT. INST. OF ADVANCED INDUSTRIAL SCIENCE AND TECHNOLOGY: KAZUO KITAURA
+     MICHIGAN STATE UNIVERSITY:
+          KAROL KOWALSKI, MARTA WLOCH, JEFFREY GOUR, JESSE LUTZ,
+          WEI LI, JUN SHEN, J. EMILIANO DEUSTUA, PIOTR PIECUCH
+     UNIVERSITY OF MINNESOTA:
+          YINAN SHU
+     UNIVERSITY OF SILESIA: MONIKA MUSIAL, STANISLAW KUCHARSKI
+     FACULTES UNIVERSITAIRES NOTRE-DAME DE LA PAIX:
+          OLIVIER QUINET, BENOIT CHAMPAGNE
+     UNIVERSITY OF CALIFORNIA - SANTA BARBARA: BERNARD KIRTMAN
+     INSTITUTE FOR MOLECULAR SCIENCE:
+          KAZUYA ISHIMURA, MICHIO KATOUDA, AND SHIGERU NAGASE
+     UNIVERSITY OF NOTRE DAME: ANNA POMOGAEVA, DAN CHIPMAN
+     KYUSHU UNIVERSITY:
+          HARUYUKI NAKANO,
+          FENG LONG GU, JACEK KORCHOWIEC, MARCIN MAKOWSKI, AND YURIKO AOKI,
+          HIROTOSHI MORI AND EISAKU MIYOSHI
+     PENNSYLVANIA STATE UNIVERSITY:
+          TZVETELIN IORDANOV, CHET SWALINA, JONATHAN SKONE,
+          SHARON HAMMES-SCHIFFER
+     WASEDA UNIVERSITY:
+          MASATO KOBAYASHI, TOMOKO AKAMA, TSUGUKI TOUMA,
+          TAKESHI YOSHIKAWA, YASUHIRO IKABATA, JUNJI SEINO,
+          YUYA NAKAJIMA, HIROMI NAKAI
+     NANJING UNIVERSITY: SHUHUA LI
+     UNIVERSITY OF NEBRASKA:
+          PEIFENG SU, DEJUN SI, NANDUN THELLAMUREGE, YALI WANG, HUI LI
+     UNIVERSITY OF ZURICH: ROBERTO PEVERATI, KIM BALDRIDGE
+     N. COPERNICUS UNIVERSITY AND JACKSON STATE UNIVERSITY:
+          MARIA BARYSZ
+     UNIVERSITY OF COPENHAGEN: Jimmy Kromann, CASPER STEINMANN
+     TOKYO INSTITUTE OF TECHNOLOGY: HIROYA NAKATA
+     NAGOYA UNIVERSITY: YOSHIO NISHIMOTO, STEPHAN IRLE
+     MOSCOW STATE UNIVERSITY: VLADIMIR MIRONOV
+
+ EXECUTION OF GAMESS BEGUN Wed Nov 16 18:53:22 2022
+
+            ECHO OF THE FIRST FEW INPUT CARDS -
+ INPUT CARD> $system kdiag=3 mwords=100 memddi=1000 parall=.t. $end                         
+ INPUT CARD> $contrl runtyp=energy ispher=1 $end                                            
+ INPUT CARD> $contrl icut=9 itol=20 inttyp=rysquad qmttol=1.0d-05 nosym=1 $end              
+ INPUT CARD> $scf    npunch=2 conv=1.0d-06 dirscf=.t.      $end                             
+ INPUT CARD> $contrl scftyp=mcscf  mult=2 maxit=200 icharg=1 mplevl=2 $end                  
+ INPUT CARD> $guess  guess=moread norb=29 purify=.t. $end                                   
+ INPUT CARD> $basis  gbasis=ccd $end                                                        
+ INPUT CARD> $mcscf  cistep=gmcci fullnr=.t. finci=mos                                      
+ INPUT CARD>         acurcy=1.d-6 maxit=100 $end                                            
+ INPUT CARD> $trans  dirtrf=.t. $end                                                        
+ INPUT CARD> $mrmp   mrpt=gmcpt rdvecs=.f. $end                                             
+ INPUT CARD> $gmcpt  nmofzc=0 nmodoc=1 nmoact=7 nelact=7 stsym(1)=A                         
+ INPUT CARD>         reftyp=ormas nspace=1 mstart(1)=2 mine(1)=7 maxe(1)=7                  
+ INPUT CARD>         kstate(1)=1,1,1                                                        
+ INPUT CARD>         wstate(1)=1,1,1                                                        
+ INPUT CARD>         iwgt=0 thrwgt=-1.0 krot=.f. kszdoe=.f. knospn=.f.                      
+ INPUT CARD>         thrde=-1.0 edshft=0.02 $end                                            
+ INPUT CARD> $data                                                                          
+ INPUT CARD> NH3+ 3 states calculation at NH3 structure.                                    
+ INPUT CARD> c1                                                                             
+ INPUT CARD>N 7.0 -0.006228917999999998 0.024915612000000004 -0.1693807382                  
+ INPUT CARD>H 1.0 -0.567264133 0.8170283108 0.15181883910000002                             
+ INPUT CARD>H 1.0 -0.261562867 -0.8713361898 0.33470473710000004                            
+ INPUT CARD>H 1.0 0.915379498 -0.291902974 0.2828579351                                     
+ INPUT CARD>$end                                                                            
+ INPUT CARD>--- OPTIMIZED RHF      MO-S --- GENERATED AT Mon Nov 14 16:47:08 2022           
+ INPUT CARD>E=      -56.3825050291, E(NUC)=   11.8429239490                                 
+ INPUT CARD> $VEC                                                                           
+ INPUT CARD> 1  1-1.00134066E+00-2.25158504E-03 3.44925845E-03 0.00000000E+00 0.00000000E+00
+ INPUT CARD> 1  2-2.13170927E-03 0.00000000E+00 0.00000000E+00 6.57129898E-04-6.87950443E-05
+ INPUT CARD> 1  3-6.87950443E-05 1.37590089E-04 0.00000000E+00 0.00000000E+00 0.00000000E+00
+ INPUT CARD> 1  4 3.25502815E-04-4.84772356E-04 3.62525460E-04-6.27912517E-04-3.45956485E-04
+ INPUT CARD> 1  5 3.25502815E-04-4.84772356E-04 3.62525460E-04 6.27912517E-04-3.45956485E-04
+ INPUT CARD> 1  6 3.25502815E-04-4.84772356E-04-7.25050921E-04 0.00000000E+00-3.45956485E-04
+ INPUT CARD> 2  1 1.31286642E-02-4.05911371E-01-2.82090992E-01 0.00000000E+00 0.00000000E+00
+ INPUT CARD> 2  2-7.71489043E-02 0.00000000E+00 0.00000000E+00 9.73717494E-03 6.62450916E-04
+ INPUT CARD> 2  3 6.62450916E-04-1.32490183E-03 0.00000000E+00 0.00000000E+00 0.00000000E+00
+ INPUT CARD> 2  4-1.96090317E-01-1.96656153E-02-1.74855877E-02 3.02859263E-02 8.68214399E-03
+ INPUT CARD> 2  5-1.96090317E-01-1.96656153E-02-1.74855877E-02-3.02859263E-02 8.68214399E-03
+ INPUT CARD> 2  6-1.96090317E-01-1.96656153E-02 3.49711754E-02 0.00000000E+00 8.68214399E-03
+ INPUT CARD> 3  1 0.00000000E+00 0.00000000E+00 0.00000000E+00 4.48608762E-01 0.00000000E+00
+ INPUT CARD> 3  2 0.00000000E+00 2.18692520E-01 0.00000000E+00 0.00000000E+00 1.30198027E-02
+ INPUT CARD> 3  3-1.30198027E-02 0.00000000E+00 0.00000000E+00 2.71832968E-02 0.00000000E+00
+ INPUT CARD> 3  4-1.85332726E-01-7.03958951E-02 8.47929477E-03 1.95242443E-02 8.32835058E-03
+ INPUT CARD> 3  5-1.85332726E-01-7.03958951E-02 8.47929477E-03-1.95242443E-02 8.32835058E-03
+ INPUT CARD> 3  6 3.70665453E-01 1.40791790E-01-2.53376884E-02 0.00000000E+00-1.66567012E-02
+ INPUT CARD> 4  1 0.00000000E+00 0.00000000E+00 0.00000000E+00 0.00000000E+00 4.48608762E-01
+ INPUT CARD> 4  2 0.00000000E+00 0.00000000E+00 2.18692520E-01 0.00000000E+00 0.00000000E+00
+ INPUT CARD> 4  3 0.00000000E+00 0.00000000E+00-1.50339731E-02 0.00000000E+00 2.71832968E-02
+ INPUT CARD> 4  4 3.21005698E-01 1.21929267E-01 1.95242443E-02-1.40653607E-02-1.44251263E-02
+  100000000 WORDS OF MEMORY AVAILABLE
+
+     BASIS OPTIONS
+     -------------
+     GBASIS=CCD          IGAUSS=       0      POLAR=NONE    
+     NDFUNC=       0     NFFUNC=       0     DIFFSP=       F
+     NPFUNC=       0      DIFFS=       F     BASNAM=        
+
+
+     RUN TITLE
+     ---------
+  NH3+ 3 states calculation at NH3 structure.                                    
+
+ THE POINT GROUP OF THE MOLECULE IS C1      
+ THE ORDER OF THE PRINCIPAL AXIS IS     0
+
+ ATOM      ATOMIC                      COORDINATES (BOHR)
+           CHARGE         X                   Y                   Z
+ N           7.0    -0.0117709482        0.0470836795       -0.3200831828
+ H           1.0    -1.0719737740        1.5439596316        0.2868960057
+ H           1.0    -0.4942821472       -1.6465866419        0.6325002399
+ H           1.0     1.7298164260       -0.5516166359        0.5345239908
+
+          INTERNUCLEAR DISTANCES (ANGS.)
+          ------------------------------
+
+                1 N          2 H          3 H          4 H     
+
+   1 N       0.0000000    1.0224345 *  1.0595116 *  1.0743630 *
+   2 H       1.0224345 *  0.0000000    1.7255362 *  1.8561067 *
+   3 H       1.0595116 *  1.7255362 *  0.0000000    1.3128687 *
+   4 H       1.0743630 *  1.8561067 *  1.3128687 *  0.0000000  
+
+  * ... LESS THAN  3.000
+
+
+     ATOMIC BASIS SET
+     ----------------
+ THE CONTRACTED PRIMITIVE FUNCTIONS HAVE BEEN UNNORMALIZED
+ THE CONTRACTED BASIS FUNCTIONS ARE NOW NORMALIZED TO UNITY
+
+  SHELL TYPE  PRIMITIVE        EXPONENT          CONTRACTION COEFFICIENT(S)
+
+ N         
+
+      1   S       1          9046.0000000    0.000699617413
+      1   S       2          1357.0000000    0.005386054630
+      1   S       3           309.3000000    0.027391021189
+      1   S       4            87.7300000    0.103150591982
+      1   S       5            28.5600000    0.278570663317
+      1   S       6            10.2100000    0.448294849454
+      1   S       7             3.8380000    0.278085928395
+      1   S       8             0.7466000    0.015431561233
+
+      2   S       9          9046.0000000   -0.000304990096
+      2   S      10          1357.0000000   -0.002408026379
+      2   S      11           309.3000000   -0.011944448725
+      2   S      12            87.7300000   -0.048925992909
+      2   S      13            28.5600000   -0.134472724725
+      2   S      14            10.2100000   -0.315112577700
+      2   S      15             3.8380000   -0.242857832550
+      2   S      16             0.7466000    1.094382206854
+
+      3   S      17             0.2248000    1.000000000000
+
+      4   P      18            13.5500000    0.058905676772
+      4   P      19             2.9170000    0.320461106714
+      4   P      20             0.7973000    0.753042061792
+
+      5   P      21             0.2185000    1.000000000000
+
+      6   D      22             0.8170000    1.000000000000
+
+ H         
+
+      7   S      23            13.0100000    0.033498726390
+      7   S      24             1.9620000    0.234800801174
+      7   S      25             0.4446000    0.813682957883
+
+      8   S      26             0.1220000    1.000000000000
+
+      9   P      27             0.7270000    1.000000000000
+
+ H         
+
+     10   S      28            13.0100000    0.033498726390
+     10   S      29             1.9620000    0.234800801174
+     10   S      30             0.4446000    0.813682957883
+
+     11   S      31             0.1220000    1.000000000000
+
+     12   P      32             0.7270000    1.000000000000
+
+ H         
+
+     13   S      33            13.0100000    0.033498726390
+     13   S      34             1.9620000    0.234800801174
+     13   S      35             0.4446000    0.813682957883
+
+     14   S      36             0.1220000    1.000000000000
+
+     15   P      37             0.7270000    1.000000000000
+
+ TOTAL NUMBER OF BASIS SET SHELLS             =   15
+ NUMBER OF CARTESIAN GAUSSIAN BASIS FUNCTIONS =   30
+ NOTE: THIS RUN WILL RESTRICT THE MO VARIATION SPACE TO SPHERICAL HARMONICS.
+ THE NUMBER OF ORBITALS KEPT IN THE VARIATIONAL SPACE WILL BE PRINTED LATER.
+ NUMBER OF ELECTRONS                          =    9
+ CHARGE OF MOLECULE                           =    1
+ SPIN MULTIPLICITY                            =    2
+ NUMBER OF OCCUPIED ORBITALS (ALPHA)          =    5
+ NUMBER OF OCCUPIED ORBITALS (BETA )          =    4
+ TOTAL NUMBER OF ATOMS                        =    4
+ THE NUCLEAR REPULSION ENERGY IS       11.5618316336
+
+     $CONTRL OPTIONS
+     ---------------
+ SCFTYP=MCSCF        RUNTYP=ENERGY       EXETYP=RUN     
+ MPLEVL=       2     CITYP =NONE         CCTYP =NONE         VBTYP =NONE    
+ DFTTYP=NONE         TDDFT =NONE    
+ MULT  =       2     ICHARG=       1     NZVAR =       0     COORD =UNIQUE  
+ PP    =NONE         RELWFN=NONE         LOCAL =NONE         NUMGRD=       F
+ ISPHER=       1     NOSYM =       1     MAXIT =     200     UNITS =ANGS    
+ PLTORB=       F     MOLPLT=       F     AIMPAC=       F     FRIEND=        
+ NPRINT=       7     IREST =       0     GEOM  =INPUT   
+ NORMF =       0     NORMP =       0     ITOL  =      20     ICUT  =       9
+ INTTYP=RYSQUAD      GRDTYP=BEST         QMTTOL= 1.0E-05
+
+     $SYSTEM OPTIONS
+     ---------------
+  REPLICATED MEMORY=   100000000 WORDS (ON EVERY NODE).
+ DISTRIBUTED MEMDDI=        1000 MILLION WORDS IN AGGREGATE,
+ MEMDDI DISTRIBUTED OVER   1 PROCESSORS IS  1000000000 WORDS/PROCESSOR.
+ TOTAL MEMORY REQUESTED ON EACH PROCESSOR=  1100000000 WORDS.
+ TIMLIM=      525600.00 MINUTES, OR     365.0 DAYS.
+ PARALL= T  BALTYP=  DLB     KDIAG=    3  COREFL= F
+ MXSEQ2=     300 MXSEQ3=     150  mem10=         0
+
+          ----------------
+          PROPERTIES INPUT
+          ----------------
+
+     MOMENTS            FIELD           POTENTIAL          DENSITY
+ IEMOM =       1   IEFLD =       0   IEPOT =       0   IEDEN =       0
+ WHERE =COMASS     WHERE =NUCLEI     WHERE =NUCLEI     WHERE =NUCLEI  
+ OUTPUT=BOTH       OUTPUT=BOTH       OUTPUT=BOTH       OUTPUT=BOTH    
+ IEMINT=       0   IEFINT=       0                     IEDINT=       0
+                                                       MORB  =       0
+
+     -------------------------------
+     INTEGRAL TRANSFORMATION OPTIONS
+     -------------------------------
+     NWORD  =            0
+     CUTOFF = 1.0E-09     MPTRAN =       0
+     DIRTRF =       T     AOINTS =DUP     
+
+          ----------------------
+          MCSCF INPUT PARAMETERS
+          ----------------------
+ CONVERGER SELECTION: FOCAS = F  SOSCF = F  FULLNR = T  QUD = F  JACOBI = F
+ SECULAR EQUATION METHOD CISTEP = GMCCI   
+ --- GENERAL INPUT OPTIONS:
+ MAXIT =     100  MICIT =       1  ACURCY= 1.000E-06
+ DAMP  =   0.000  CANONC=       T  ENGTOL= 1.000E-10
+ EKT   =       F  NPUNCH=       2  NWORD =         0
+ REGENERATE CI AFTER CONVERGENCE = NONE    
+ DIABATIZATION AFTER CONVERGENCE =        F
+ --- INPUT FOR FULLNR CONVERGER:
+ METHOD=DM2       FORS  =       F  DROPC =       T
+ LINSER=       F  FCORE =       F  NORB  =      30
+
+          ----------------------
+          INTEGRAL INPUT OPTIONS
+          ----------------------
+ NOPK  =       1 NORDER=       0 SCHWRZ=       T
+
+ ------------------------------------------
+ MULTIREFERENCE PERTURBATION THEORY CONTROL
+ ------------------------------------------
+ MRPT=GMCPT    READ CONVERGED MCSCF VECTORS= F
+
+
+     ------------------------------------------
+     THE POINT GROUP IS C1 , NAXIS= 1, ORDER= 1
+     ------------------------------------------
+
+ -- VARIATIONAL SPACE WILL BE RESTRICTED TO PURE SPHERICAL HARMONICS ONLY --
+ AFTER EXCLUDING CONTAMINANT COMBINATIONS FROM THE CARTESIAN GAUSSIAN BASIS
+ SET, THE NUMBER OF SPHERICAL HARMONICS KEPT IN THE VARIATION SPACE IS   29
+
+     DIMENSIONS OF THE SYMMETRY SUBSPACES ARE
+ A   =   29
+
+ ..... DONE SETTING UP THE RUN .....
+ CPU     0: STEP CPU TIME=     0.04 TOTAL CPU TIME=          0.0 (      0.0 MIN)
+ TOTAL WALL CLOCK TIME=          0.0 SECONDS, CPU UTILIZATION IS   100.00%
+
+          ********************
+          1 ELECTRON INTEGRALS
+          ********************
+ TIME TO DO   DIPOLE INTEGRALS=      0.00
+ ...... END OF ONE-ELECTRON INTEGRALS ......
+ CPU     0: STEP CPU TIME=     0.00 TOTAL CPU TIME=          0.0 (      0.0 MIN)
+ TOTAL WALL CLOCK TIME=          0.1 SECONDS, CPU UTILIZATION IS    80.00%
+
+          -------------
+          GUESS OPTIONS
+          -------------
+          GUESS =MOREAD            NORB  =      29          NORDER=       0
+          MIX   =       F          PRTMO =       F          PUNMO =       F
+          TOLZ  = 1.0E-08          TOLE  = 1.0E-05
+          SYMDEN=       F          PURIFY=       T
+
+ INITIAL GUESS ORBITALS GENERATED BY MOREAD   ROUTINE.
+
+ STATISTICS FOR GENERATION OF SYMMETRY ORBITAL -Q- MATRIX
+ NUMBER OF CARTESIAN ATOMIC ORBITALS=         30
+ NUMBER OF SPHERICAL CONTAMINANTS DROPPED=     1
+ NUMBER OF LINEARLY DEPENDENT MOS DROPPED=     0
+ TOTAL NUMBER OF MOS IN VARIATION SPACE=      29
+ ORBITAL PURIFICATION WILL OCCUR
+
+ SYMMETRIES FOR INITIAL GUESS ORBITALS FOLLOW.   BOTH SET(S).
+     5 ORBITALS ARE OCCUPIED (    1 CORE ORBITALS).
+     1=A        2=A        3=A        4=A        5=A        6=A        7=A   
+     8=A        9=A       10=A       11=A       12=A       13=A       14=A   
+    15=A       16=A       17=A       18=A       19=A       20=A       21=A   
+    22=A       23=A       24=A       25=A       26=A       27=A       28=A   
+    29=A   
+ ...... END OF INITIAL ORBITAL SELECTION ......
+ CPU     0: STEP CPU TIME=     0.01 TOTAL CPU TIME=          0.0 (      0.0 MIN)
+ TOTAL WALL CLOCK TIME=          0.1 SECONDS, CPU UTILIZATION IS   100.00%
+
+                    ----------------------
+                    AO INTEGRAL TECHNOLOGY
+                    ----------------------
+     S,P,L SHELL ROTATED AXIS INTEGRALS, REPROGRAMMED BY
+        KAZUYA ISHIMURA (IMS) AND JOSE SIERRA (SYNSTAR).
+     S,P,D,L SHELL ROTATED AXIS INTEGRALS PROGRAMMED BY
+        KAZUYA ISHIMURA (INSTITUTE FOR MOLECULAR SCIENCE).
+     S,P,D,F,G SHELL TO TOTAL QUARTET ANGULAR MOMENTUM SUM 5,
+        ERIC PROGRAM BY GRAHAM FLETCHER (ELORET AND NASA ADVANCED
+        SUPERCOMPUTING DIVISION, AMES RESEARCH CENTER).
+     S,P,D,F,G,L SHELL GENERAL RYS QUADRATURE PROGRAMMED BY
+        MICHEL DUPUIS (PACIFIC NORTHWEST NATIONAL LABORATORY).
+
+          --------------------
+          2 ELECTRON INTEGRALS
+          --------------------
+
+ DIRECT SCF METHOD SKIPS INTEGRAL STORAGE ON DISK.
+ DIRECT TRANSFORMATION SKIPS AO INTEGRAL STORAGE ON DISK.
+  ...... END OF TWO-ELECTRON INTEGRALS .....
+ STEP CPU TIME =     0.02 TOTAL CPU TIME =          0.1 (      0.0 MIN)
+ TOTAL WALL CLOCK TIME=          0.1 SECONDS, CPU UTILIZATION IS   100.00%
+ DDI: Creating Array [0] - 900 x 36 = 32400 words.
+ DDI: Creating Array [1] - 21 x 288 = 6048 words.
+ DDI: Creating Array [2] - 36 x 36 = 1296 words.
+ DDI: Creating Array [3] - 465 x 36 = 16740 words.
+
+          -----------------
+          MCSCF CALCULATION
+          -----------------
+
+ ----- NUCLEAR ENERGY ----- =        11.5618316336
+
+     -------------------------------------------------
+     GMC-PT/GMC-QDPT or general MCSCF input parameters
+     -------------------------------------------------
+ # of frozen core orbs. =         0 ->         0
+ # of doubly occ. orbs. =         1
+ # of active      orbs. =         7
+ # of virtual     orbs. =        21
+ # of active electrons  =         7
+ # of states in CI      =         3
+ Highest state in CI    =         3
+ kstate =  1 1 1
+ avecoe =  0.333 0.333 0.333
+ State symmetry           = A           
+ Assigned symmetry number = 1
+
+ <<<Act. MO sym.: 1111111
+
+ <<<Division of 1-ext.:  0
+ <<<Division of 2-ext.:  0
+
+ *** Reference space
+
+ Reference type: ORMAS (= Occupation restricted multiple active space)
+ # of orbitals          =  7
+ # of minimum electrons =  7
+ # of maximum electrons =  7
+ State symmetry    =    1 (input)
+ 2*Sz              =    1 (input)
+ Spin multiplicity =    2 (input)
+ Dimension of reference space =      1225  (from      3432 walks)
+
+ Dimension of reference space =      1225  (from      1225 walks)
+
+ <<<Ionized spaces for Ref-CI:
+      0:         1225 /   -1-0:         1960 /  0-1-0:         2891
+
+ EVALUATING EXCHANGE INTEGRALS FOR DIRECT INTEGRAL TRANSFORMATION
+ SCHWARZ INEQUALITY OVERHEAD:       465 INTEGRALS, T=        0.00
+
+     --------------------------------------------
+     PARTIAL TWO ELECTRON INTEGRAL TRANSFORMATION
+     --------------------------------------------
+
+ NUMBER OF CORE MOLECULAR ORBITALS     =    1
+ NUMBER OF OCCUPIED MOLECULAR ORBITALS =    8
+ TOTAL NUMBER OF MOLECULAR ORBITALS    =   29
+ TOTAL NUMBER OF ATOMIC ORBITALS       =   30
+ THRESHOLD FOR KEEPING TRANSFORMED 2E- INTEGRALS = 1.000E-09
+
+ -------------------------------     ------------------------------
+ DISTRIBUTED DATA TRANSFORMATION     PROGRAM WRITTEN BY G. FLETCHER
+ -------------------------------     ------------------------------
+
+ THE DISTRIBUTED MEMORY REQUIRED FOR THIS STEP IS MEMDDI=         1 MWORDS
+ CREATING DISTRIBUTED STORAGE FOR [VIR OCC|VIR OCC] INTEGRALS
+ CREATING DISTRIBUTED STORAGE FOR [VIR OCC|OCC OCC] INTEGRALS
+ CREATING DISTRIBUTED STORAGE FOR [OCC OCC|OCC OCC] INTEGRALS
+ CREATING DISTRIBUTED STORAGE FOR [VIR VIR|OCC OCC] INTEGRALS
+ FOR    1 PROCESSORS, THE REPLICATED MEMORY NEEDED IS       73700 WORDS.
+ SCHWARZ INEQUALITY OVERHEAD:       465 INTEGRALS, T=        0.00
+
+      DIRECT 4-INDEX TRANSFORMATION 
+      SCHWARZ INEQUALITY TEST SKIPPED          0 INTEGRAL BLOCKS
+ ----- FROZEN CORE ENERGY =       -47.7512206275
+ ... END OF INTEGRAL TRANSFORMATION ...
+ CPU     0: STEP CPU TIME=     0.21 TOTAL CPU TIME=          0.3 (      0.0 MIN)
+ TOTAL WALL CLOCK TIME=          0.3 SECONDS, CPU UTILIZATION IS    96.55%
+
+     --------------------------------     -----------------------------
+     MCHF NEWTON-RAPHSON OPTIMIZATION     CODE WRITTEN BY MICHEL DUPUIS
+     --------------------------------     -----------------------------
+     PARALLEL VERSION WRITTEN BY G. FLETCHER (ELORET)
+     NASA ADVANCED SUPERCOMPUTING DIVISION, AMES RESEARCH CENTER
+
+ NUMBER OF INDEPENDENT ORBITAL ROTATION PARAMETERS =   175
+ ..... DONE SOLVING NEWTON-RAPHSON EQUATIONS .....
+ CPU     0: STEP CPU TIME=     0.72 TOTAL CPU TIME=          1.0 (      0.0 MIN)
+ TOTAL WALL CLOCK TIME=          1.0 SECONDS, CPU UTILIZATION IS    99.01%
+ ..... DONE WITH NTN-RPH ORBITAL ROTATIONS ..... 
+ CPU     0: STEP CPU TIME=     0.00 TOTAL CPU TIME=          1.0 (      0.0 MIN)
+ TOTAL WALL CLOCK TIME=          1.0 SECONDS, CPU UTILIZATION IS    99.01%
+ MAXIMUM MEMORY USED BY NTN-RPH CODE WAS     57645 WORDS.
+
+ ITER     TOTAL ENERGY      DEL(E)  LAGRANGIAN ASYMMETRY   SQCDF  MICIT   DAMP
+   1      -55.656448652 -0.656448652  0.124188   12    5 1.533E-01  1   0.0000
+   2      -55.697052000 -0.040603348  0.023203   12    5 4.496E-01  1   0.0000
+   3      -55.730168707 -0.033116707  0.012321   11    6 2.171E-01  1   0.0247
+   4      -55.744095200 -0.013926494  0.004188   11    6 3.955E-02  1   0.0044
+   5      -55.745822487 -0.001727287  0.000749   12    5 1.179E-03  1   0.0000
+   6      -55.745874137 -0.000051650  0.000250   12    5 1.040E-04  1   0.0000
+   7      -55.745879512 -0.000005375  0.000114   12    5 1.585E-05  1   0.0000
+   8      -55.745880373 -0.000000862  0.000050   12    5 2.741E-06  1   0.0000
+   9      -55.745880526 -0.000000152  0.000021   12    5 5.257E-07  1   0.0000
+  10      -55.745880556 -0.000000030  0.000009   23    5 1.151E-07  1   0.0000
+  11      -55.745880562 -0.000000007  0.000005   23    5 2.923E-08  1   0.0000
+  12      -55.745880564 -0.000000002  0.000003   23    5 8.518E-09  1   0.0000
+  13      -55.745880565 -0.000000001  0.000002   23    5 2.752E-09  1   0.0000
+  14      -55.745880565 -0.000000000  0.000001   23    5 9.492E-10  1   0.0000
+
+          --------------------
+          LAGRANGIAN CONVERGED
+          --------------------
+
+ FINAL MCSCF ENERGY IS      -55.7458805648 AFTER  14 ITERATIONS
+
+ -MCCI- BASED ON OPTIMIZED ORBITALS
+ ----------------------------------
+
+ PLEASE NOTE: IF THE ACTIVE ORBITALS ARE CANONICALIZED BELOW,
+ THE FOLLOWING CI EXPANSION COEFFICIENTS AND THE DENSITY DO NOT
+ CORRESPOND TO THE PRINTED ORBITALS.  THE PRINTED EXPANSIONS MATCH
+ THE ORBITALS USED DURING THE LAST ITERATION.  IF YOU WISH TO SEE
+ CI EXPANSIONS BASED ON THE CANONICAL (OR NATURAL) ORBITALS, YOU
+ MUST RUN A CI CALCULATION WITH THAT ORBITAL CHOICE READ IN $VEC.
+
+ Averaged energy =     -55.745880565
+
+ State #    1  Energy =     -55.885410002  S =  0.500
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+        1   -0.946661  11110001110000
+        5    0.063218  01111001110000
+        8    0.126216  10110101110000
+       17    0.130621  11010011110000
+       36    0.107749  11110001101000
+      386   -0.098309  11110001010010
+      393   -0.061233  10110101010010
+      701   -0.102270  11110001100001
+      717   -0.058506  11010011100001
+
+ State #    2  Energy =     -55.743502958  S =  0.500
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+        1   -0.069535  11110001110000
+       36   -0.592034  11110001101000
+       43    0.056363  10110101101000
+       71    0.762645  11110001011000
+       78   -0.059113  10110101011000
+       87   -0.076151  11010011011000
+      456   -0.065346  11110001001010
+      806   -0.079952  11110001001001
+
+ State #    3  Energy =     -55.608728734  S =  0.500
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+        1    0.079218  11110001110000
+       36    0.758619  11110001101000
+       43   -0.064064  10110101101000
+       71    0.597569  11110001011000
+       87   -0.053155  11010011011000
+      281    0.054960  11110000101100
+      456    0.067168  11110001001010
+      463    0.053202  10110101001010
+      806   -0.059560  11110001001001
+
+ DENSITY MATRIX OVER ACTIVE MO-S
+
+             1           2           3           4           5
+
+    1    1.9780730
+    2   -0.0002638   1.6350095
+    3   -0.0088976  -0.0005872   1.6354317
+    4    0.0028042  -0.0005381  -0.0008546   1.6554170
+    5    0.0982416   0.0016526   0.0135784   0.0310024   0.0261172
+    6   -0.0056171  -0.1373334   0.0209504   0.0003328  -0.0013894
+    7   -0.0056986  -0.0093072   0.1463159   0.0182558   0.0013785
+
+             6           7
+
+    6    0.0345527
+    7   -0.0010331   0.0353989
+
+ FORMING THE "STANDARD FOCK OPERATOR" IN DIRECT AO INTEGRAL MODE...
+ ONLY THE    1 CORE AND   21 VIRTUAL ORBITALS WILL BE CANONICALIZED
+
+          ----------------------
+          MCSCF NATURAL ORBITALS
+          ----------------------
+
+                      1          2          3          4          5
+                  -15.9867     1.9833     1.6565     1.6508     1.6445
+                     A          A          A          A          A   
+    1  N  1  S    1.001268   0.008336  -0.010624   0.002246   0.000974
+    2  N  1  S   -0.001785   0.437350  -0.168225   0.083714   0.021393
+    3  N  1  S   -0.006321   0.299718  -0.268713   0.113980   0.032120
+    4  N  1  X   -0.000080   0.001501  -0.064174  -0.251665   0.442126
+    5  N  1  Y    0.000090  -0.024458   0.139983   0.383370   0.287325
+    6  N  1  Z    0.001167   0.094465   0.576387  -0.135898  -0.007326
+    7  N  1  X   -0.000011   0.001135  -0.025671  -0.084380   0.226267
+    8  N  1  Y   -0.000021   0.001086   0.077679   0.130663   0.149225
+    9  N  1  Z   -0.000481   0.009791   0.377451  -0.071453   0.004405
+   10  N  1 XX    0.000007  -0.001277  -0.011964   0.001701   0.009229
+   11  N  1 YY    0.000202   0.000498  -0.011378   0.004582  -0.008838
+   12  N  1 ZZ   -0.000209   0.000779   0.023342  -0.006283  -0.000391
+   13  N  1 XY   -0.000363  -0.002268  -0.001812  -0.006499  -0.008884
+   14  N  1 XZ   -0.000000   0.000881  -0.002983  -0.011841   0.020931
+   15  N  1 YZ   -0.000092  -0.001928   0.004090   0.019580   0.014057
+   16  H  2  S   -0.002104   0.178967   0.188767   0.339088   0.006014
+   17  H  2  S    0.000628  -0.000308   0.033436   0.035353   0.004066
+   18  H  2  X   -0.000615   0.020003   0.013193   0.018861   0.015484
+   19  H  2  Y    0.000919  -0.030480  -0.018158  -0.026036   0.011945
+   20  H  2  Z    0.000401  -0.004350   0.015379  -0.019312  -0.000645
+   21  H  3  S   -0.001875   0.199967   0.064142  -0.216756  -0.319445
+   22  H  3  S    0.000339   0.005409   0.020023  -0.027314  -0.074494
+   23  H  3  X   -0.000286   0.009671   0.003905  -0.023563   0.002477
+   24  H  3  Y   -0.000863   0.033348   0.014854  -0.011635  -0.027445
+   25  H  3  Z    0.000483  -0.012680   0.021155   0.006166   0.017387
+   26  H  4  S   -0.001824   0.186603   0.057157  -0.250070   0.289396
+   27  H  4  S    0.000397   0.001797   0.021602  -0.031994   0.068841
+   28  H  4  X    0.000887  -0.032344  -0.011528   0.027776  -0.020101
+   29  H  4  Y   -0.000235   0.010075   0.004512   0.007993   0.020250
+   30  H  4  Z    0.000456  -0.009570   0.021727   0.006935  -0.014167
+
+                      6          7          8
+                    0.0261     0.0206     0.0182
+                     A          A          A   
+    1  N  1  S    0.048709   0.203570  -0.137062
+    2  N  1  S    0.155730   0.676971  -0.407572
+    3  N  1  S    0.000598   0.183188   0.010102
+    4  N  1  X    0.672566   0.102327   0.567044
+    5  N  1  Y    0.479151  -0.394114  -0.662181
+    6  N  1  Z    0.069577   0.631995  -0.195011
+    7  N  1  X   -0.005599   0.026682   0.049311
+    8  N  1  Y   -0.005026  -0.072603  -0.057938
+    9  N  1  Z   -0.015452  -0.070737   0.051225
+   10  N  1 XX   -0.020850   0.022193   0.014219
+   11  N  1 YY    0.020008  -0.016049  -0.008319
+   12  N  1 ZZ    0.000842  -0.006144  -0.005900
+   13  N  1 XY    0.031425   0.037898   0.002303
+   14  N  1 XZ   -0.021059  -0.014827  -0.030794
+   15  N  1 YZ   -0.010484   0.044170   0.029190
+   16  H  2  S   -0.157575  -0.228197   0.864129
+   17  H  2  S   -0.022894  -0.003162   0.143003
+   18  H  2  X   -0.019160  -0.021671   0.048903
+   19  H  2  Y    0.005815   0.034964  -0.074452
+   20  H  2  Z    0.001826  -0.004939   0.013556
+   21  H  3  S    0.575922  -0.641313  -0.053269
+   22  H  3  S    0.149414  -0.092051  -0.017441
+   23  H  3  X    0.000609  -0.046544  -0.024506
+   24  H  3  Y    0.041317  -0.063149   0.019177
+   25  H  3  Z   -0.017259  -0.011100  -0.003366
+   26  H  4  S   -0.646710  -0.497577  -0.249629
+   27  H  4  S   -0.150270  -0.060099  -0.067474
+   28  H  4  X    0.051938   0.068499   0.015636
+   29  H  4  Y   -0.030997   0.005586   0.016043
+   30  H  4  Z    0.010886  -0.019618  -0.003974
+
+          ------------------------
+          MCSCF OPTIMIZED ORBITALS
+          ------------------------
+
+                      1          2          3          4          5
+                  -15.9867     0.0000     0.0000     0.0000     0.0000
+                     A          A          A          A          A   
+    1  N  1  S    1.001268  -0.003417   0.003767  -0.007450  -0.015924
+    2  N  1  S   -0.001785   0.401420  -0.001311   0.011657  -0.194444
+    3  N  1  S   -0.006321   0.295962  -0.006963   0.050772  -0.287095
+    4  N  1  X   -0.000080  -0.001136   0.433490   0.058774  -0.008792
+    5  N  1  Y    0.000090  -0.005646   0.010603   0.414201   0.030127
+    6  N  1  Z    0.001167   0.052868  -0.002584   0.001569   0.581173
+    7  N  1  X   -0.000011   0.001924   0.231049   0.065972  -0.007640
+    8  N  1  Y   -0.000021   0.008535   0.040420   0.199177   0.041844
+    9  N  1  Z   -0.000481   0.009192  -0.005672   0.025652   0.385265
+   10  N  1 XX    0.000007  -0.001714   0.008148   0.006971  -0.012071
+   11  N  1 YY    0.000202   0.001072  -0.008781  -0.005923  -0.012097
+   12  N  1 ZZ   -0.000209   0.000642   0.000632  -0.001047   0.024168
+   13  N  1 XY   -0.000363  -0.004585  -0.005678  -0.011088  -0.000893
+   14  N  1 XZ   -0.000000   0.001416   0.027287   0.000893  -0.000353
+   15  N  1 YZ   -0.000092  -0.002945  -0.001996   0.028076  -0.001092
+   16  H  2  S   -0.002104   0.208563  -0.252243   0.366065   0.120217
+   17  H  2  S    0.000628   0.002479  -0.028328   0.048090   0.026085
+   18  H  2  X   -0.000615   0.022355  -0.001474   0.029887   0.009439
+   19  H  2  Y    0.000919  -0.033402   0.030486  -0.020992  -0.013480
+   20  H  2  Z    0.000401  -0.004552   0.007650  -0.011446   0.019762
+   21  H  3  S   -0.001875   0.214546  -0.165663  -0.396909   0.124188
+   22  H  3  S    0.000339   0.006453  -0.053852  -0.072099   0.026722
+   23  H  3  X   -0.000286   0.011005   0.016916  -0.019302   0.009853
+   24  H  3  Y   -0.000863   0.035420  -0.020246  -0.025252   0.018780
+   25  H  3  Z    0.000483  -0.011800   0.009125   0.019952   0.018886
+   26  H  4  S   -0.001824   0.210027   0.428079  -0.015873   0.123723
+   27  H  4  S    0.000397   0.005116   0.084662   0.021018   0.029066
+   28  H  4  X    0.000887  -0.035332  -0.035427   0.008531  -0.019248
+   29  H  4  Y   -0.000235   0.010698   0.012023   0.021607   0.002731
+   30  H  4  Z    0.000456  -0.008967  -0.018375   0.000429   0.019601
+
+                      6          7          8          9         10
+                    0.0000     0.0000     0.0000     0.1427     0.1972
+                     A          A          A          A          A   
+    1  N  1  S    0.241762  -0.033391   0.053746  -0.138342   0.001269
+    2  N  1  S    0.805731  -0.083983   0.142678  -0.210524  -0.005675
+    3  N  1  S    0.177862   0.026055  -0.069017   1.413392  -0.110443
+    4  N  1  X    0.019456   0.924613   0.023459  -0.002481  -0.080131
+    5  N  1  Y   -0.074076  -0.131126   0.936921   0.030189   0.090318
+    6  N  1  Z    0.678309  -0.012122  -0.033743  -0.200255  -0.015838
+    7  N  1  X    0.008863   0.050352  -0.041717   0.044041   0.423564
+    8  N  1  Y   -0.046890  -0.049050   0.079346  -0.153251  -0.628362
+    9  N  1  Z   -0.077172   0.014397  -0.013794   0.460595   0.056336
+   10  N  1 XX    0.012585  -0.003082  -0.030508   0.003863   0.008730
+   11  N  1 YY   -0.009368   0.006969   0.023663   0.041584  -0.026466
+   12  N  1 ZZ   -0.003217  -0.003886   0.006846  -0.045448   0.017736
+   13  N  1 XY    0.039297   0.028508   0.004971  -0.062579   0.061089
+   14  N  1 XZ   -0.007123  -0.035413   0.012133   0.010155   0.057834
+   15  N  1 YZ    0.030235   0.015768  -0.039363  -0.045028  -0.092221
+   16  H  2  S   -0.502250   0.409398  -0.575204   0.320668  -0.531349
+   17  H  2  S   -0.051866   0.074957  -0.106105  -0.780113   1.897626
+   18  H  2  X   -0.037556   0.015642  -0.035476  -0.054230   0.065612
+   19  H  2  Y    0.055609  -0.038866   0.040103   0.086728  -0.087047
+   20  H  2  Z   -0.008660   0.010655  -0.007141  -0.012470  -0.079825
+   21  H  3  S   -0.481211   0.316636   0.600567   0.255315   0.243119
+   22  H  3  S   -0.056538   0.086077   0.135528  -0.809657  -0.890047
+   23  H  3  X   -0.034872  -0.019052   0.031327   0.026656  -0.023020
+   24  H  3  Y   -0.056772   0.035549   0.033800  -0.099896  -0.026468
+   25  H  3  Z   -0.012071  -0.015746  -0.003192   0.049978   0.060227
+   26  H  4  S   -0.473431  -0.661916  -0.085515   0.310356   0.201037
+   27  H  4  S   -0.057055  -0.155987  -0.030176  -0.893408  -0.780956
+   28  H  4  X    0.065075   0.052981   0.000616   0.066397   0.036307
+   29  H  4  Y   -0.004097  -0.010973  -0.031220  -0.072511  -0.002384
+   30  H  4  Z   -0.015415   0.001782   0.016982   0.039691   0.068835
+
+                     11         12         13         14         15
+                    0.2163     0.5398     0.5663     0.6345     0.8127
+                     A          A          A          A          A   
+    1  N  1  S    0.012033  -0.068449   0.008859  -0.047466  -0.359247
+    2  N  1  S    0.023690  -0.047249  -0.044508  -0.191754  -0.816038
+    3  N  1  S   -0.083578   0.714894  -0.338761  -0.126825   1.478183
+    4  N  1  X   -0.024400  -0.134230  -0.528646   0.226782  -0.046447
+    5  N  1  Y    0.012824  -0.416472  -0.200552  -0.288410   0.054593
+    6  N  1  Z    0.017826  -0.512083   0.274056   0.371690   0.257873
+    7  N  1  X    0.436328   0.158702   1.468369  -1.020843   0.192422
+    8  N  1  Y    0.169837   1.142724   0.462062   1.465702  -0.205694
+    9  N  1  Z   -0.051735   0.776757  -0.492724  -0.758922  -0.060559
+   10  N  1 XX    0.070772   0.008982  -0.013814   0.015073   0.102421
+   11  N  1 YY   -0.069486  -0.033982   0.033724   0.007897  -0.043007
+   12  N  1 ZZ   -0.001286   0.025000  -0.019909  -0.022970  -0.059415
+   13  N  1 XY   -0.049840   0.018292  -0.027434  -0.016336   0.085189
+   14  N  1 XZ    0.064461   0.004663   0.015820   0.024827  -0.054685
+   15  N  1 YZ    0.033551   0.025569   0.002496  -0.042704   0.041092
+   16  H  2  S    0.012480  -0.658252   0.385275  -0.359342  -0.042167
+   17  H  2  S    0.026334  -0.535512   0.135570  -0.795114  -0.239064
+   18  H  2  X   -0.031160  -0.045522   0.096100  -0.124542  -0.059699
+   19  H  2  Y   -0.037061   0.078897   0.023657   0.143128  -0.041639
+   20  H  2  Z   -0.007320   0.073824  -0.031414  -0.110661   0.209024
+   21  H  3  S   -0.561888   0.004337   0.518212   0.603748   0.029506
+   22  H  3  S    1.879100   0.579633   0.773952   0.265050  -0.267466
+   23  H  3  X    0.030480  -0.085907   0.072615   0.081788  -0.447222
+   24  H  3  Y    0.073615   0.103155   0.058269   0.108408  -0.055423
+   25  H  3  Z   -0.035595  -0.004462  -0.098292   0.024051  -0.044827
+   26  H  4  S    0.557576  -0.287520  -0.257146   0.701257  -0.006203
+   27  H  4  S   -1.839447  -0.284434  -0.854165   0.338220  -0.350494
+   28  H  4  X    0.072016   0.047960   0.055841  -0.158120   0.334034
+   29  H  4  Y   -0.008882   0.088328  -0.131629   0.034462   0.294107
+   30  H  4  Z    0.030567   0.080140   0.033853   0.041291  -0.114774
+
+                     16         17         18         19         20
+                    0.9761     1.0464     1.3141     1.3893     1.5038
+                     A          A          A          A          A   
+    1  N  1  S   -0.466476  -0.101364   0.063545  -0.294515  -0.503558
+    2  N  1  S   -0.986258  -0.212772   0.132116  -0.618388  -1.037682
+    3  N  1  S    1.978061   0.507333  -0.239274   1.086712   1.945382
+    4  N  1  X   -0.023276   0.070407  -0.176595   0.008109  -0.067341
+    5  N  1  Y    0.065538   0.033902   0.040021  -0.072156   0.050925
+    6  N  1  Z    0.137389   0.027661   0.011907  -0.022008  -0.029281
+    7  N  1  X    0.092486  -0.383251   0.642044  -0.320908   0.206228
+    8  N  1  Y   -0.308114  -0.186020  -0.419718   0.823088  -0.649133
+    9  N  1  Z   -0.082970   0.143511  -0.048828   0.383121   0.886971
+   10  N  1 XX   -0.143153  -0.127429   0.024962   0.101524   0.071697
+   11  N  1 YY   -0.090467   0.163202  -0.051617   0.056786   0.101268
+   12  N  1 ZZ    0.233619  -0.035773   0.026655  -0.158311  -0.172965
+   13  N  1 XY   -0.058141   0.095480   0.014384   0.014752  -0.033087
+   14  N  1 XZ    0.001939   0.235082   0.057938   0.007434   0.037597
+   15  N  1 YZ    0.019913   0.156233   0.023576  -0.011115   0.045267
+   16  H  2  S   -0.174727  -0.111145   0.383855  -0.656907  -0.276569
+   17  H  2  S   -0.257944  -0.094634   0.191556  -0.314436  -0.051051
+   18  H  2  X    0.013065   0.394383  -0.545680  -0.257353   0.030368
+   19  H  2  Y   -0.016856   0.335674  -0.198421  -0.394052   0.218484
+   20  H  2  Z    0.275328   0.017398  -0.260595   0.222162  -0.828730
+   21  H  3  S   -0.410281  -0.197380   0.061521  -0.024084  -0.731316
+   22  H  3  S   -0.262929  -0.169039  -0.019486   0.002962  -0.276280
+   23  H  3  X    0.196458   0.041538   0.138841   0.423909  -0.043572
+   24  H  3  Y    0.075811  -0.278110  -0.222315  -0.409692   0.055706
+   25  H  3  Z    0.357839  -0.431871  -0.007510  -0.472301   0.104174
+   26  H  4  S   -0.383280   0.050940  -0.320613  -0.115105  -0.694427
+   27  H  4  S   -0.244822   0.055948  -0.081074   0.010337  -0.127875
+   28  H  4  X   -0.136533  -0.042437  -0.171508  -0.079634  -0.055538
+   29  H  4  Y   -0.127015   0.156852   0.626245  -0.265589  -0.029061
+   30  H  4  Z    0.364069   0.334896   0.380159  -0.312565  -0.282734
+
+                     21         22         23         24         25
+                    1.6190     1.8731     1.9285     2.0077     2.1044
+                     A          A          A          A          A   
+    1  N  1  S   -0.075562   0.000516  -0.038511   0.094718  -0.052758
+    2  N  1  S   -0.154875  -0.021315  -0.060352   0.317508  -0.095592
+    3  N  1  S    0.269454  -0.009632   0.321042   1.566486   0.412838
+    4  N  1  X    0.185881  -0.328778   0.287179  -0.018210  -0.091865
+    5  N  1  Y    0.190664   0.554278   0.038034  -0.091112   0.157875
+    6  N  1  Z   -0.018026  -0.075360   0.021509   0.334373   0.018885
+    7  N  1  X    0.607975  -0.143090  -0.190501   0.091625  -0.043395
+    8  N  1  Y    0.020925   0.027733  -0.113835   0.080435   0.133660
+    9  N  1  Z    0.114609  -0.050037   0.141318   0.591377   0.430523
+   10  N  1 XX    0.009895   0.202689  -0.221978   0.025679  -0.602095
+   11  N  1 YY    0.071485  -0.033583   0.197765  -0.131707  -0.188023
+   12  N  1 ZZ   -0.081381  -0.169106   0.024212   0.106028   0.790118
+   13  N  1 XY    0.053094   0.291937   0.082744   0.251930  -0.491229
+   14  N  1 XZ   -0.223568   0.101819  -0.073248   0.093657   0.113413
+   15  N  1 YZ   -0.123384  -0.128712  -0.023359   0.183514  -0.305758
+   16  H  2  S    0.072368   0.034303  -0.080947  -0.383928  -0.225460
+   17  H  2  S    0.001021  -0.391814  -0.022154  -0.318948  -0.218858
+   18  H  2  X   -0.364996  -0.339831  -0.019269  -0.591410  -0.254444
+   19  H  2  Y   -0.121165   0.661051  -0.032435   0.585049   0.280399
+   20  H  2  Z   -0.171461   0.437999  -0.121476  -0.157204  -0.058541
+   21  H  3  S   -0.149966  -0.051546  -0.086629  -0.360820  -0.105809
+   22  H  3  S    0.311451   0.241705   0.295279  -0.234612   0.063093
+   23  H  3  X   -0.313019   0.296260   0.774079  -0.034546  -0.229105
+   24  H  3  Y    0.410614   0.450180   0.330870  -0.679120  -0.087875
+   25  H  3  Z   -0.547589  -0.157503   0.016208   0.268780  -0.526038
+   26  H  4  S   -0.160520  -0.004472  -0.071707  -0.384366  -0.103592
+   27  H  4  S   -0.375370   0.169932  -0.409239  -0.293808   0.035870
+   28  H  4  X    0.072677  -0.304452   0.950634   0.531070   0.118999
+   29  H  4  Y   -0.424708   0.116278   0.330904  -0.631688   0.118930
+   30  H  4  Z    0.588772  -0.317358  -0.020857   0.090084  -0.428590
+
+                     26         27         28         29
+                    2.2918     2.6159     2.7362     2.9179
+                     A          A          A          A   
+    1  N  1  S    0.039768  -0.056781  -0.071508  -0.023799
+    2  N  1  S    0.050806   0.031654  -0.175932  -0.094282
+    3  N  1  S   -0.549080   2.019432  -0.493388  -0.582346
+    4  N  1  X    0.027408  -0.007458   0.481944  -0.217087
+    5  N  1  Y    0.053663  -0.203606  -0.359698  -0.453804
+    6  N  1  Z   -0.065733   0.301678  -0.088981  -0.068636
+    7  N  1  X    0.451886   0.192443   1.038192  -0.346785
+    8  N  1  Y    0.266658  -0.760985  -0.828539  -0.766024
+    9  N  1  Z   -0.252637   0.466728   0.007266  -0.013761
+   10  N  1 XX   -0.512261   0.001920   0.534838  -0.803323
+   11  N  1 YY    0.580434   0.668842  -0.818941   0.477899
+   12  N  1 ZZ   -0.068172  -0.670762   0.284103   0.325424
+   13  N  1 XY    0.087162  -0.445147   0.437360   1.099310
+   14  N  1 XZ    0.757083   0.247835   0.844218  -0.397612
+   15  N  1 YZ    0.383248  -0.891903  -0.593430  -0.600036
+   16  H  2  S    0.160486  -0.339775   1.355755   0.825616
+   17  H  2  S    0.054495  -0.027016   0.497721   0.253731
+   18  H  2  X   -0.473757  -0.126957   0.650922   0.262636
+   19  H  2  Y   -0.485378   0.231326  -0.791352  -0.566879
+   20  H  2  Z    0.128322   0.455252  -0.300040  -0.307935
+   21  H  3  S    0.323989  -1.115448   0.057926  -0.993896
+   22  H  3  S    0.238037  -0.386302   0.048146  -0.366795
+   23  H  3  X   -0.312880  -0.351557   0.014006  -0.193823
+   24  H  3  Y    0.489330  -0.623668   0.146018  -0.786633
+   25  H  3  Z    0.183791   0.499595  -0.166135   0.420925
+   26  H  4  S    0.022949  -0.801091  -0.848612   0.844044
+   27  H  4  S   -0.090062  -0.190790  -0.360132   0.294183
+   28  H  4  X   -0.005021   0.466790   0.582021  -0.725719
+   29  H  4  Y   -0.172058   0.055666  -0.300533   0.208409
+   30  H  4  Z   -0.206038   0.333970   0.182344  -0.458378
+ .....DONE WITH MCSCF ITERATIONS.....
+ CPU     0: STEP CPU TIME=     8.91 TOTAL CPU TIME=          9.9 (      0.2 MIN)
+ TOTAL WALL CLOCK TIME=          9.9 SECONDS, CPU UTILIZATION IS    99.80%
+
+     ----------------------------------------------------------------
+     PROPERTY VALUES FOR THE MCSCF SELF-CONSISTENT FIELD WAVEFUNCTION
+     ----------------------------------------------------------------
+
+          -----------------
+          ENERGY COMPONENTS
+          -----------------
+
+         WAVEFUNCTION NORMALIZATION =       1.0000000000
+
+                ONE ELECTRON ENERGY =     -94.5543136290
+                TWO ELECTRON ENERGY =      27.2466014305
+           NUCLEAR REPULSION ENERGY =      11.5618316336
+                                      ------------------
+                       TOTAL ENERGY =     -55.7458805648
+
+ ELECTRON-ELECTRON POTENTIAL ENERGY =      27.2466014305
+  NUCLEUS-ELECTRON POTENTIAL ENERGY =    -150.4104952111
+   NUCLEUS-NUCLEUS POTENTIAL ENERGY =      11.5618316336
+                                      ------------------
+             TOTAL POTENTIAL ENERGY =    -111.6020621469
+               TOTAL KINETIC ENERGY =      55.8561815821
+                 VIRIAL RATIO (V/T) =       1.9980252675
+
+          ---------------------------------------
+          MULLIKEN AND LOWDIN POPULATION ANALYSES
+          ---------------------------------------
+
+     ATOMIC MULLIKEN POPULATION IN EACH MOLECULAR ORBITAL
+
+                      1          2          3          4          5
+
+                  2.000000   1.983318   1.656479   1.650804   1.644477
+
+    1             2.000924   1.320037   1.520846   0.916702   1.089260
+    2            -0.000358   0.196597   0.100330   0.378934   0.008070
+    3            -0.000298   0.249051   0.019709   0.152321   0.295204
+    4            -0.000267   0.217633   0.015593   0.202846   0.251943
+
+                      6          7          8
+
+                  0.026088   0.020587   0.018247
+
+    1             0.012548   0.010992   0.009613
+    2             0.000427   0.000613   0.008001
+    3             0.005627   0.005505   0.000018
+    4             0.007486   0.003477   0.000615
+ WARNING! MCSCF POPULATIONS SHOWN ABOVE ARE FOR THE NATURAL ORBITALS.
+ IGNORE THE ABOVE DATA FOR MCSCF FUNCTIONS WHICH ARE NOT OF -FORS- TYPE.
+ THE FOLLOWING POPULATIONS ARE CORRECT FOR ANY MCSCF WAVEFUNCTION.
+
+               ----- POPULATIONS IN EACH AO -----
+                             MULLIKEN      LOWDIN
+              1  N  1  S      2.00262     1.89660
+              2  N  1  S      0.82392     0.57624
+              3  N  1  S      0.64542     0.39504
+              4  N  1  X      0.69959     0.62919
+              5  N  1  Y      0.68155     0.60535
+              6  N  1  Z      0.87962     0.82324
+              7  N  1  X      0.32809     0.41389
+              8  N  1  Y      0.28249     0.39150
+              9  N  1  Z      0.51976     0.55606
+             10  N  1 XX      0.00053     0.16470
+             11  N  1 YY      0.00236     0.17263
+             12  N  1 ZZ      0.00270     0.14195
+             13  N  1 XY      0.00563     0.00994
+             14  N  1 XZ      0.00664     0.00970
+             15  N  1 YZ      0.00000     0.01313
+             16  H  2  S      0.60820     0.47240
+             17  H  2  S      0.02681     0.14231
+             18  H  2  X      0.01736     0.03518
+             19  H  2  Y      0.02782     0.04878
+             20  H  2  Z      0.01242     0.03495
+             21  H  3  S      0.62290     0.48114
+             22  H  3  S      0.04592     0.14351
+             23  H  3  X      0.01176     0.02884
+             24  H  3  Y      0.02979     0.04973
+             25  H  3  Z      0.01676     0.03989
+             26  H  4  S      0.60001     0.46384
+             27  H  4  S      0.04264     0.14467
+             28  H  4  X      0.03089     0.05329
+             29  H  4  Y      0.01110     0.02640
+             30  H  4  Z      0.01468     0.03594
+
+          ----- MULLIKEN ATOMIC OVERLAP POPULATIONS -----
+          (OFF-DIAGONAL ELEMENTS NEED TO BE MULTIPLIED BY 2)
+
+             1           2           3           4
+
+    1    5.9723126
+    2    0.3199487   0.3837172
+    3    0.2963245  -0.0052469   0.4451083
+    4    0.2923375  -0.0058050  -0.0090480   0.4218404
+
+          TOTAL MULLIKEN AND LOWDIN ATOMIC POPULATIONS
+       ATOM         MULL.POP.    CHARGE          LOW.POP.     CHARGE
+    1 N             6.880923    0.119077         6.799132    0.200868
+    2 H             0.692614    0.307386         0.733623    0.266377
+    3 H             0.727138    0.272862         0.743109    0.256891
+    4 H             0.699325    0.300675         0.724135    0.275865
+
+          MULLIKEN SPHERICAL HARMONIC POPULATIONS
+       ATOM           S       P       D      F      G      H      I    TOTAL
+    1 N             3.47    3.39    0.02   0.00   0.00   0.00   0.00    6.88
+    2 H             0.64    0.06    0.00   0.00   0.00   0.00   0.00    0.69
+    3 H             0.67    0.06    0.00   0.00   0.00   0.00   0.00    0.73
+    4 H             0.64    0.06    0.00   0.00   0.00   0.00   0.00    0.70
+
+          ---------------------
+          ELECTROSTATIC MOMENTS
+          ---------------------
+
+ POINT   1           X           Y           Z (BOHR)    CHARGE
+                 0.000001   -0.000003   -0.177185        1.00 (A.U.)
+         DX          DY          DZ         /D/  (DEBYE)
+     0.114375   -0.437869    2.160308    2.207202
+ ...... END OF PROPERTY EVALUATION ......
+ CPU     0: STEP CPU TIME=     0.01 TOTAL CPU TIME=          9.9 (      0.2 MIN)
+ TOTAL WALL CLOCK TIME=          9.9 SECONDS, CPU UTILIZATION IS    99.90%
+
+     -------------------------------------------------
+     GMC-PT/GMC-QDPT or general MCSCF input parameters
+     -------------------------------------------------
+ # of frozen core orbs. =         0 ->         0
+ # of doubly occ. orbs. =         1
+ # of active      orbs. =         7
+ # of virtual     orbs. =        21
+ # of active electrons  =         7
+ # of states in CI      =         3
+ Highest state in CI    =         3
+ kstate =  1 1 1
+ avecoe =  0.333 0.333 0.333
+ State symmetry           = A           
+ Assigned symmetry number = 1
+
+ <<<Act. MO sym.: 1111111
+
+ <<<Division of 1-ext.:  0
+ <<<Division of 2-ext.:  0
+
+     ------------------------
+     Orbital canonicalization
+     ------------------------
+
+ MOs are canonicalized for core, virtual, and invariant-active orbital spaces.
+ This is a part of the GMC-QDPT calculation.
+ SCHWARZ INEQUALITY OVERHEAD:       465 INTEGRALS, T=        0.00
+ DIRECT TRANSFORMATION SKIPS AO INTEGRAL STORAGE ON DISK.
+
+ Averaged energy =     -55.745880565
+
+ State #    1  Energy =     -55.885410002  S =  0.500
+ State #    2  Energy =     -55.743502958  S =  0.500
+ State #    3  Energy =     -55.608728734  S =  0.500
+
+ Orbital energies for filled orbital space
+  -15.986738
+ Orbital energies for active orbital space
+   -1.525309  -0.855599  -0.998547  -0.753183   0.357563
+    0.268232   0.420364
+ Orbital energies for external orbital space
+    0.142684   0.197209   0.216333   0.539819   0.566269
+    0.634473   0.812657   0.976090   1.046438   1.314085
+    1.389286   1.503812   1.618960   1.873142   1.928549
+    2.007723   2.104371   2.291765   2.615865   2.736244
+    2.917858
+
+ Zero values mean non-canonical orbitals.
+ ... done with orbital canonicalization ...
+ CPU     0: STEP CPU TIME=     0.60 TOTAL CPU TIME=         10.5 (      0.2 MIN)
+ TOTAL WALL CLOCK TIME=         10.5 SECONDS, CPU UTILIZATION IS    99.91%
+
+     --------------------------------------------
+     PARTIAL TWO ELECTRON INTEGRAL TRANSFORMATION
+     --------------------------------------------
+
+ NUMBER OF CORE MOLECULAR ORBITALS     =    0
+ NUMBER OF OCCUPIED MOLECULAR ORBITALS =    8
+ TOTAL NUMBER OF MOLECULAR ORBITALS    =   29
+ TOTAL NUMBER OF ATOMIC ORBITALS       =   30
+ THRESHOLD FOR KEEPING TRANSFORMED 2E- INTEGRALS = 1.000E-09
+ AO INTEGRALS WILL BE CALCULATED IN DIRECT MODE...
+ DIRECT TRANSFORMATION SKIPS AO INTEGRAL STORAGE ON DISK.
+ SCHWARZ INEQUALITY OVERHEAD:       465 INTEGRALS, T=        0.00
+
+ PLAN A: REQUIREMENTS FOR FULLY IN-MEMORY TRANSFORMATION:
+ # OF WORDS AVAILABLE =            100000000
+ # OF WORDS NEEDED    =               221798
+
+ PARALLEL ONLY WORKS WITH THE SEGMENTED ALGORITHM.
+ ADJUSTING MEMORY TO USE SEGMENTED ALGORITHM.
+
+
+ PLAN B: REQUIREMENTS FOR THE SEGMENTED TRANSFORMATION:
+       MINIMUM=         124148 WORDS FOR 1 MOLECULAR ORBITAL PER PASS
+       MAXIMUM=         221798 WORDS FOR ALL MOLECULAR ORBITALS IN 1 PASS
+              (          13950 EXTRA WORDS INCLUDES 1 EXTRA ORBITAL/PASS)
+ THIS RUN USES=         221798 WORDS,
+ DISTRIBUTING   1 PASSES EACH CONTAINING     8 ORBITALS OVER   1 PROCESSORS.
+
+ CHOOSING SEGMENTED PARTIAL TRANSFORMATION...
+ DIRECT TRANSFORMATION SKIPS AO INTEGRAL STORAGE ON DISK.
+ PASS #   1 TOOK        0.04 SECONDS.
+ TOTAL NUMBER OF TRANSFORMED 2E- INTEGRALS KEPT =        29226
+ ... END OF INTEGRAL TRANSFORMATION ...
+ CPU     0: STEP CPU TIME=     0.05 TOTAL CPU TIME=         10.6 (      0.2 MIN)
+ TOTAL WALL CLOCK TIME=         10.6 SECONDS, CPU UTILIZATION IS    99.91%
+
+     --------     ------------------------------------------
+     GMC-QDPT     Program written by H.Nakano (Kyushu Univ.)
+     --------     ------------------------------------------
+
+ *** Reference space
+
+ Reference type: ORMAS (= Occupation restricted multiple active space)
+ # of orbitals          =  7
+ # of minimum electrons =  7
+ # of maximum electrons =  7
+ State symmetry    =    1 (input)
+ 2*Sz              =    1 (input)
+ Spin multiplicity =    2 (input)
+ Dimension of reference space =      1225  (from      3432 walks)
+
+ Dimension of reference space =      1225  (from      1225 walks)
+
+ <<<Ionized spaces for Ref-CI:
+      0:         1225 /   -1-0:         1960 /  0-1-0:         2891
+
+ ***                    ***
+ *** Reference space CI ***
+ ***                    ***
+
+ Converged after   38 iterations
+
+ Reference wavefunctions:
+
+ State #    1  Energy =     -55.885410002  S =  0.500
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+        1    0.978380  11110001110000
+      393    0.079104  10110101010010
+      717    0.063136  11010011100001
+
+ State #    2  Energy =     -55.743502958  S =  0.500
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       71   -0.983811  11110001011000
+      822    0.062727  11010011001001
+
+ State #    3  Energy =     -55.608728734  S =  0.500
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       36    0.980178  11110001101000
+      463    0.079492  10110101001010
+
+ Davidson method: CPU/Wall time =           0.49 /           0.49 sec.
+
+ Oscillator strength (invalid if E(1)/=E(GS)):
+ -----------------------------------------
+   State                        f
+ -----------------------------------------
+     2     F(REF-CI)=        0.0003440286
+     3     F(REF-CI)=        0.0018489005
+ -----------------------------------------
+
+ Dipole moment matrix elements, x, y, z, in A.U.
+
+ Dimension of ionized spaces for PT:
+ (N-2) space:         1715 /  (N-1) space:         2842 /  N space:         2891
+ (N+1) space:         2842 /  (N+2) space:         1715
+
+ <<<Ionized spaces for internal:
+         0:         1225 /      -1-0:         1960 /     0-1-0:         2891
+  -1-0-1-0:         2842 / 0-1-0-1-0:         3381
+
+ Diagonal elements of averaged one-particle density matrix:
+       2       3       4       5       6       7       8
+  0.9939  0.9867  0.9890  0.9929  0.0114  0.0154  0.0108
+  0.9894  0.6577  0.6618  0.6634  0.0093  0.0108  0.0077
+
+ Orbital energies:
+ -------- Doubly-occupied orbitals (highest several orbs.) -------
+             1
+ -1.598674D+01
+ -------- Active orbitals ----------------------------------------
+             2            3            4            5            6
+ -1.525309D+00-8.555991D-01-9.985473D-01-7.531829D-01 3.575634D-01
+             7            8
+  2.682316D-01 4.203638D-01
+ -------- External orbitals (lowest several orbs.) ---------------
+             9           10           11           12           13
+  1.426843D-01 1.972088D-01 2.163330D-01 5.398191D-01 5.662690D-01
+            14           15           16           17           18
+  6.344728D-01 8.126574D-01 9.760898D-01 1.046438D+00 1.314085D+00
+
+ *** Quasi-degeneracy checking
+
+ === Det (|Ci| > 1.0D-01 and dE < 5.0D-03)
+
+ # of small denominators (single excitations)
+ State       dEmin  dE < 5.0D-03  dE < 5.0D-04  dE < 5.0D-05  dE < 5.0D-06
+ ----- ----------- ------------- ------------- ------------- -------------
+     1    5.00D-03             0             0             0             0
+     2    5.00D-03             0             0             0             0
+     3    5.00D-03             0             0             0             0
+
+ # of small denominators (double excitations)
+ State       dEmin  dE < 5.0D-03  dE < 5.0D-04  dE < 5.0D-05  dE < 5.0D-06
+ ----- ----------- ------------- ------------- ------------- -------------
+     1    5.00D-03             0             0             0             0
+     2    5.00D-03             0             0             0             0
+     3    5.00D-03             0             0             0             0
+
+ *** Zeroth-Order Setup (Granovsky's zeroth-order vectors)
+ Zeroth-order effective Hamiltonian
+  (= Sum_i e(i)*<I|a+(i)a(i)|J> ):
+                   1            2            3
+     1 -7.409653D+00
+     2  4.477627D-03-7.330051D+00
+     3  2.237188D-03 1.320149D-03-7.177100D+00
+
+ Zeroth-order vectors:
+ State #    1
+       MC st            1           2           3
+       Coeff   -9.984D-01   5.582D-02   9.277D-03
+ State #    2
+       MC st            2           1           3
+       Coeff   -9.984D-01  -5.573D-02   9.447D-03
+ State #    3
+       MC st            3           1           2
+       Coeff    9.999D-01   9.790D-03   8.915D-03
+
+ *** GMC-QDPT computation
+
+ (Integral reading:  CPU/Wall time =           0.00 /           0.00 sec.)
+
+ One-external:
+   0 -ionized terms: CPU/Wall time =           0.04 /           0.03 sec.
+ (-1)-ionized terms: CPU/Wall time =           0.08 /           0.09 sec.
+ (+1)-ionized terms: CPU/Wall time =           0.03 /           0.02 sec.
+ (+1)-ionized terms: CPU/Wall time =           0.00 /           0.00 sec.
+ (+2)-ionized terms: CPU/Wall time =           0.00 /           0.00 sec.
+
+ Internal:
+ # of macro loops for internal contribution =         1 (input)
+ Loop:    1
+ Dimension of internal CISD space     =         0  (after screening)
+ Space construction: CPU/Wall time =           0.02 /           0.02 sec.
+ Internal terms:     CPU/Wall time =           0.00 /           0.00 sec.
+
+ Two-external:
+   0 -ionized terms: CPU/Wall time =           0.06 /           0.06 sec.
+ (-1)-ionized terms: CPU/Wall time =           0.99 /           1.00 sec.
+ (-2)-ionized terms: CPU/Wall time =           0.17 /           0.16 sec.
+
+ Total time:         CPU/Wall time =           1.39 /           1.38 sec.
+
+ ***                  ***
+ *** GMC-QDPT Results ***
+ ***                  ***
+
+ Diagonal elements of effective Hamiltonian:
+ Heff(  1) =   -55.98300098
+ Heff(  2) =   -55.85247308
+ Heff(  3) =   -55.71996765
+
+ Off-diagonal elements of effective Hamiltonian:
+                   1            2
+     2 -7.010979D-03
+     3  2.238051D-03 1.247133D-03
+
+ ******** GMC-QDPT energies ********
+ ----------------------------------------------------------------------------
+   State                        1st order                           2nd order
+ ----------------------------------------------------------------------------
+     1     E(REF-CI)=      -55.8854100023   E(GMC-QDPT2)=      -55.9833965874
+     2     E(REF-CI)=      -55.7435029585   E(GMC-QDPT2)=      -55.8521071681
+     3     E(REF-CI)=      -55.6087287337   E(GMC-QDPT2)=      -55.7199379580
+ ----------------------------------------------------------------------------
+
+ Excitation energies (invalid if E(1)/=E(GS)):
+ ----------------------------------------------------------------------------
+   State                        1st order                           2nd order
+ ----------------------------------------------------------------------------
+
+     TZ Sorted GMC-PT ENERGIES:
+         1      -55.9833965874
+         2      -55.8521071681
+         3      -55.7199379580
+     2     E(REF-CI)=        3.8614893 eV   E(GMC-QDPT2)=        3.5725689 eV
+     3     E(REF-CI)=        7.5288847 eV   E(GMC-QDPT2)=        7.1690781 eV
+ ----------------------------------------------------------------------------
+
+ Main characters of perturbed GMC-QDPT states:
+
+ State #    1  Energy =     -55.983396587  S =  0.500
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+        1    0.978435  11110001110000
+      393    0.079086  10110101010010
+      717    0.063122  11010011100001
+
+ State #    2  Energy =     -55.852107168  S =  0.500
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       71   -0.983864  11110001011000
+      822    0.062729  11010011001001
+
+ State #    3  Energy =     -55.719937958  S =  0.500
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       36    0.980182  11110001101000
+      463    0.079496  10110101001010
+
+ <<<Max |V/de| = 2.231D-02  Thresh = 1.000D+00
+
+ Oscillator strength (invalid if E(1)/=E(GS)):
+ ----------------------------------------------------------------------------
+   State                        1st order                           2nd order
+ ----------------------------------------------------------------------------
+     2     F(REF-CI)=        0.0003440286     F(GMC-PT2)=        0.0003285599
+     3     F(REF-CI)=        0.0018489005     F(GMC-PT2)=        0.0017852116
+ ----------------------------------------------------------------------------
+
+ Dipole moment matrix elements, x, y, z, in A.U.
+States    1    1        0.0633429393       -0.2161756330        0.7516977198
+States    1    2       -0.0269550198       -0.0287341486        0.0469214121
+States    1    3       -0.0514824182        0.0637684848        0.0587131308
+States    2    1       -0.0269550198       -0.0287341486        0.0469214121
+States    2    2       -0.0657907742       -0.0358237670        0.2618429602
+States    2    3        0.1801690986        0.0403552515       -0.0010143363
+States    3    1       -0.0514824182        0.0637684848        0.0587131308
+States    3    2        0.1801690986        0.0403552515       -0.0010143363
+States    3    3        0.1815986856       -0.4877301479        0.2488431083
+
+ Oscillator strength (valid only when positive): 
+ ----------------------------------------------------------------------------
+  States                        1st order                           2nd order
+ ----------------------------------------------------------------------------
+  1  1     F(REF-CI)=        0.0000000000     F(GMC-PT2)=        0.0000000000
+  1  2     F(REF-CI)=       -0.0003440286     F(GMC-PT2)=       -0.0003285599
+  1  3     F(REF-CI)=       -0.0018489005     F(GMC-PT2)=       -0.0017852116
+  2  1     F(REF-CI)=        0.0003440286     F(GMC-PT2)=        0.0003285599
+  2  2     F(REF-CI)=        0.0000000000     F(GMC-PT2)=        0.0000000000
+  2  3     F(REF-CI)=       -0.0030687787     F(GMC-PT2)=       -0.0030038078
+  3  1     F(REF-CI)=        0.0018489005     F(GMC-PT2)=        0.0017852116
+  3  2     F(REF-CI)=        0.0030687787     F(GMC-PT2)=        0.0030038078
+  3  3     F(REF-CI)=        0.0000000000     F(GMC-PT2)=        0.0000000000
+ CPU     0: STEP CPU TIME=     1.94 TOTAL CPU TIME=         12.5 (      0.2 MIN)
+ TOTAL WALL CLOCK TIME=         12.5 SECONDS, CPU UTILIZATION IS    99.92%
+
+     !!! DIABATIZATION FOR REF CI STATES !!!
+
+ *******************************************************
+          $DMO GROUP FOUND IN THE INPUT.
+        DIABATIZATION OF ADIABATIC STATES BEGINS.
+     PROGRAMMED BY TAO ZENG (CARLETON UNIVERSITY).
+               Email: toby.zeng@carleton.ca
+     See T. Zeng, J. Chem. Phys. 2017, 146, 144103
+ *******************************************************
+
+ *************************************************************************
+     STEP 1: TRANSFORMATION OF ADIABATIC STATES TO THE DMO REPRESENTATION
+         See Atchity and Ruedenberg, J. Chem. Phys. 1999, 111, 2910
+ *************************************************************************
+
+Read in Diabatic Molecualr Orbitals:
+
+                      1          2          3          4          5
+
+    1  N  1  S    0.008609   0.000000   0.000000  -0.013219   0.279491
+    2  N  1  S    0.442914  -0.000000   0.000000  -0.184329   0.867803
+    3  N  1  S    0.276913   0.000000  -0.000000  -0.288315   0.144236
+    4  N  1  X   -0.000000   0.493155  -0.024636  -0.000000  -0.000000
+    5  N  1  Y    0.000000   0.024636   0.493155  -0.000000   0.000000
+    6  N  1  Z    0.090197   0.000000   0.000000   0.593421   0.705309
+    7  N  1  X   -0.000000   0.210628  -0.010522   0.000000   0.000000
+    8  N  1  Y    0.000000   0.010522   0.210628  -0.000000  -0.000000
+    9  N  1  Z   -0.004381   0.000000   0.000000   0.381592  -0.106092
+   10  N  1 XX   -0.000457   0.010719  -0.000535  -0.012387   0.006153
+   11  N  1 YY   -0.000457  -0.010719   0.000535  -0.012387   0.006153
+   12  N  1 ZZ    0.000914  -0.000000   0.000000   0.024773  -0.012306
+   13  N  1 XY    0.000000  -0.000618  -0.012377  -0.000000   0.000000
+   14  N  1 XZ   -0.000000   0.026529  -0.001325  -0.000000   0.000000
+   15  N  1 YZ    0.000000   0.001325   0.026529  -0.000000   0.000000
+   16  H  2  S    0.194462  -0.176074   0.343485   0.112865  -0.523343
+   17  H  2  S    0.003574  -0.023812   0.046452   0.024014  -0.054445
+   18  H  2  X    0.018760   0.009101   0.022834   0.009336  -0.039151
+   19  H  2  Y   -0.032493   0.022287  -0.020044  -0.016171   0.067811
+   20  H  2  Z   -0.009251   0.008464  -0.016511   0.018769  -0.010566
+   21  H  3  S    0.194462  -0.209430  -0.324227   0.112865  -0.523343
+   22  H  3  S    0.003574  -0.028322  -0.043847   0.024014  -0.054445
+   23  H  3  X    0.018760   0.006781  -0.023627   0.009336  -0.039151
+   24  H  3  Y    0.032493  -0.024174  -0.017723   0.016171  -0.067811
+   25  H  3  Z   -0.009251   0.010067   0.015585   0.018769  -0.010566
+   26  H  4  S    0.194462   0.385503  -0.019258   0.112865  -0.523343
+   27  H  4  S    0.003574   0.052134  -0.002604   0.024014  -0.054445
+   28  H  4  X   -0.037519  -0.032295   0.001613  -0.018672   0.078302
+   29  H  4  Y    0.000000   0.001067   0.021353  -0.000000   0.000000
+   30  H  4  Z   -0.009251  -0.018530   0.000926   0.018769  -0.010566
+
+                      6          7
+
+    1  N  1  S    0.000000  -0.000000
+    2  N  1  S    0.000000  -0.000000
+    3  N  1  S   -0.000000   0.000000
+    4  N  1  X   -0.930415  -0.002083
+    5  N  1  Y   -0.002083   0.930415
+    6  N  1  Z   -0.000000   0.000000
+    7  N  1  X   -0.046866  -0.000105
+    8  N  1  Y   -0.000105   0.046866
+    9  N  1  Z   -0.000000   0.000000
+   10  N  1 XX    0.001538   0.000003
+   11  N  1 YY   -0.001538  -0.000003
+   12  N  1 ZZ   -0.000000   0.000000
+   13  N  1 XY   -0.000004   0.001776
+   14  N  1 XZ    0.039985   0.000090
+   15  N  1 YZ    0.000090  -0.039985
+   16  H  2  S   -0.362630  -0.631354
+   17  H  2  S   -0.065964  -0.114846
+   18  H  2  X    0.002763  -0.037520
+   19  H  2  Y    0.037435   0.040736
+   20  H  2  Z    0.001882   0.003276
+   21  H  3  S   -0.365454   0.629724
+   22  H  3  S   -0.066477   0.114549
+   23  H  3  X    0.002595   0.037532
+   24  H  3  Y   -0.037617   0.040567
+   25  H  3  Z    0.001896  -0.003268
+   26  H  4  S    0.728084   0.001630
+   27  H  4  S    0.132441   0.000297
+   28  H  4  X   -0.062317  -0.000140
+   29  H  4  Y    0.000055  -0.024345
+   30  H  4  Z   -0.003778  -0.000008
+
+NUMBER OF SUB ACTIVE SPACES:   1
+ROTATE ACTIVE MOS TO DMOS IN EACH SUB-SPACE
+
+SPACE  1:
+
+OVERLAP BETWEEN ORTHONORMAL AND PRE-ORTHONORMAL REF. DMOS
+
+             1           2           3           4           5
+
+    1    0.9920244  -0.0001624  -0.0160909  -0.0028719  -0.0007901
+    2   -0.0001624   0.9640325  -0.0474034   0.0036308  -0.0128928
+    3   -0.0160909  -0.0474034   1.0059684  -0.0257471   0.0524962
+    4   -0.0028719   0.0036308  -0.0257471   0.9977638  -0.0036949
+    5   -0.0007901  -0.0128928   0.0524962  -0.0036949   1.0555371
+    6   -0.0014786  -0.0230003  -0.0400253   0.0100610  -0.0233565
+    7   -0.0036039   0.0441202  -0.0117122   0.0321843  -0.0157395
+
+             6           7
+
+    1   -0.0014786  -0.0036039
+    2   -0.0230003   0.0441202
+    3   -0.0400253  -0.0117122
+    4    0.0100610   0.0321843
+    5   -0.0233565  -0.0157395
+    6    1.0210390  -0.0169347
+    7   -0.0169347   1.0160261
+REFERENCE DMOS AFTER ORTHONORMALIZATION:
+
+                      1          2          3          4          5
+
+    1  N  1  S    0.008657   0.002871  -0.013635  -0.012802   0.265655
+    2  N  1  S    0.446073   0.009456  -0.039082  -0.182285   0.824641
+    3  N  1  S    0.278311   0.002083  -0.009573  -0.288363   0.136667
+    4  N  1  X   -0.001995   0.489797  -0.036956   0.007579  -0.012714
+    5  N  1  Y    0.011501   0.008802   0.502989  -0.017137  -0.010477
+    6  N  1  Z    0.092882   0.006478  -0.017704   0.597210   0.671389
+    7  N  1  X   -0.000095   0.217894  -0.002043  -0.000094   0.001698
+    8  N  1  Y    0.003629   0.019232   0.211847   0.003743  -0.009372
+    9  N  1  Z   -0.003210  -0.001587   0.014519   0.382943  -0.100243
+   10  N  1 XX   -0.000496   0.011265  -0.000562  -0.012470   0.005996
+   11  N  1 YY   -0.000503  -0.011108  -0.000661  -0.012386   0.005663
+   12  N  1 ZZ    0.000999  -0.000157   0.001223   0.024856  -0.011659
+   13  N  1 XY   -0.000197  -0.001330  -0.012410  -0.000363   0.000614
+   14  N  1 XZ    0.000087   0.028583   0.001542  -0.000448   0.001147
+   15  N  1 YZ    0.000289   0.004448   0.026292   0.001920  -0.001822
+   16  H  2  S    0.198789  -0.153222   0.346881   0.145238  -0.531812
+   17  H  2  S    0.003855  -0.019708   0.045054   0.029471  -0.057141
+   18  H  2  X    0.019193   0.011936   0.025522   0.011086  -0.038675
+   19  H  2  Y   -0.032890   0.022072  -0.021359  -0.018399   0.066954
+   20  H  2  Z   -0.009516   0.007775  -0.015194   0.018256  -0.009050
+   21  H  3  S    0.192442  -0.276412  -0.312708   0.088882  -0.482407
+   22  H  3  S    0.003212  -0.038966  -0.043645   0.019992  -0.049638
+   23  H  3  X    0.018705   0.003925  -0.020482   0.007565  -0.035415
+   24  H  3  Y    0.032568  -0.029480  -0.015863   0.014896  -0.064020
+   25  H  3  Z   -0.009013   0.011310   0.016971   0.019258  -0.010669
+   26  H  4  S    0.197992   0.413693   0.059335   0.105203  -0.477622
+   27  H  4  S    0.003965   0.056925   0.008416   0.022644  -0.048365
+   28  H  4  X   -0.038022  -0.034345  -0.007257  -0.018068   0.072725
+   29  H  4  Y    0.000261   0.003234   0.021229   0.001298  -0.001357
+   30  H  4  Z   -0.009278  -0.019506   0.000693   0.018882  -0.010325
+
+                      6          7
+
+    1  N  1  S    0.005818   0.004367
+    2  N  1  S    0.020312   0.019609
+    3  N  1  S    0.006244   0.012142
+    4  N  1  X   -0.902678  -0.039235
+    5  N  1  Y    0.033115   0.922129
+    6  N  1  Z    0.008918  -0.008524
+    7  N  1  X   -0.041202  -0.010247
+    8  N  1  Y    0.009179   0.047636
+    9  N  1  Z   -0.005763  -0.013554
+   10  N  1 XX    0.001998   0.000027
+   11  N  1 YY   -0.001516   0.000924
+   12  N  1 ZZ   -0.000482  -0.000952
+   13  N  1 XY   -0.000475   0.001675
+   14  N  1 XZ    0.039889  -0.000438
+   15  N  1 YZ    0.000506  -0.039324
+   16  H  2  S   -0.368753  -0.629024
+   17  H  2  S   -0.066775  -0.114577
+   18  H  2  X    0.002379  -0.037994
+   19  H  2  Y    0.038669   0.041036
+   20  H  2  Z    0.001055   0.001977
+   21  H  3  S   -0.377885   0.612285
+   22  H  3  S   -0.067176   0.111421
+   23  H  3  X    0.001564   0.035837
+   24  H  3  Y   -0.039044   0.039026
+   25  H  3  Z    0.002259  -0.004281
+   26  H  4  S    0.712821  -0.013824
+   27  H  4  S    0.129978  -0.001369
+   28  H  4  X   -0.060274   0.001830
+   29  H  4  Y    0.000518  -0.023909
+   30  H  4  Z   -0.004549  -0.000020
+
+ -------------------------------------------
+       MAXIMIZING MORMO OVERLAP TERM        
+ -------------------------------------------
+   SWEEP    VALUE       PROGRESS
+     0     5.38772
+     1     6.96884     1.58112459
+     2     6.98275     0.01390503
+     3     6.98275     0.00000100
+     4     6.98275     0.00000000
+     5     6.98275     0.00000000
+ THE ROTATION IS DONE
+ACTIVE ORBITALS AFTER MORMO:
+
+                      1          2          3          4          5
+
+    1  N  1  S    0.007913   0.002658  -0.018030  -0.012523   0.244143
+    2  N  1  S    0.437769   0.003038  -0.038184  -0.185290   0.797160
+    3  N  1  S    0.301584   0.008027   0.018182  -0.282667   0.168183
+    4  N  1  X   -0.003979   0.474153  -0.047299   0.005436  -0.013071
+    5  N  1  Y    0.006958  -0.001638   0.495079  -0.023828  -0.000854
+    6  N  1  Z    0.088097   0.007232  -0.028286   0.597605   0.659355
+    7  N  1  X    0.002373   0.240937   0.034059  -0.005487   0.004771
+    8  N  1  Y    0.011015   0.054783   0.206123   0.031605  -0.031499
+    9  N  1  Z    0.009038  -0.004666   0.040913   0.382782  -0.084679
+   10  N  1 XX   -0.001376   0.010660   0.002684  -0.010619   0.011757
+   11  N  1 YY    0.000632  -0.010456  -0.003335  -0.013103  -0.008395
+   12  N  1 ZZ    0.000744  -0.000204   0.000651   0.023723  -0.003361
+   13  N  1 XY   -0.003063  -0.005277  -0.014459   0.000591   0.038132
+   14  N  1 XZ    0.001302   0.024880   0.001832  -0.001496  -0.005944
+   15  N  1 YZ   -0.001481   0.004460   0.021781   0.000873   0.029601
+   16  H  2  S    0.186720  -0.169707   0.349305   0.126304  -0.525340
+   17  H  2  S    0.000005  -0.014787   0.041383   0.029062  -0.056224
+   18  H  2  X    0.020853   0.003782   0.028312   0.009304  -0.038971
+   19  H  2  Y   -0.030863   0.025055  -0.021764  -0.013449   0.058447
+   20  H  2  Z   -0.005105   0.006906  -0.012066   0.020343  -0.010320
+   21  H  3  S    0.190487  -0.236420  -0.316164   0.099022  -0.493275
+   22  H  3  S    0.003710  -0.066254  -0.056281   0.022379  -0.056617
+   23  H  3  X    0.009459   0.011484  -0.014596   0.007831  -0.034820
+   24  H  3  Y    0.032676  -0.024264  -0.018732   0.016719  -0.059155
+   25  H  3  Z   -0.011811   0.010475   0.021133   0.018088  -0.010497
+   26  H  4  S    0.190200   0.390974   0.010247   0.105961  -0.476216
+   27  H  4  S    0.003361   0.080259   0.024748   0.026313  -0.054581
+   28  H  4  X   -0.032483  -0.030803   0.004150  -0.016915   0.066385
+   29  H  4  Y    0.010657   0.015481   0.018585   0.003204  -0.004718
+   30  H  4  Z   -0.009318  -0.019377   0.005288   0.018475  -0.014191
+
+                      6          7
+
+    1  N  1  S    0.023280   0.045700
+    2  N  1  S    0.049041   0.101909
+    3  N  1  S   -0.030149  -0.096323
+    4  N  1  X   -0.905082  -0.028940
+    5  N  1  Y    0.023607   0.909305
+    6  N  1  Z    0.005680  -0.037795
+    7  N  1  X   -0.040093  -0.035713
+    8  N  1  Y    0.033377   0.072902
+    9  N  1  Z   -0.009056   0.002157
+   10  N  1 XX    0.005401  -0.030974
+   11  N  1 YY   -0.009043   0.022607
+   12  N  1 ZZ    0.003642   0.008366
+   13  N  1 XY   -0.029259   0.001389
+   14  N  1 XZ    0.035355   0.016968
+   15  N  1 YZ   -0.014432  -0.043962
+   16  H  2  S   -0.373750  -0.623698
+   17  H  2  S   -0.067299  -0.113589
+   18  H  2  X   -0.013156  -0.036997
+   19  H  2  Y    0.036131   0.043845
+   20  H  2  Z   -0.008538  -0.005264
+   21  H  3  S   -0.342170   0.613670
+   22  H  3  S   -0.094565   0.132696
+   23  H  3  X    0.018763   0.037110
+   24  H  3  Y   -0.036424   0.034222
+   25  H  3  Z    0.015673  -0.001481
+   26  H  4  S    0.696246   0.024386
+   27  H  4  S    0.161721  -0.009374
+   28  H  4  X   -0.056301  -0.010238
+   29  H  4  Y    0.013145  -0.030679
+   30  H  4  Z   -0.003588   0.016904
+
+Actually Used Diabatic Molecualr Orbitals:
+
+                      1          2          3          4          5
+
+    1  N  1  S    0.007913   0.002658  -0.018030  -0.012523   0.244143
+    2  N  1  S    0.437769   0.003038  -0.038184  -0.185290   0.797160
+    3  N  1  S    0.301584   0.008027   0.018182  -0.282667   0.168183
+    4  N  1  X   -0.003979   0.474153  -0.047299   0.005436  -0.013071
+    5  N  1  Y    0.006958  -0.001638   0.495079  -0.023828  -0.000854
+    6  N  1  Z    0.088097   0.007232  -0.028286   0.597605   0.659355
+    7  N  1  X    0.002373   0.240937   0.034059  -0.005487   0.004771
+    8  N  1  Y    0.011015   0.054783   0.206123   0.031605  -0.031499
+    9  N  1  Z    0.009038  -0.004666   0.040913   0.382782  -0.084679
+   10  N  1 XX   -0.001376   0.010660   0.002684  -0.010619   0.011757
+   11  N  1 YY    0.000632  -0.010456  -0.003335  -0.013103  -0.008395
+   12  N  1 ZZ    0.000744  -0.000204   0.000651   0.023723  -0.003361
+   13  N  1 XY   -0.003063  -0.005277  -0.014459   0.000591   0.038132
+   14  N  1 XZ    0.001302   0.024880   0.001832  -0.001496  -0.005944
+   15  N  1 YZ   -0.001481   0.004460   0.021781   0.000873   0.029601
+   16  H  2  S    0.186720  -0.169707   0.349305   0.126304  -0.525340
+   17  H  2  S    0.000005  -0.014787   0.041383   0.029062  -0.056224
+   18  H  2  X    0.020853   0.003782   0.028312   0.009304  -0.038971
+   19  H  2  Y   -0.030863   0.025055  -0.021764  -0.013449   0.058447
+   20  H  2  Z   -0.005105   0.006906  -0.012066   0.020343  -0.010320
+   21  H  3  S    0.190487  -0.236420  -0.316164   0.099022  -0.493275
+   22  H  3  S    0.003710  -0.066254  -0.056281   0.022379  -0.056617
+   23  H  3  X    0.009459   0.011484  -0.014596   0.007831  -0.034820
+   24  H  3  Y    0.032676  -0.024264  -0.018732   0.016719  -0.059155
+   25  H  3  Z   -0.011811   0.010475   0.021133   0.018088  -0.010497
+   26  H  4  S    0.190200   0.390974   0.010247   0.105961  -0.476216
+   27  H  4  S    0.003361   0.080259   0.024748   0.026313  -0.054581
+   28  H  4  X   -0.032483  -0.030803   0.004150  -0.016915   0.066385
+   29  H  4  Y    0.010657   0.015481   0.018585   0.003204  -0.004718
+   30  H  4  Z   -0.009318  -0.019377   0.005288   0.018475  -0.014191
+
+                      6          7
+
+    1  N  1  S    0.023280   0.045700
+    2  N  1  S    0.049041   0.101909
+    3  N  1  S   -0.030149  -0.096323
+    4  N  1  X   -0.905082  -0.028940
+    5  N  1  Y    0.023607   0.909305
+    6  N  1  Z    0.005680  -0.037795
+    7  N  1  X   -0.040093  -0.035713
+    8  N  1  Y    0.033377   0.072902
+    9  N  1  Z   -0.009056   0.002157
+   10  N  1 XX    0.005401  -0.030974
+   11  N  1 YY   -0.009043   0.022607
+   12  N  1 ZZ    0.003642   0.008366
+   13  N  1 XY   -0.029259   0.001389
+   14  N  1 XZ    0.035355   0.016968
+   15  N  1 YZ   -0.014432  -0.043962
+   16  H  2  S   -0.373750  -0.623698
+   17  H  2  S   -0.067299  -0.113589
+   18  H  2  X   -0.013156  -0.036997
+   19  H  2  Y    0.036131   0.043845
+   20  H  2  Z   -0.008538  -0.005264
+   21  H  3  S   -0.342170   0.613670
+   22  H  3  S   -0.094565   0.132696
+   23  H  3  X    0.018763   0.037110
+   24  H  3  Y   -0.036424   0.034222
+   25  H  3  Z    0.015673  -0.001481
+   26  H  4  S    0.696246   0.024386
+   27  H  4  S    0.161721  -0.009374
+   28  H  4  X   -0.056301  -0.010238
+   29  H  4  Y    0.013145  -0.030679
+   30  H  4  Z   -0.003588   0.016904
+
+     ------------------------------------------------
+        ADIABATIC STATES IN TRANSFORMED ORBITALS:
+      !! USE Coefp TO PREPARE DIABATIC REFERENCES !!
+     ------------------------------------------------
+
+ State #    1  Energy =     -55.885410002  S =  0.500
+
+      Det      Coef        Coefp    Occupancy (Ignoring core)
+      ---      ----        ----    --------- --------- -----
+        1   -0.955352    0.955352  222+000
+       36   -0.134867   -0.134867  22+2000
+        8    0.078846   -0.078846  2-2+0+0
+      393    0.072724    0.072724  202+020
+      717    0.069789    0.069789  220+002
+      141    0.067742    0.067742  22++-00
+        3   -0.067527   -0.067527  22-++00
+       18   -0.055773    0.055773  2-2+00+
+      386   -0.049517    0.049517  2+2+0-0
+      736    0.047816   -0.047816  2+2+00-
+       16   -0.047702    0.047702  222000+
+        7    0.044789    0.044789  22-+0+0
+      351   -0.041810   -0.041810  22++0-0
+       17   -0.040409   -0.040409  22-+00+
+      708   -0.039217    0.039217  2-++0+-
+      402   -0.037199    0.037199  2+-+0-+
+      215    0.035126    0.035126  022+200
+       51    0.033837   -0.033837  22+-00+
+      218   -0.033722    0.033722  +-2+-+0
+      390   -0.033378    0.033378  -+2++-0
+      705    0.032345    0.032345  -2+++0-
+      227    0.032281    0.032281  +2-+-0+
+       76   -0.029329   -0.029329  2+2-0+0
+      212   -0.028274   -0.028274  +220200
+      113    0.024339   -0.024339  +-220+0
+      179    0.024145    0.024145  202+200
+      122   -0.023809   -0.023809  +2-200+
+        2   -0.023137    0.023137  2220+00
+      424    0.022981    0.022981  +-2++-0
+      387    0.022725   -0.022725  2+20+-0
+      184    0.022484    0.022484  -+2+-+0
+      702   -0.022470   -0.022470  22+0+0-
+      773   -0.022448    0.022448  +2-++0-
+     1051    0.021824    0.021824  2+++0--
+      159   -0.021754    0.021754  -2++-0+
+      143    0.020818    0.020818  220+200
+
+ State #    2  Energy =     -55.743502958  S =  0.500
+
+      Det      Coef        Coefp    Occupancy (Ignoring core)
+      ---      ----        ----    --------- --------- -----
+       71    0.821890   -0.821890  2+22000
+       36    0.505577    0.505577  22+2000
+        1   -0.081817    0.081817  222+000
+       73   -0.081491    0.081491  2+-2+00
+      246    0.074900    0.074900  2++2-00
+       86   -0.057354   -0.057354  2+2-00+
+       38    0.057258   -0.057258  2202+00
+      736    0.057169   -0.057169  2+2+00-
+      822   -0.055430    0.055430  2+02002
+       51   -0.041439    0.041439  22+-00+
+      463   -0.039745    0.039745  20+2020
+       77    0.038369   -0.038369  2+-20+0
+      701    0.036837    0.036837  22++00-
+       88    0.032492   -0.032492  202200+
+      813   -0.031179    0.031179  20+20+-
+      320   -0.029859   -0.029859  0+22200
+       74   -0.029241    0.029241  2022+00
+      323    0.028778   -0.028778  +022-+0
+      111   -0.028644    0.028644  +22-0+0
+       76   -0.027695   -0.027695  2+2-0+0
+      332    0.027542   -0.027542  ++-2-0+
+      810    0.026645    0.026645  -++2+0-
+       53    0.026288    0.026288  2-+200+
+      180    0.025093   -0.025093  -+2+200
+      317   -0.024739    0.024739  ++2-200
+      183    0.024342   -0.024342  202+-+0
+      177   -0.023880    0.023880  2+20200
+      806   -0.023789   -0.023789  2++200-
+       99    0.023308   -0.023308  20-20++
+      122   -0.022789   -0.022789  +2-200+
+      106    0.021888    0.021888  +222000
+       43   -0.021430   -0.021430  2-+20+0
+      391   -0.021346    0.021346  2+20020
+      112    0.021287    0.021287  +2-20+0
+        6   -0.020236    0.020236  22200+0
+
+ State #    3  Energy =     -55.608728734  S =  0.500
+
+      Det      Coef        Coefp    Occupancy (Ignoring core)
+      ---      ----        ----    --------- --------- -----
+       36    0.816161    0.816161  22+2000
+       71   -0.512831    0.512831  2+22000
+        1   -0.107988    0.107988  222+000
+      456    0.064424    0.064424  2++20-0
+      463   -0.062934    0.062934  20+2020
+       53    0.051840    0.051840  2-+200+
+      806   -0.051193   -0.051193  2++200-
+       38    0.043621   -0.043621  2202+00
+      822    0.041932   -0.041932  2+02002
+       42   -0.040210    0.040210  22020+0
+      106    0.038972    0.038972  +222000
+      701    0.038675    0.038675  22++00-
+      472    0.037788    0.037788  2+020-+
+      121    0.034541   -0.034541  +22-00+
+       77   -0.033564    0.033564  2+-20+0
+       88   -0.033060    0.033060  202200+
+       43   -0.030861   -0.030861  2-+20+0
+      113    0.030301   -0.030301  +-220+0
+      288    0.030300    0.030300  +-+2-+0
+      285   -0.030257    0.030257  02+2200
+       51   -0.029967    0.029967  22+-00+
+      246   -0.029497   -0.029497  2++2-00
+      460    0.029497    0.029497  -++2+-0
+      813    0.029235   -0.029235  20+20+-
+      123   -0.029040    0.029040  +-2200+
+      297   -0.026936    0.026936  +202-0+
+       74    0.025929   -0.025929  2022+00
+      145    0.025072    0.025072  -2++200
+      282   -0.025062   -0.025062  +2+-200
+      111    0.024688   -0.024688  +22-0+0
+       64   -0.023502    0.023502  2-020++
+      142   -0.023409   -0.023409  22+0200
+      249   -0.023178    0.023178  20+2200
+        3   -0.022273   -0.022273  22-++00
+      457    0.022102   -0.022102  2++-+-0
+      810   -0.020331   -0.020331  -++2+0-
+      254   -0.020244    0.020244  -++2-+0
+      148    0.020034    0.020034  2-++-+0
+
+         ----------------------------------------------------
+          Transformation matrix between Active CMOs and DMOs
+                    Row for CMO and Column for DMO
+         ----------------------------------------------------
+
+             1           2           3           4           5
+
+    1    0.9990738  -0.0010950  -0.0404589  -0.0089551   0.0020935
+    2    0.0207000   0.8496908   0.5100761  -0.1102964   0.0280035
+    3    0.0317928  -0.5220768   0.8406002  -0.1123289   0.0710935
+    4    0.0156810   0.0328094   0.1539792   0.9859187   0.0019761
+    5   -0.0079037   0.0345365  -0.0681172   0.0273631   0.9269681
+    6    0.0003969   0.0542747   0.0545014   0.0198712  -0.2754943
+    7    0.0101837  -0.0156564   0.0160273  -0.0442429   0.2428708
+
+             6           7
+
+    1   -0.0042980  -0.0105039
+    2   -0.0551619   0.0377763
+    3   -0.0235821  -0.0398522
+    4    0.0017916   0.0540857
+    5    0.0687059  -0.3596744
+    6    0.7729618  -0.5659697
+    7    0.6278447   0.7377410
+
+     $REFDET GROUP FOUND
+
+ *************************************************************************
+     STEP 2: DIABATIZATION USING CONFIGURATION UNIFORMITY
+  See Atchity and Ruedenberg, Theor. Chem. Acc. 1997, 97, 47
+ *************************************************************************
+
+READ-IN LIST OF DIABATIC PROTOTYPES:
+
+     THE SAME NUMBER OF PROTOTYPE GROUPS & ADIABATS
+
+     THE ADIABS SHOULD HAVE FULLY COVER THE PROTOTYPES
+
+ Approximated Overlap Matrix for truncated adiabats:
+   0.9662089246  -0.0022120803   0.0007316821
+  -0.0022120803   0.9665058684   0.0014069725
+   0.0007316821   0.0014069725   0.9628242918
+
+
+ -------------------------------------------
+   - DIABATIC HAMILTONIAN MATRIX ELEMENTS - 
+ -------------------------------------------
+                                            
+ --- DIABATIC ENERGIES (DIAGONAL ELEMENT) ---       HARTREE            EV
+ STATE #  1'S GMC-CI-LEVEL DIABATIC ENERGY=     -55.880957685       0.000000000
+ STATE #  2'S GMC-CI-LEVEL DIABATIC ENERGY=     -55.699941568       4.925699417
+ STATE #  3'S GMC-CI-LEVEL DIABATIC ENERGY=     -55.656742442       6.101207525
+
+ --- DIABATIC COUPLINGS (OFF DIAGONAL ELEMENTS)---  HATREE            EV
+ STATE #  1 &  2'S GMC-CI-LEVEL COUPLING  =      -0.007411731      -0.201683482
+ STATE #  1 &  3'S GMC-CI-LEVEL COUPLING  =       0.031870830       0.867249451
+ STATE #  2 &  3'S GMC-CI-LEVEL COUPLING  =      -0.062616092      -1.703870644
+
+ ---------------------------------------
+     - ROTATION TO DIABATIC STATES -    
+ ---------------------------------------
+ ROWS=ADIABATIC, COLUMNS=DIABATIC STATES
+
+             1           2           3
+
+    1   -0.9901049   0.0077378   0.1401160
+    2   -0.0859741  -0.8225932  -0.5620933
+    3   -0.1109091   0.5685777  -0.8151188
+
+ ---------------------------------------
+          - DIABATIC STATES -           
+ ---------------------------------------
+
+ State #    1  Energy =     -55.880957685
+
+      Det      Coef        Coefp    Occupancy (Ignoring core)
+      ---      ----        ----    --------- --------- -----
+        1    0.964910   -0.964910  222+000
+        8   -0.079096    0.079096  2-2+0+0
+      393   -0.073825   -0.073825  202+020
+        3    0.070347    0.070347  22-++00
+      717   -0.069751   -0.069751  220+002
+      141   -0.068501   -0.068501  22++-00
+       18    0.054650   -0.054650  2-2+00+
+      736   -0.050580    0.050580  2+2+00-
+      386    0.049660   -0.049660  2+2+0-0
+       16    0.044562   -0.044562  222000+
+        7   -0.043605   -0.043605  22-+0+0
+      351    0.042166    0.042166  22++0-0
+       17    0.040579    0.040579  22-+00+
+      708    0.038506   -0.038506  2-++0+-
+      402    0.037532   -0.037532  2+-+0-+
+      215   -0.035674   -0.035674  022+200
+      218    0.034168   -0.034168  +-2+-+0
+      390    0.033772   -0.033772  -+2++-0
+      227   -0.032772   -0.032772  +2-+-0+
+      705   -0.032710   -0.032710  -2+++0-
+       76    0.029437    0.029437  2+2-0+0
+      212    0.028679    0.028679  +220200
+       51   -0.026616    0.026616  22+-00+
+      113   -0.026519    0.026519  +-220+0
+      122    0.024971    0.024971  +2-200+
+      179   -0.024399   -0.024399  202+200
+        2    0.023315   -0.023315  2220+00
+      424   -0.023251   -0.023251  +-2++-0
+      387   -0.022990    0.022990  2+20+-0
+      773    0.022983   -0.022983  +2-++0-
+      184   -0.022733   -0.022733  -+2+-+0
+      702    0.022166    0.022166  22+0+0-
+      159    0.021989   -0.021989  -2++-0+
+      143   -0.021056   -0.021056  220+200
+     1051   -0.020831   -0.020831  2+++0--
+
+ State #    2  Energy =     -55.699941568
+
+      Det      Coef        Coefp    Occupancy (Ignoring core)
+      ---      ----        ----    --------- --------- -----
+       71   -0.967782    0.967782  2+22000
+      246   -0.078408   -0.078408  2++2-00
+       73    0.076739   -0.076739  2+-2+00
+      822    0.069442   -0.069442  2+02002
+      736   -0.055260    0.055260  2+2+00-
+       86    0.052995    0.052995  2+2-00+
+       77   -0.050660    0.050660  2+-20+0
+      456    0.050510    0.050510  2++20-0
+       36    0.047123    0.047123  22+2000
+       88   -0.045515    0.045515  202200+
+      813    0.042269   -0.042269  20+20+-
+       74    0.038890   -0.038890  2022+00
+      111    0.037600   -0.037600  +22-0+0
+      320    0.035489    0.035489  0+22200
+      323   -0.034141    0.034141  +022-+0
+      810   -0.033480   -0.033480  -++2+0-
+       76    0.032722    0.032722  2+2-0+0
+      332   -0.032139    0.032139  ++-2-0+
+      180   -0.029426    0.029426  -+2+200
+      317    0.029241   -0.029241  ++2-200
+      177    0.027970   -0.027970  2+20200
+       99   -0.027539    0.027539  20-20++
+      183   -0.026850    0.026850  202+-+0
+      113    0.026413   -0.026413  +-220+0
+        6    0.024746   -0.024746  22200+0
+      391    0.024181   -0.024181  2+20020
+      807   -0.023798    0.023798  2++-+0-
+      192   -0.023474    0.023474  2+-+-0+
+      878    0.022627    0.022627  ++-2+0-
+       38   -0.022287    0.022287  2202+00
+      264    0.021928   -0.021928  -++2-0+
+      248    0.021747   -0.021747  2+02200
+      122    0.021439    0.021439  +2-200+
+      526   -0.021151   -0.021151  ++220-0
+      529    0.020482    0.020482  +022+-0
+      386   -0.020341    0.020341  2+2+0-0
+
+ State #    3  Energy =     -55.656742442
+
+      Det      Coef        Coefp    Occupancy (Ignoring core)
+      ---      ----        ----    --------- --------- -----
+       36   -0.968346   -0.968346  22+2000
+      463    0.074952   -0.074952  20+2020
+       38   -0.067545    0.067545  2202+00
+       53   -0.058986   -0.058986  2-+200+
+      806    0.056314    0.056314  2++200-
+       51    0.052460   -0.052460  22+-00+
+      701   -0.051309   -0.051309  22++00-
+       71   -0.046067    0.046067  2+22000
+      456   -0.043980   -0.043980  2++20-0
+      106   -0.042180   -0.042180  +222000
+      472   -0.042104   -0.042104  2+020-+
+       42    0.039710   -0.039710  22020+0
+      121   -0.038532    0.038532  +22-00+
+       43    0.038445    0.038445  2-+20+0
+      285    0.035644   -0.035644  02+2200
+      460   -0.035036   -0.035036  -++2+-0
+      288   -0.034799   -0.034799  +-+2-+0
+      297    0.032693   -0.032693  +202-0+
+       73    0.032494   -0.032494  2+-2+00
+      282    0.029685    0.029685  +2+-200
+      145   -0.029619   -0.029619  -2++200
+      112   -0.028499   -0.028499  +2-20+0
+      123    0.028033   -0.028033  +-2200+
+      142    0.027822    0.027822  22+0200
+       64    0.027764   -0.027764  2-020++
+      249    0.026949   -0.026949  20+2200
+       16   -0.025654    0.025654  222000+
+      457   -0.025427    0.025427  2++-+-0
+       86    0.025103    0.025103  2+2-00+
+      148   -0.025047   -0.025047  2-++-+0
+      157    0.024351   -0.024351  220+-0+
+      494    0.023354   -0.023354  +-+2+-0
+      254    0.022995   -0.022995  -++2-+0
+      716    0.022363    0.022363  22+0002
+      356    0.020823    0.020823  22+0020
+
+ ---------------------------------------
+      - DIABATIC STATES IN CMO -        
+ ---------------------------------------
+
+ State #    1  Energy =     -55.880957685
+
+      Det      Coef        Coefp    Occupancy (Ignoring core)
+      ---      ----        ----    --------- --------- -----
+        1    0.966240   -0.966240  222+000
+       36   -0.111315   -0.111315  22+2000
+       71   -0.107645    0.107645  2+22000
+      393   -0.079035   -0.079035  202+020
+      717   -0.064172   -0.064172  220+002
+       17    0.040960    0.040960  22-+00+
+        8   -0.040844    0.040844  2-2+0+0
+      402    0.033873   -0.033873  2+-+0-+
+      215   -0.033752   -0.033752  022+200
+      390    0.031538   -0.031538  -+2++-0
+      708    0.031406   -0.031406  2-++0+-
+      179   -0.030264   -0.030264  202+200
+      218    0.029491   -0.029491  +-2+-+0
+       76    0.028870    0.028870  2+2-0+0
+      106   -0.028559   -0.028559  +222000
+      113   -0.026912    0.026912  +-220+0
+        2    0.025986   -0.025986  2220+00
+      705   -0.025434   -0.025434  -2+++0-
+      388    0.025292    0.025292  2+-++-0
+      227   -0.024915   -0.024915  +2-+-0+
+       51   -0.023636    0.023636  22+-00+
+      387   -0.023194    0.023194  2+20+-0
+      122    0.022431    0.022431  +2-200+
+      143   -0.021879   -0.021879  220+200
+      212    0.021699    0.021699  +220200
+      148    0.021398    0.021398  2-++-+0
+      357   -0.021378   -0.021378  220+020
+      184   -0.020225   -0.020225  -+2+-+0
+
+ State #    2  Energy =     -55.699941568
+
+      Det      Coef        Coefp    Occupancy (Ignoring core)
+      ---      ----        ----    --------- --------- -----
+       71   -0.812667    0.812667  2+22000
+       36    0.552381    0.552381  22+2000
+      822    0.048666   -0.048666  2+02002
+      463   -0.040873    0.040873  20+2020
+      112   -0.035574   -0.035574  +2-20+0
+      253    0.033731    0.033731  20+2-+0
+      121    0.028052   -0.028052  +22-00+
+      320    0.027420    0.027420  0+22200
+      249   -0.026861    0.026861  20+2200
+        1   -0.026849    0.026849  222+000
+      248    0.026442   -0.026442  2+02200
+      813    0.025900   -0.025900  20+20+-
+      111    0.025657   -0.025657  +22-0+0
+      323   -0.025471    0.025471  +022-+0
+      472    0.023582    0.023582  2+020-+
+      177    0.023461   -0.023461  2+20200
+      183   -0.022734    0.022734  202+-+0
+       86    0.021649    0.021649  2+2-00+
+      332   -0.020427    0.020427  ++-2-0+
+
+ State #    3  Energy =     -55.656742442
+
+      Det      Coef        Coefp    Occupancy (Ignoring core)
+      ---      ----        ----    --------- --------- -----
+       36   -0.802043   -0.802043  22+2000
+       71   -0.544504    0.544504  2+22000
+        1   -0.153397    0.153397  222+000
+      463    0.067613   -0.067613  20+2020
+      113   -0.039757    0.039757  +-220+0
+      822    0.039196   -0.039196  2+02002
+      121   -0.031446    0.031446  +22-00+
+       74   -0.030054    0.030054  2022+00
+      285    0.028278   -0.028278  02+2200
+      460   -0.025579   -0.025579  -++2+-0
+      813    0.025265   -0.025265  20+20+-
+      472   -0.024953   -0.024953  2+020-+
+       51   -0.024711    0.024711  22+-00+
+      288   -0.024362   -0.024362  +-+2-+0
+      458   -0.023412    0.023412  2+02+-0
+      142    0.023173    0.023173  22+0200
+      148   -0.023156   -0.023156  2-++-+0
+      107    0.021815   -0.021815  +22-+00
+      249    0.020871   -0.020871  20+2200
+      716    0.020407    0.020407  22+0002
+      297    0.020130   -0.020130  +202-0+
+
+ ---------------------------------------
+    -DIABATIC STATES IN PROTOTYPES-     
+ ---------------------------------------
+
+     STATE:    1
+ Group Ref#    Coefficients
+     1    1    0.982842
+     2    2   -0.000976
+     3    3   -0.000371
+
+WEIGHT OF LISTED PROTOTYPES:   96.60%
+
+     STATE:    2
+ Group Ref#    Coefficients
+     1    1   -0.000976
+     2    2    0.981851
+     3    3    0.001282
+
+WEIGHT OF LISTED PROTOTYPES:   96.40%
+
+     STATE:    3
+ Group Ref#    Coefficients
+     1    1   -0.000371
+     2    2    0.001282
+     3    3    0.982610
+
+WEIGHT OF LISTED PROTOTYPES:   96.55%
+
+     !!! DIABATIZATION FOR GMC-QDPT STATES !!!
+
+ *******************************************************
+          $DMO GROUP FOUND IN THE INPUT.
+        DIABATIZATION OF ADIABATIC STATES BEGINS.
+     PROGRAMMED BY TAO ZENG (CARLETON UNIVERSITY).
+               Email: toby.zeng@carleton.ca
+     See T. Zeng, J. Chem. Phys. 2017, 146, 144103
+ *******************************************************
+
+ *************************************************************************
+     STEP 1: TRANSFORMATION OF ADIABATIC STATES TO THE DMO REPRESENTATION
+         See Atchity and Ruedenberg, J. Chem. Phys. 1999, 111, 2910
+ *************************************************************************
+
+     ------------------------------------------------
+        ADIABATIC STATES IN TRANSFORMED ORBITALS:
+      !! USE Coefp TO PREPARE DIABATIC REFERENCES !!
+     ------------------------------------------------
+
+ State #    1  Energy =     -55.983396587  S =  0.500
+
+      Det      Coef        Coefp    Occupancy (Ignoring core)
+      ---      ----        ----    --------- --------- -----
+        1   -0.955059    0.955059  222+000
+       36   -0.136816   -0.136816  22+2000
+        8    0.078816   -0.078816  2-2+0+0
+      393    0.072684    0.072684  202+020
+      717    0.069780    0.069780  220+002
+      141    0.067723    0.067723  22++-00
+        3   -0.067478   -0.067478  22-++00
+       18   -0.055779    0.055779  2-2+00+
+      386   -0.049529    0.049529  2+2+0-0
+       16   -0.047740    0.047740  222000+
+      736    0.047707   -0.047707  2+2+00-
+        7    0.044801    0.044801  22-+0+0
+      351   -0.041798   -0.041798  22++0-0
+       17   -0.040410   -0.040410  22-+00+
+      708   -0.039223    0.039223  2-++0+-
+      402   -0.037195    0.037195  2+-+0-+
+      215    0.035113    0.035113  022+200
+       51    0.033958   -0.033958  22+-00+
+      218   -0.033710    0.033710  +-2+-+0
+      390   -0.033367    0.033367  -+2++-0
+      705    0.032335    0.032335  -2+++0-
+      227    0.032269    0.032269  +2-+-0+
+       76   -0.029287   -0.029287  2+2-0+0
+      212   -0.028263   -0.028263  +220200
+      113    0.024332   -0.024332  +-220+0
+      179    0.024136    0.024136  202+200
+      122   -0.023764   -0.023764  +2-200+
+        2   -0.023130    0.023130  2220+00
+      424    0.022973    0.022973  +-2++-0
+      387    0.022713   -0.022713  2+20+-0
+      184    0.022476    0.022476  -+2+-+0
+      702   -0.022473   -0.022473  22+0+0-
+      773   -0.022439    0.022439  +2-++0-
+     1051    0.021831    0.021831  2+++0--
+      159   -0.021747    0.021747  -2++-0+
+      143    0.020811    0.020811  220+200
+
+ State #    2  Energy =     -55.852107168  S =  0.500
+
+      Det      Coef        Coefp    Occupancy (Ignoring core)
+      ---      ----        ----    --------- --------- -----
+       71    0.822071   -0.822071  2+22000
+       36    0.504937    0.504937  22+2000
+        1   -0.083860    0.083860  222+000
+       73   -0.081490    0.081490  2+-2+00
+      246    0.074905    0.074905  2++2-00
+       86   -0.057340   -0.057340  2+2-00+
+      736    0.057280   -0.057280  2+2+00-
+       38    0.057243   -0.057243  2202+00
+      822   -0.055447    0.055447  2+02002
+       51   -0.041352    0.041352  22+-00+
+      463   -0.039698    0.039698  20+2020
+       77    0.038379   -0.038379  2+-20+0
+      701    0.036835    0.036835  22++00-
+       88    0.032508   -0.032508  202200+
+      813   -0.031191    0.031191  20+20+-
+      320   -0.029866   -0.029866  0+22200
+       74   -0.029226    0.029226  2022+00
+      323    0.028783   -0.028783  +022-+0
+      111   -0.028655    0.028655  +22-0+0
+       76   -0.027766   -0.027766  2+2-0+0
+      332    0.027548   -0.027548  ++-2-0+
+      810    0.026653    0.026653  -++2+0-
+       53    0.026235    0.026235  2-+200+
+      180    0.025099   -0.025099  -+2+200
+      317   -0.024745    0.024745  ++2-200
+      183    0.024374   -0.024374  202+-+0
+      177   -0.023888    0.023888  2+20200
+      806   -0.023748   -0.023748  2++200-
+       99    0.023313   -0.023313  20-20++
+      122   -0.022843   -0.022843  +2-200+
+      106    0.021901    0.021901  +222000
+       43   -0.021397   -0.021397  2-+20+0
+      391   -0.021372    0.021372  2+20020
+      112    0.021272    0.021272  +2-20+0
+        6   -0.020261    0.020261  22200+0
+
+ State #    3  Energy =     -55.719937958  S =  0.500
+
+      Det      Coef        Coefp    Occupancy (Ignoring core)
+      ---      ----        ----    --------- --------- -----
+       36    0.816232    0.816232  22+2000
+       71   -0.512503    0.512503  2+22000
+        1   -0.109010    0.109010  222+000
+      456    0.064410    0.064410  2++20-0
+      463   -0.062941    0.062941  20+2020
+       53    0.051836    0.051836  2-+200+
+      806   -0.051194   -0.051194  2++200-
+       38    0.043647   -0.043647  2202+00
+      822    0.041910   -0.041910  2+02002
+       42   -0.040202    0.040202  22020+0
+      106    0.038995    0.038995  +222000
+      701    0.038697    0.038697  22++00-
+      472    0.037790    0.037790  2+020-+
+      121    0.034549   -0.034549  +22-00+
+       77   -0.033550    0.033550  2+-20+0
+       88   -0.033045    0.033045  202200+
+       43   -0.030860   -0.030860  2-+20+0
+      113    0.030321   -0.030321  +-220+0
+      288    0.030304    0.030304  +-+2-+0
+      285   -0.030259    0.030259  02+2200
+       51   -0.029949    0.029949  22+-00+
+      460    0.029500    0.029500  -++2+-0
+      246   -0.029469   -0.029469  2++2-00
+      813    0.029222   -0.029222  20+20+-
+      123   -0.029043    0.029043  +-2200+
+      297   -0.026941    0.026941  +202-0+
+       74    0.025929   -0.025929  2022+00
+      145    0.025075    0.025075  -2++200
+      282   -0.025063   -0.025063  +2+-200
+      111    0.024676   -0.024676  +22-0+0
+       64   -0.023504    0.023504  2-020++
+      142   -0.023411   -0.023411  22+0200
+      249   -0.023181    0.023181  20+2200
+        3   -0.022348   -0.022348  22-++00
+      457    0.022104   -0.022104  2++-+-0
+      810   -0.020320   -0.020320  -++2+0-
+      254   -0.020247    0.020247  -++2-+0
+      148    0.020025    0.020025  2-++-+0
+
+     $REFDET GROUP FOUND
+
+ *************************************************************************
+     STEP 2: DIABATIZATION USING CONFIGURATION UNIFORMITY
+  See Atchity and Ruedenberg, Theor. Chem. Acc. 1997, 97, 47
+ *************************************************************************
+
+READ-IN LIST OF DIABATIC PROTOTYPES:
+
+     THE SAME NUMBER OF PROTOTYPE GROUPS & ADIABATS
+
+     THE ADIABS SHOULD HAVE FULLY COVER THE PROTOTYPES
+
+ -------------------------------------------
+   - DIABATIC HAMILTONIAN MATRIX ELEMENTS - 
+ -------------------------------------------
+                                            
+ --- DIABATIC ENERGIES (DIAGONAL ELEMENT) ---       HARTREE            EV
+ STATE #  1'S GMC-PT-LEVEL DIABATIC ENERGY=     -55.979074761       0.000000000
+ STATE #  2'S GMC-PT-LEVEL DIABATIC ENERGY=     -55.809440518       4.615982881
+ STATE #  3'S GMC-PT-LEVEL DIABATIC ENERGY=     -55.766926434       5.772850015
+
+ --- DIABATIC COUPLINGS (OFF DIAGONAL ELEMENTS)---  HATREE            EV
+ STATE #  1 &  2'S GMC-PT-LEVEL COUPLING  =      -0.007246321      -0.197182445
+ STATE #  1 &  3'S GMC-PT-LEVEL COUPLING  =       0.030541381       0.831073315
+ STATE #  2 &  3'S GMC-PT-LEVEL COUPLING  =      -0.061392472      -1.670574253
+
+ ---------------------------------------
+     - ROTATION TO DIABATIC STATES -    
+ ---------------------------------------
+ ROWS=ADIABATIC, COLUMNS=DIABATIC STATES
+
+             1           2           3
+
+    1   -0.9897993   0.0089495   0.1421871
+    2   -0.0880923  -0.8228134  -0.5614426
+    3   -0.1119689   0.5682411  -0.8152086
+
+ ---------------------------------------
+          - DIABATIC STATES -           
+ ---------------------------------------
+
+ State #    1  Energy =     -55.979074761
+
+      Det      Coef        Coefp    Occupancy (Ignoring core)
+      ---      ----        ----    --------- --------- -----
+        1    0.964910   -0.964910  222+000
+        8   -0.079096    0.079096  2-2+0+0
+      393   -0.073825   -0.073825  202+020
+        3    0.070347    0.070347  22-++00
+      717   -0.069751   -0.069751  220+002
+      141   -0.068501   -0.068501  22++-00
+       18    0.054650   -0.054650  2-2+00+
+      736   -0.050580    0.050580  2+2+00-
+      386    0.049660   -0.049660  2+2+0-0
+       16    0.044562   -0.044562  222000+
+        7   -0.043605   -0.043605  22-+0+0
+      351    0.042166    0.042166  22++0-0
+       17    0.040579    0.040579  22-+00+
+      708    0.038506   -0.038506  2-++0+-
+      402    0.037532   -0.037532  2+-+0-+
+      215   -0.035674   -0.035674  022+200
+      218    0.034168   -0.034168  +-2+-+0
+      390    0.033772   -0.033772  -+2++-0
+      227   -0.032772   -0.032772  +2-+-0+
+      705   -0.032710   -0.032710  -2+++0-
+       76    0.029437    0.029437  2+2-0+0
+      212    0.028679    0.028679  +220200
+       51   -0.026616    0.026616  22+-00+
+      113   -0.026519    0.026519  +-220+0
+      122    0.024971    0.024971  +2-200+
+      179   -0.024399   -0.024399  202+200
+        2    0.023315   -0.023315  2220+00
+      424   -0.023251   -0.023251  +-2++-0
+      387   -0.022990    0.022990  2+20+-0
+      773    0.022983   -0.022983  +2-++0-
+      184   -0.022733   -0.022733  -+2+-+0
+      702    0.022166    0.022166  22+0+0-
+      159    0.021989   -0.021989  -2++-0+
+      143   -0.021056   -0.021056  220+200
+     1051   -0.020831   -0.020831  2+++0--
+
+ State #    2  Energy =     -55.809440518
+
+      Det      Coef        Coefp    Occupancy (Ignoring core)
+      ---      ----        ----    --------- --------- -----
+       71   -0.967782    0.967782  2+22000
+      246   -0.078408   -0.078408  2++2-00
+       73    0.076739   -0.076739  2+-2+00
+      822    0.069442   -0.069442  2+02002
+      736   -0.055260    0.055260  2+2+00-
+       86    0.052995    0.052995  2+2-00+
+       77   -0.050660    0.050660  2+-20+0
+      456    0.050510    0.050510  2++20-0
+       36    0.047123    0.047123  22+2000
+       88   -0.045515    0.045515  202200+
+      813    0.042269   -0.042269  20+20+-
+       74    0.038890   -0.038890  2022+00
+      111    0.037600   -0.037600  +22-0+0
+      320    0.035489    0.035489  0+22200
+      323   -0.034141    0.034141  +022-+0
+      810   -0.033480   -0.033480  -++2+0-
+       76    0.032722    0.032722  2+2-0+0
+      332   -0.032139    0.032139  ++-2-0+
+      180   -0.029426    0.029426  -+2+200
+      317    0.029241   -0.029241  ++2-200
+      177    0.027970   -0.027970  2+20200
+       99   -0.027539    0.027539  20-20++
+      183   -0.026850    0.026850  202+-+0
+      113    0.026413   -0.026413  +-220+0
+        6    0.024746   -0.024746  22200+0
+      391    0.024181   -0.024181  2+20020
+      807   -0.023798    0.023798  2++-+0-
+      192   -0.023474    0.023474  2+-+-0+
+      878    0.022627    0.022627  ++-2+0-
+       38   -0.022287    0.022287  2202+00
+      264    0.021928   -0.021928  -++2-0+
+      248    0.021747   -0.021747  2+02200
+      122    0.021439    0.021439  +2-200+
+      526   -0.021151   -0.021151  ++220-0
+      529    0.020482    0.020482  +022+-0
+      386   -0.020341    0.020341  2+2+0-0
+
+ State #    3  Energy =     -55.766926434
+
+      Det      Coef        Coefp    Occupancy (Ignoring core)
+      ---      ----        ----    --------- --------- -----
+       36   -0.968346   -0.968346  22+2000
+      463    0.074952   -0.074952  20+2020
+       38   -0.067545    0.067545  2202+00
+       53   -0.058986   -0.058986  2-+200+
+      806    0.056314    0.056314  2++200-
+       51    0.052460   -0.052460  22+-00+
+      701   -0.051309   -0.051309  22++00-
+       71   -0.046067    0.046067  2+22000
+      456   -0.043980   -0.043980  2++20-0
+      106   -0.042180   -0.042180  +222000
+      472   -0.042104   -0.042104  2+020-+
+       42    0.039710   -0.039710  22020+0
+      121   -0.038532    0.038532  +22-00+
+       43    0.038445    0.038445  2-+20+0
+      285    0.035644   -0.035644  02+2200
+      460   -0.035036   -0.035036  -++2+-0
+      288   -0.034799   -0.034799  +-+2-+0
+      297    0.032693   -0.032693  +202-0+
+       73    0.032494   -0.032494  2+-2+00
+      282    0.029685    0.029685  +2+-200
+      145   -0.029619   -0.029619  -2++200
+      112   -0.028499   -0.028499  +2-20+0
+      123    0.028033   -0.028033  +-2200+
+      142    0.027822    0.027822  22+0200
+       64    0.027764   -0.027764  2-020++
+      249    0.026949   -0.026949  20+2200
+       16   -0.025654    0.025654  222000+
+      457   -0.025427    0.025427  2++-+-0
+       86    0.025103    0.025103  2+2-00+
+      148   -0.025047   -0.025047  2-++-+0
+      157    0.024351   -0.024351  220+-0+
+      494    0.023354   -0.023354  +-+2+-0
+      254    0.022995   -0.022995  -++2-+0
+      716    0.022363    0.022363  22+0002
+      356    0.020823    0.020823  22+0020
+
+ ---------------------------------------
+      - DIABATIC STATES IN CMO -        
+ ---------------------------------------
+
+ State #    1  Energy =     -55.979074761
+
+      Det      Coef        Coefp    Occupancy (Ignoring core)
+      ---      ----        ----    --------- --------- -----
+        1    0.966240   -0.966240  222+000
+       36   -0.111315   -0.111315  22+2000
+       71   -0.107645    0.107645  2+22000
+      393   -0.079035   -0.079035  202+020
+      717   -0.064172   -0.064172  220+002
+       17    0.040960    0.040960  22-+00+
+        8   -0.040844    0.040844  2-2+0+0
+      402    0.033873   -0.033873  2+-+0-+
+      215   -0.033752   -0.033752  022+200
+      390    0.031538   -0.031538  -+2++-0
+      708    0.031406   -0.031406  2-++0+-
+      179   -0.030264   -0.030264  202+200
+      218    0.029491   -0.029491  +-2+-+0
+       76    0.028870    0.028870  2+2-0+0
+      106   -0.028559   -0.028559  +222000
+      113   -0.026912    0.026912  +-220+0
+        2    0.025986   -0.025986  2220+00
+      705   -0.025434   -0.025434  -2+++0-
+      388    0.025292    0.025292  2+-++-0
+      227   -0.024915   -0.024915  +2-+-0+
+       51   -0.023636    0.023636  22+-00+
+      387   -0.023194    0.023194  2+20+-0
+      122    0.022431    0.022431  +2-200+
+      143   -0.021879   -0.021879  220+200
+      212    0.021699    0.021699  +220200
+      148    0.021398    0.021398  2-++-+0
+      357   -0.021378   -0.021378  220+020
+      184   -0.020225   -0.020225  -+2+-+0
+
+ State #    2  Energy =     -55.809440518
+
+      Det      Coef        Coefp    Occupancy (Ignoring core)
+      ---      ----        ----    --------- --------- -----
+       71   -0.812667    0.812667  2+22000
+       36    0.552381    0.552381  22+2000
+      822    0.048666   -0.048666  2+02002
+      463   -0.040873    0.040873  20+2020
+      112   -0.035574   -0.035574  +2-20+0
+      253    0.033731    0.033731  20+2-+0
+      121    0.028052   -0.028052  +22-00+
+      320    0.027420    0.027420  0+22200
+      249   -0.026861    0.026861  20+2200
+        1   -0.026849    0.026849  222+000
+      248    0.026442   -0.026442  2+02200
+      813    0.025900   -0.025900  20+20+-
+      111    0.025657   -0.025657  +22-0+0
+      323   -0.025471    0.025471  +022-+0
+      472    0.023582    0.023582  2+020-+
+      177    0.023461   -0.023461  2+20200
+      183   -0.022734    0.022734  202+-+0
+       86    0.021649    0.021649  2+2-00+
+      332   -0.020427    0.020427  ++-2-0+
+
+ State #    3  Energy =     -55.766926434
+
+      Det      Coef        Coefp    Occupancy (Ignoring core)
+      ---      ----        ----    --------- --------- -----
+       36   -0.802043   -0.802043  22+2000
+       71   -0.544504    0.544504  2+22000
+        1   -0.153397    0.153397  222+000
+      463    0.067613   -0.067613  20+2020
+      113   -0.039757    0.039757  +-220+0
+      822    0.039196   -0.039196  2+02002
+      121   -0.031446    0.031446  +22-00+
+       74   -0.030054    0.030054  2022+00
+      285    0.028278   -0.028278  02+2200
+      460   -0.025579   -0.025579  -++2+-0
+      813    0.025265   -0.025265  20+20+-
+      472   -0.024953   -0.024953  2+020-+
+       51   -0.024711    0.024711  22+-00+
+      288   -0.024362   -0.024362  +-+2-+0
+      458   -0.023412    0.023412  2+02+-0
+      142    0.023173    0.023173  22+0200
+      148   -0.023156   -0.023156  2-++-+0
+      107    0.021815   -0.021815  +22-+00
+      249    0.020871   -0.020871  20+2200
+      716    0.020407    0.020407  22+0002
+      297    0.020130   -0.020130  +202-0+
+
+ ---------------------------------------
+    -DIABATIC STATES IN PROTOTYPES-     
+ ---------------------------------------
+
+     STATE:    1
+ Group Ref#    Coefficients
+     1    1    0.982842
+     2    2   -0.000976
+     3    3   -0.000371
+
+WEIGHT OF LISTED PROTOTYPES:   96.60%
+
+     STATE:    2
+ Group Ref#    Coefficients
+     1    1   -0.000976
+     2    2    0.981851
+     3    3    0.001282
+
+WEIGHT OF LISTED PROTOTYPES:   96.40%
+
+     STATE:    3
+ Group Ref#    Coefficients
+     1    1   -0.000371
+     2    2    0.001282
+     3    3    0.982610
+
+WEIGHT OF LISTED PROTOTYPES:   96.55%
+
+ --------------------------------------------------
+ IN DIRECT MAX. DIABATIZATION FOR GMC-QDPT
+
+ DIRECT MAXIMIZATION (DM) WITHOUT TRUNCATING ADIABATS
+ EXPANSIONS INTO THE REFERENCE CONFIGURATION SPACE
+ --------------------------------------------------
+
+ -------------------------------------------
+ - DM DIABT PT HAMILTONIAN MATRIX ELEMENTS -
+ -------------------------------------------
+                                            
+ --- DIABATIC ENERGIES (DIAGONAL ELEMENT) ---       HARTREE            EV
+ STATE #  1'S GMC-PT-LEVEL DIABATIC ENERGY=     -55.979074766       0.000000000
+ STATE #  2'S GMC-PT-LEVEL DIABATIC ENERGY=     -55.809440572       4.615981519
+ STATE #  3'S GMC-PT-LEVEL DIABATIC ENERGY=     -55.766926375       5.772851748
+
+ --- DIABATIC COUPLINGS (OFF DIAGONAL ELEMENTS)---  HATREE            EV
+ STATE #  1 &  2'S GMC-PT-LEVEL COUPLING  =      -0.007246224      -0.197179788
+ STATE #  1 &  3'S GMC-PT-LEVEL COUPLING  =       0.030541364       0.831072834
+ STATE #  2 &  3'S GMC-PT-LEVEL COUPLING  =      -0.061392466      -1.670574077
+
+ ---------------------------------------
+     - ROTATION TO DIABATIC STATES -    
+ ---------------------------------------
+ ROWS=ADIABATIC, COLUMNS=DIABATIC STATES
+
+             1           2           3
+
+    1   -0.9897993   0.0089500   0.1421872
+    2   -0.0880927  -0.8228137  -0.5614422
+    3   -0.1119686   0.5682407  -0.8152089
+
+ ---------------------------------------
+          - DIABATIC STATES -           
+ ---------------------------------------
+
+ State #    1  Energy =     -55.979074766
+
+      Det      Coef        Coefp    Occupancy (Ignoring core)
+      ---      ----        ----    --------- --------- -----
+        1    0.964910   -0.964910  222+000
+        8   -0.079096    0.079096  2-2+0+0
+      393   -0.073825   -0.073825  202+020
+        3    0.070347    0.070347  22-++00
+      717   -0.069751   -0.069751  220+002
+      141   -0.068501   -0.068501  22++-00
+       18    0.054650   -0.054650  2-2+00+
+      736   -0.050580    0.050580  2+2+00-
+      386    0.049660   -0.049660  2+2+0-0
+       16    0.044562   -0.044562  222000+
+        7   -0.043605   -0.043605  22-+0+0
+      351    0.042166    0.042166  22++0-0
+       17    0.040579    0.040579  22-+00+
+      708    0.038506   -0.038506  2-++0+-
+      402    0.037532   -0.037532  2+-+0-+
+      215   -0.035674   -0.035674  022+200
+      218    0.034168   -0.034168  +-2+-+0
+      390    0.033772   -0.033772  -+2++-0
+      227   -0.032772   -0.032772  +2-+-0+
+      705   -0.032710   -0.032710  -2+++0-
+       76    0.029437    0.029437  2+2-0+0
+      212    0.028679    0.028679  +220200
+       51   -0.026616    0.026616  22+-00+
+      113   -0.026519    0.026519  +-220+0
+      122    0.024971    0.024971  +2-200+
+      179   -0.024399   -0.024399  202+200
+        2    0.023315   -0.023315  2220+00
+      424   -0.023251   -0.023251  +-2++-0
+      387   -0.022990    0.022990  2+20+-0
+      773    0.022983   -0.022983  +2-++0-
+      184   -0.022733   -0.022733  -+2+-+0
+      702    0.022166    0.022166  22+0+0-
+      159    0.021989   -0.021989  -2++-0+
+      143   -0.021056   -0.021056  220+200
+     1051   -0.020831   -0.020831  2+++0--
+
+ State #    2  Energy =     -55.809440572
+
+      Det      Coef        Coefp    Occupancy (Ignoring core)
+      ---      ----        ----    --------- --------- -----
+       71   -0.967782    0.967782  2+22000
+      246   -0.078408   -0.078408  2++2-00
+       73    0.076739   -0.076739  2+-2+00
+      822    0.069442   -0.069442  2+02002
+      736   -0.055260    0.055260  2+2+00-
+       86    0.052995    0.052995  2+2-00+
+       77   -0.050660    0.050660  2+-20+0
+      456    0.050510    0.050510  2++20-0
+       36    0.047123    0.047123  22+2000
+       88   -0.045515    0.045515  202200+
+      813    0.042269   -0.042269  20+20+-
+       74    0.038890   -0.038890  2022+00
+      111    0.037600   -0.037600  +22-0+0
+      320    0.035489    0.035489  0+22200
+      323   -0.034141    0.034141  +022-+0
+      810   -0.033480   -0.033480  -++2+0-
+       76    0.032722    0.032722  2+2-0+0
+      332   -0.032139    0.032139  ++-2-0+
+      180   -0.029426    0.029426  -+2+200
+      317    0.029241   -0.029241  ++2-200
+      177    0.027970   -0.027970  2+20200
+       99   -0.027539    0.027539  20-20++
+      183   -0.026850    0.026850  202+-+0
+      113    0.026413   -0.026413  +-220+0
+        6    0.024746   -0.024746  22200+0
+      391    0.024181   -0.024181  2+20020
+      807   -0.023798    0.023798  2++-+0-
+      192   -0.023474    0.023474  2+-+-0+
+      878    0.022627    0.022627  ++-2+0-
+       38   -0.022287    0.022287  2202+00
+      264    0.021928   -0.021928  -++2-0+
+      248    0.021747   -0.021747  2+02200
+      122    0.021439    0.021439  +2-200+
+      526   -0.021151   -0.021151  ++220-0
+      529    0.020482    0.020482  +022+-0
+      386   -0.020341    0.020341  2+2+0-0
+
+ State #    3  Energy =     -55.766926375
+
+      Det      Coef        Coefp    Occupancy (Ignoring core)
+      ---      ----        ----    --------- --------- -----
+       36   -0.968346   -0.968346  22+2000
+      463    0.074952   -0.074952  20+2020
+       38   -0.067545    0.067545  2202+00
+       53   -0.058986   -0.058986  2-+200+
+      806    0.056314    0.056314  2++200-
+       51    0.052460   -0.052460  22+-00+
+      701   -0.051309   -0.051309  22++00-
+       71   -0.046066    0.046066  2+22000
+      456   -0.043980   -0.043980  2++20-0
+      106   -0.042180   -0.042180  +222000
+      472   -0.042104   -0.042104  2+020-+
+       42    0.039710   -0.039710  22020+0
+      121   -0.038532    0.038532  +22-00+
+       43    0.038445    0.038445  2-+20+0
+      285    0.035644   -0.035644  02+2200
+      460   -0.035036   -0.035036  -++2+-0
+      288   -0.034799   -0.034799  +-+2-+0
+      297    0.032693   -0.032693  +202-0+
+       73    0.032494   -0.032494  2+-2+00
+      282    0.029685    0.029685  +2+-200
+      145   -0.029619   -0.029619  -2++200
+      112   -0.028499   -0.028499  +2-20+0
+      123    0.028033   -0.028033  +-2200+
+      142    0.027822    0.027822  22+0200
+       64    0.027764   -0.027764  2-020++
+      249    0.026949   -0.026949  20+2200
+       16   -0.025654    0.025654  222000+
+      457   -0.025427    0.025427  2++-+-0
+       86    0.025103    0.025103  2+2-00+
+      148   -0.025047   -0.025047  2-++-+0
+      157    0.024351   -0.024351  220+-0+
+      494    0.023354   -0.023354  +-+2+-0
+      254    0.022995   -0.022995  -++2-+0
+      716    0.022363    0.022363  22+0002
+      356    0.020823    0.020823  22+0020
+
+ ---------------------------------------
+      - DIABATIC STATES IN CMO -        
+ ---------------------------------------
+
+ State #    1  Energy =     -55.979074766
+
+      Det      Coef        Coefp    Occupancy (Ignoring core)
+      ---      ----        ----    --------- --------- -----
+        1    0.966240   -0.966240  222+000
+       36   -0.111315   -0.111315  22+2000
+       71   -0.107645    0.107645  2+22000
+      393   -0.079035   -0.079035  202+020
+      717   -0.064172   -0.064172  220+002
+       17    0.040960    0.040960  22-+00+
+        8   -0.040844    0.040844  2-2+0+0
+      402    0.033873   -0.033873  2+-+0-+
+      215   -0.033752   -0.033752  022+200
+      390    0.031538   -0.031538  -+2++-0
+      708    0.031406   -0.031406  2-++0+-
+      179   -0.030264   -0.030264  202+200
+      218    0.029491   -0.029491  +-2+-+0
+       76    0.028870    0.028870  2+2-0+0
+      106   -0.028559   -0.028559  +222000
+      113   -0.026912    0.026912  +-220+0
+        2    0.025986   -0.025986  2220+00
+      705   -0.025434   -0.025434  -2+++0-
+      388    0.025292    0.025292  2+-++-0
+      227   -0.024915   -0.024915  +2-+-0+
+       51   -0.023636    0.023636  22+-00+
+      387   -0.023194    0.023194  2+20+-0
+      122    0.022431    0.022431  +2-200+
+      143   -0.021879   -0.021879  220+200
+      212    0.021699    0.021699  +220200
+      148    0.021398    0.021398  2-++-+0
+      357   -0.021378   -0.021378  220+020
+      184   -0.020225   -0.020225  -+2+-+0
+
+ State #    2  Energy =     -55.809440572
+
+      Det      Coef        Coefp    Occupancy (Ignoring core)
+      ---      ----        ----    --------- --------- -----
+       71   -0.812667    0.812667  2+22000
+       36    0.552381    0.552381  22+2000
+      822    0.048666   -0.048666  2+02002
+      463   -0.040873    0.040873  20+2020
+      112   -0.035574   -0.035574  +2-20+0
+      253    0.033731    0.033731  20+2-+0
+      121    0.028052   -0.028052  +22-00+
+      320    0.027420    0.027420  0+22200
+      249   -0.026861    0.026861  20+2200
+        1   -0.026850    0.026850  222+000
+      248    0.026442   -0.026442  2+02200
+      813    0.025900   -0.025900  20+20+-
+      111    0.025657   -0.025657  +22-0+0
+      323   -0.025471    0.025471  +022-+0
+      472    0.023582    0.023582  2+020-+
+      177    0.023461   -0.023461  2+20200
+      183   -0.022734    0.022734  202+-+0
+       86    0.021649    0.021649  2+2-00+
+      332   -0.020427    0.020427  ++-2-0+
+
+ State #    3  Energy =     -55.766926375
+
+      Det      Coef        Coefp    Occupancy (Ignoring core)
+      ---      ----        ----    --------- --------- -----
+       36   -0.802044   -0.802044  22+2000
+       71   -0.544504    0.544504  2+22000
+        1   -0.153397    0.153397  222+000
+      463    0.067613   -0.067613  20+2020
+      113   -0.039757    0.039757  +-220+0
+      822    0.039196   -0.039196  2+02002
+      121   -0.031446    0.031446  +22-00+
+       74   -0.030054    0.030054  2022+00
+      285    0.028278   -0.028278  02+2200
+      460   -0.025579   -0.025579  -++2+-0
+      813    0.025265   -0.025265  20+20+-
+      472   -0.024953   -0.024953  2+020-+
+       51   -0.024711    0.024711  22+-00+
+      288   -0.024362   -0.024362  +-+2-+0
+      458   -0.023412    0.023412  2+02+-0
+      142    0.023173    0.023173  22+0200
+      148   -0.023156   -0.023156  2-++-+0
+      107    0.021815   -0.021815  +22-+00
+      249    0.020871   -0.020871  20+2200
+      716    0.020407    0.020407  22+0002
+      297    0.020130   -0.020130  +202-0+
+
+ ---------------------------------------
+    -DIABATIC STATES IN PROTOTYPES-     
+ ---------------------------------------
+
+     STATE:    1
+ Group Ref#    Coefficients
+     1    1    0.982842
+     2    2   -0.000976
+     3    3   -0.000371
+
+WEIGHT OF LISTED PROTOTYPES:   96.60%
+
+     STATE:    2
+ Group Ref#    Coefficients
+     1    1   -0.000977
+     2    2    0.981851
+     3    3    0.001282
+
+WEIGHT OF LISTED PROTOTYPES:   96.40%
+
+     STATE:    3
+ Group Ref#    Coefficients
+     1    1   -0.000371
+     2    2    0.001281
+     3    3    0.982610
+
+WEIGHT OF LISTED PROTOTYPES:   96.55%
+
+     DIRECT MAX. DIABATIZATION FINISHED    
+ CPU     0: STEP CPU TIME=     0.25 TOTAL CPU TIME=         12.8 (      0.2 MIN)
+ TOTAL WALL CLOCK TIME=         12.8 SECONDS, CPU UTILIZATION IS    99.92%
+
+DIABATS FOR SPIN-ORBIT CALCULATION ARE READY
+
+TRANSITION DIPOLES BETWEEN ADIABATS (in A.U.):
+
+STATE PAIR      X         Y         Z
+    1    1  0.063343 -0.216176  0.751698
+    2    1 -0.026955 -0.028734  0.046921
+    2    2 -0.065791 -0.035824  0.261843
+    3    1 -0.051482  0.063768  0.058713
+    3    2  0.180169  0.040355 -0.001014
+    3    3  0.181599 -0.487730  0.248843
+
+
+TRANSITION DIPOLES BETWEEN DIABATS (in A.U.):
+
+STATE PAIR      X         Y         Z
+    1    1  0.051266 -0.208261  0.762768
+    2    1 -0.002228 -0.027261  0.001540
+    2    2 -0.154504 -0.218423  0.258539
+    3    1 -0.026691  0.024399  0.001664
+    3    2 -0.051559  0.231497  0.004879
+    3    3  0.282389 -0.313046  0.241076
+
+TRANSITION DIPOLES BETWEEN DIRECT MAX. DIABATS (in A.U.):
+
+STATE PAIR      X         Y         Z
+    1    1  0.051266 -0.208261  0.762768
+    2    1 -0.002228 -0.027261  0.001540
+    2    2 -0.154504 -0.218423  0.258539
+    3    1 -0.026691  0.024399  0.001664
+    3    2 -0.051559  0.231497  0.004879
+    3    3  0.282389 -0.313046  0.241076
+ No $TRANST Group Found.
+ Quit without doing spin-orbit coupling
+ ..... DONE WITH MP2 ENERGY .....
+ CPU     0: STEP CPU TIME=     0.00 TOTAL CPU TIME=         12.8 (      0.2 MIN)
+ TOTAL WALL CLOCK TIME=         12.8 SECONDS, CPU UTILIZATION IS    99.92%
+            100000000  WORDS OF DYNAMIC MEMORY USED
+ EXECUTION OF GAMESS TERMINATED NORMALLY Wed Nov 16 18:53:35 2022
+ DDI: 715512 bytes (0.7 MB / 0 MWords) used by master data server.
+
+ ----------------------------------------
+ CPU timing information for all processes
+ ========================================
+ 0: 12.455 + 0.315 = 12.771
+ ----------------------------------------
+Note: The following floating-point exceptions are signalling: IEEE_DENORMAL
+ ddikick.x: exited gracefully.
+unset echo
+----- accounting info -----
+Files used on the master node io002 were:
+-rw-r--r-- 1 bsonghao nooijen   20712 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F05
+-rw-r--r-- 1 bsonghao nooijen  363520 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F09
+-rw-r--r-- 1 bsonghao nooijen 1995920 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F10
+-rw-r--r-- 1 bsonghao nooijen  131264 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F13
+-rw-r--r-- 1 bsonghao nooijen  180312 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F15
+-rw-r--r-- 1 bsonghao nooijen       0 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F16
+-rw-r--r-- 1 bsonghao nooijen    9808 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F70
+-rw-r--r-- 1 bsonghao nooijen    9808 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F71
+-rw-r--r-- 1 bsonghao nooijen   19608 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F72
+-rw-r--r-- 1 bsonghao nooijen   19608 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F73
+-rw-r--r-- 1 bsonghao nooijen 1920824 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F74
+-rw-r--r-- 1 bsonghao nooijen       0 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F75
+-rw-r--r-- 1 bsonghao nooijen   58848 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F76
+-rw-r--r-- 1 bsonghao nooijen       0 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F77
+-rw-r--r-- 1 bsonghao nooijen    1864 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F78
+-rw-r--r-- 1 bsonghao nooijen   39208 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F79
+-rw-r--r-- 1 bsonghao nooijen     104 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F80
+-rw-r--r-- 1 bsonghao nooijen   13472 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F81
+-rw-r--r-- 1 bsonghao nooijen      16 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F82
+-rw-r--r-- 1 bsonghao nooijen   19216 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F83
+-rw-r--r-- 1 bsonghao nooijen   29712 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F84
+-rw-r--r-- 1 bsonghao nooijen  401576 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F85
+-rw-r--r-- 1 bsonghao nooijen  903672 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F86
+-rw-r--r-- 1 bsonghao nooijen     656 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F87
+-rw-r--r-- 1 bsonghao nooijen   29232 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F88
+-rw-r--r-- 1 bsonghao nooijen     240 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F89
+-rw-r--r-- 1 bsonghao nooijen       0 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F90
+-rw-r--r-- 1 bsonghao nooijen   13760 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F91
+-rw-r--r-- 1 bsonghao nooijen   22776 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F92
+-rw-r--r-- 1 bsonghao nooijen   23168 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F93
+-rw-r--r-- 1 bsonghao nooijen   22776 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F94
+-rw-r--r-- 1 bsonghao nooijen   13760 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F95
+-rw-r--r-- 1 bsonghao nooijen   29440 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F96
+-rw-r--r-- 1 bsonghao nooijen    1184 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F97
+-rw-r--r-- 1 bsonghao nooijen    9808 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F98
+-rw-r--r-- 1 bsonghao nooijen   30264 Nov 16 18:53 /scratch/bsonghao/nh3_diabatization_2d_at_mode_7_8_dist-0.4_0.1.F99
+ls: No match.
+ls: No match.
+ls: No match.
+Wed 16 Nov 2022 06:53:38 PM EST
+0.302u 0.032s 0:16.15 2.0%	0+0k 48+224io 0pf+0w
