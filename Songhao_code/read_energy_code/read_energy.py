@@ -200,9 +200,9 @@ class read_energy(object):
             if not store_flag:
                 log.info("Warning: the diabatzation procedure fail at displacement {:.1f}, {:.1f}".format(delta_1, delta_2))
             if store_flag:
-                # store coordinate data (converged to the atomic unit)
-                energy_data["Grid_1"].append(self.ang2br * np.sqrt(omega_1 * self.wn2eh) * delta_1)
-                energy_data["Grid_2"].append(self.ang2br * np.sqrt(omega_2 * self.wn2eh) * delta_2)
+                # store coordinate data (convert to the atomic unit)
+                energy_data["Grid_1"].append(np.sqrt(self.amu2me) * self.ang2br * np.sqrt(omega_1 * self.wn2eh) * delta_1)
+                energy_data["Grid_2"].append(np.sqrt(self.amu2me) * self.ang2br * np.sqrt(omega_2 * self.wn2eh) * delta_2)
                 # print("At displacement: {:.1f}, {:.1f}".format(delta_1, delta_2))
 
                 adiabatic_energy, diagonal_diabatic_energy, off_diagonal_diabatic_energy = self._read_energy(file_name)
