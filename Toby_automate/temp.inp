@@ -1,0 +1,22 @@
+ !Step 2: single point gmcpt calculation averaging 3 states
+ !        for NH3+ at NH3 structure
+ $system kdiag=3 mwords=100 memddi=1000 parall=.t. $end
+ $contrl runtyp=energy ispher=1 $end
+ $contrl icut=9 itol=20 inttyp=rysquad qmttol=1.0d-05 nosym=1 $end
+ $scf    npunch=2 conv=1.0d-06 dirscf=.t.      $end
+ $contrl scftyp=mcscf  mult=2 maxit=200 icharg=1 mplevl=2 $end
+ $guess  guess=moread norb=29 purify=.t. $end
+ $basis  gbasis=ccd $end
+ $mcscf  cistep=gmcci fullnr=.t. finci=mos
+         acurcy=1.d-6 maxit=100 $end
+ $trans  dirtrf=.t. $end
+ $mrmp   mrpt=gmcpt rdvecs=.f. $end
+ $gmcpt  nmofzc=0 nmodoc=1 nmoact=7 nelact=7 stsym(1)=A
+         reftyp=ormas nspace=1 mstart(1)=2 mine(1)=7 maxe(1)=7
+         kstate(1)=1,1,1
+         wstate(1)=1,1,1 
+         iwgt=0 thrwgt=-1.0 krot=.f. kszdoe=.f. knospn=.f.
+         thrde=-1.0 edshft=0.02 $end
+ $data
+ NH3+ 3 states calculation at NH3 structure.
+ c1
