@@ -60,9 +60,9 @@ filtered_lines = [line for line in selected_lines if line.strip() and line[0:2].
 
 for idx,modeline in enumerate(selected_lines):
 	if len(modeline) > 3 and modeline[2].isdigit():
-		filtered_set.append(selected_lines[idx][19:])
-		filtered_set.append(selected_lines[idx+1][19:])
-		filtered_set.append(selected_lines[idx+2][19:])
+		filtered_set.append(selected_lines[idx][20:])
+		filtered_set.append(selected_lines[idx+1][20:])
+		filtered_set.append(selected_lines[idx+2][20:])
 
 for idx, freqline in enumerate(selected_lines):
 	if "FREQUENCY:" in freqline:
@@ -106,6 +106,41 @@ for igroup in range(1, ngroup + 1, 1):
                     freq = lines[igroup - 1][cutini:cutfnl].lstrip()
                     freqcm[imode] = freq
                     print("frequency:", imode, freqcm[imode])
+
+# For the leftover nleft modes
+if nleft != 0:
+    for igroup in range(nleft, nleft + 1):
+        iniline = ngroup * ndim + 1  # I have no spaces in code, so no plus 2 for iniline
+        endline = iniline + ndim - 1
+        print("igroup=leftover")
+        print("iniline =", iniline)
+        ixyz = 0
+        for line in range(iniline, endline + 1):
+            ixyz += 1
+            print(ixyz)
+            for icolumn in range(1, nleft + 1):
+                imode = ngroup * 5 + icolumn
+                print(ixyz, imode, end=" ")
+                cutini = (icolumn - 1) * 12
+                cutfnl = icolumn * 12
+                with open("oct3_mode.dat", "r") as mode_file:
+                    lines = mode_file.readlines()
+                    disp = lines[line - 1][cutini:cutfnl]
+                nrmmod[ixyz, imode] = disp
+                print(nrmmod[ixyz, imode], disp)
+
+                if ixyz == 1:
+                    cutini = (icolumn - 1) * 12
+                    cutfnl = icolumn * 12
+                    with open("oct3_freq.dat", "r") as freq_file:
+                        lines = freq_file.readlines()
+                        freq = lines[-1][cutini:cutfnl]
+                    freqcm[imode] = freq
+                    print("frequency:", imode, freqcm[imode])
+
+# Print all frequencies
+for imode in range(1, ndim + 1):
+    print("frequency:", imode, freqcm[imode].lstrip(), "CM-1")
 
 print('----------------------------')
 # print('The following arguments were passed to this ' + str(sys.argv[0]) + ' program: ' + str(sys.argv[1:]))
