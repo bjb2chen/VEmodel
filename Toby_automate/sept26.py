@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 
+# system imports
+
 import sys
 import logging
 import numpy as np
+
+# third party imports
+
+# local imports
 
 try:
 	sys.argv[1]
@@ -37,7 +43,7 @@ selected_lines = []
 filtered_set = []
 freq_value_set = []
 
-# Open the input file and read its contents
+# Extract lines from given output file
 with open(str(hessout), 'r') as file:
     # Flag to indicate whether to collect lines between patterns
     collecting = False
@@ -55,12 +61,10 @@ with open(str(hessout), 'r') as file:
         elif collecting:
             selected_lines.append(line)
 
-# Filter and extract lines that start with two digits (grep -A3 '^..[0-9]')
-filtered_lines = [line for line in selected_lines if line.strip() and line[0:2].isdigit()]
-
+# Filter and extract lines that have third character starting as digit (grep -A3 '^..[0-9]')
 for idx,modeline in enumerate(selected_lines):
-	if len(modeline) > 3 and modeline[2].isdigit():
-		filtered_set.append(selected_lines[idx][20:])
+	if len(modeline) > 3 and modeline[2].isdigit():    # IndexError if line is less than 3 characters
+		filtered_set.append(selected_lines[idx][20:])  # Slice from 21st character to end of line
 		filtered_set.append(selected_lines[idx+1][20:])
 		filtered_set.append(selected_lines[idx+2][20:])
 
@@ -68,8 +72,7 @@ for idx, freqline in enumerate(selected_lines):
 	if "FREQUENCY:" in freqline:
 		freq_value_set.append(selected_lines[idx][18:])
 
-# Extract characters from the 21st character to the end of each line (cut -c21-)
-# extracted_data = [line[20:] for line in filtered_lines]
+#filtered_lines = [line for line in selected_lines if line.strip() and line[0:2].isdigit()]
 
 # Write the extracted data to 'mode.dat'
 with open('oct3_mode.dat', 'w') as output_file:
@@ -79,7 +82,8 @@ with open('oct3_freq.dat', 'w') as output_file:
 	output_file.writelines(freq_value_set)
 
 for igroup in range(1, ngroup + 1, 1):
-    iniline = (igroup - 1) * (ndim + 2) + 1
+	# No double whitespace line between groups, so no plus 2 for iniline
+    iniline = (igroup - 1) * ndim + 1
     endline = iniline + ndim - 1
     print("igroup =", igroup)
     print("iniline =", iniline)
@@ -92,7 +96,7 @@ for igroup in range(1, ngroup + 1, 1):
             print(ixyz, imode, end=" ")
             cutini = (icolumn - 1) * 12
             cutfnl = icolumn * 12
-            with open("mode.dat", "r") as mode_file:
+            with open("oct3_mode.dat", "r") as mode_file:
                 lines = mode_file.readlines()
                 disp = lines[line - 1][cutini:cutfnl]
                 nrmmod[ixyz, imode] = disp
@@ -101,7 +105,7 @@ for igroup in range(1, ngroup + 1, 1):
             if ixyz == 1:
                 cutini = (icolumn - 1) * 12
                 cutfnl = icolumn * 12
-                with open("freq.dat", "r") as freq_file:
+                with open("oct3_freq.dat", "r") as freq_file:
                     lines = freq_file.readlines()
                     freq = lines[igroup - 1][cutini:cutfnl].lstrip()
                     freqcm[imode] = freq
@@ -110,7 +114,8 @@ for igroup in range(1, ngroup + 1, 1):
 # For the leftover nleft modes
 if nleft != 0:
     for igroup in range(nleft, nleft + 1):
-        iniline = ngroup * ndim + 1  # I have no spaces in code, so no plus 2 for iniline
+    	# No double whitespace line between groups, so no plus 2 for iniline
+        iniline = ngroup * ndim + 1 
         endline = iniline + ndim - 1
         print("igroup=leftover")
         print("iniline =", iniline)
