@@ -5,6 +5,7 @@
 import sys
 import logging
 import numpy as np
+import pprint
 
 # third party imports
 
@@ -35,6 +36,7 @@ nleft = ndim % 5
 print(ngroup, nleft)
 
 # Create dictionaries to store data
+# dicts are faster than lists
 nrmmod = {}
 freqcm = {}
 
@@ -139,7 +141,7 @@ if nleft != 0:
                     cutfnl = icolumn * 12
                     with open("oct3_freq.dat", "r") as freq_file:
                         lines = freq_file.readlines()
-                        freq = lines[-1][cutini:cutfnl]
+                        freq = lines[-1][cutini:cutfnl].lstrip()
                     freqcm[imode] = freq
                     print("frequency:", imode, freqcm[imode])
 
@@ -189,7 +191,29 @@ distcoord_mm = {}
 # echo ${distcoord[$icomp]}
 #done
 
+#List of modes not considered
+# Consider 3N - 6 vibrations for non-linear
+# (-3 for translations, -3 for rotations)
 modes_excluded = [1, 2, 3, 4, 5, 6]
+#modes_excluded = [2, 3, 5, 7, 8, 9, 13]
+#ndim = 15
+nexclud = len(modes_excluded)
+print("NUMBER OF EXCLUDED MODES: ", str(len(modes_excluded)), str(nexclud))
+print("They are modes: ", modes_excluded)
+
+modes_included = {}
+modes_included_lst = list(range(1, ndim + 1))
+
+for omit in range(len(modes_excluded)):
+	modes_included_lst.remove(modes_excluded[omit])
+
+for remaining in range(len(modes_included_lst)):
+	modes_included[remaining+1] = modes_included_lst[remaining]
+	print(remaining+1, modes_included[remaining+1])
+
+nmodes_included = len(modes_included)
+print("Number of Modes Included: ", nmodes_included)
+pprint.pprint(modes_included)
 
 print('----------------------------')
 # print('The following arguments were passed to this ' + str(sys.argv[0]) + ' program: ' + str(sys.argv[1:]))
@@ -222,7 +246,38 @@ print('----------------------------')
 		# print(selected_lines[idx+1][19:])
 		# print(selected_lines[idx+2][19:])
 
-#print(selected_lines)
-#myFilter(selected_lines)
-#print(filtered_set)
+# pprint.pprint(nrmmod)
+# print('---------nrm mod done-----------')
+# pprint.pprint(freqcm)
+# print('---------freqcm done-----------')
+# pprint.pprint(selected_lines)
+# print('---------selected_lines done-----------')
+# pprint.pprint(filtered_set)
+# print('---------filtered_set done-----------')
+# pprint.pprint(freq_value_set)
+# print('---------freq_value_set done-----------')
+# pprint.pprint(atmlst)
+# print('---------atmlst done-----------')
+# pprint.pprint(chrglst)
+# print('---------chrglst done-----------')
+# pprint.pprint(refcoord)
+# print('---------refcoord done-----------')
 
+
+#### placeholder for 170-196
+
+# icount = 0
+# for imode in range(1, ndim, 1):
+# 	# check whether the mode is considered
+# 	inlcude = 1
+# 	for iexclud in range(nexclud):
+# 		if imode == modes_excluded[iexclud]:
+# 			include = 0
+
+# 		if include == 1:
+# 			icount += 1
+# 			modes_included[icount] = imode
+# 			print(icount, modes_included[icount])
+
+# nmodes_included = icount
+# print("Number of Modes Included: ", nmodes_included)
