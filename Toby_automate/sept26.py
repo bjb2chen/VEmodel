@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-# shebang for python
-
 import sys
 import logging
 import numpy as np
@@ -10,45 +8,37 @@ try:
 	sys.argv[1]
 except Exception as e:
 	print('dist gamess_hess.out')
-	# e.message, e.args
-
-print('The following arguments were passed to this ' + str(sys.argv[0]) + ' program: ' + str(sys.argv[1:]))
 
 hessout = sys.argv[1]
 filnam = "nh3cat_ccd_gmcpt_7o7e_C3vinC1_3st_diab"
-target_str = ' TOTAL NUMBER OF ATOMS'
 
-with open(str(hessout), "r") as fp:
-	data = fp.read()
+# Extract the number of atoms
+with open(hessout, 'r') as hess_file:
+    for line in hess_file:
+        if ' TOTAL NUMBER OF ATOMS' in line:
+            natoms = int(line.split('=')[1])
+            ndim = natoms * 3
+            break
 
-target_idx = data.find(target_str)
-eq_idx = data[target_idx:].find('=')
-newline_idx = data[target_idx:].find('\n')
+print("Dimension of all xyz coordinates:", ndim)
+natom = ndim // 3
+print("# of atoms:", natom)
 
-natoms = int(data[target_idx+eq_idx+1:target_idx+newline_idx].strip()) # +1 to go past the = sign.
-ndim = natoms*3
-print(f'Dimension of all xyz coordinates: {ndim}')
-natom = ndim/3
-print(f'# of atoms: {natom}')
-ngroup = ndim//5
+ngroup = ndim // 5
 nleft = ndim - 5 * ngroup
-print(f'{ngroup} {nleft}')
+print(ngroup, nleft)
 
-nrmmod = np.zeros(5)
-freqcm = np.zeros(5)
-
-header_str = 'FREQUENCIES IN CM'
-footer_str = 'REFERENCE ON SAYVETZ CONDITIONS'
-
-# Define the input file path (replace '$hessout' with the actual file path)
-input_file = str(hessout)
-print(f'{input_file}')
+# Create dictionaries to store data
+nrmmod = {}
+freqcm = {}
 
 # Initialize an empty list to store the selected lines
 selected_lines = []
+filtered_set = []
+freq_value_set = []
 
 # Open the input file and read its contents
-with open(input_file, 'r') as file:
+with open(str(hessout), 'r') as file:
     # Flag to indicate whether to collect lines between patterns
     collecting = False
     # Iterate through each line in the file
@@ -68,16 +58,8 @@ with open(input_file, 'r') as file:
 # Filter and extract lines that start with two digits (grep -A3 '^..[0-9]')
 filtered_lines = [line for line in selected_lines if line.strip() and line[0:2].isdigit()]
 
-filtered_set = []
-freq_value_set = []
-#print(selected_lines)
-
 for idx,modeline in enumerate(selected_lines):
 	if len(modeline) > 3 and modeline[2].isdigit():
-		# print(idx, modeline)
-		# print(selected_lines[idx][19:])
-		# print(selected_lines[idx+1][19:])
-		# print(selected_lines[idx+2][19:])
 		filtered_set.append(selected_lines[idx][19:])
 		filtered_set.append(selected_lines[idx+1][19:])
 		filtered_set.append(selected_lines[idx+2][19:])
@@ -85,20 +67,6 @@ for idx,modeline in enumerate(selected_lines):
 for idx, freqline in enumerate(selected_lines):
 	if "FREQUENCY:" in freqline:
 		freq_value_set.append(selected_lines[idx][18:])
-
-
-# def myFilter(lines_to_filter):
-# 	for idx, modeline in enumerate(lines_to_filter):
-# 		# print(idx, modeline)
-# 		if len(modeline) > 3 and modeline[2].isdigit():
-# 			# print('here')
-# 			filtered_set.append(lines_to_filter.pop(idx)[20:])
-# 			filtered_set.append(lines_to_filter.pop(idx)[20:])
-# 			filtered_set.append(lines_to_filter.pop(idx)[20:])
-# 	return filtered_set
-
-#myFilter(selected_lines)
-#print(filtered_set)
 
 # Extract characters from the 21st character to the end of each line (cut -c21-)
 # extracted_data = [line[20:] for line in filtered_lines]
@@ -110,12 +78,67 @@ with open('oct3_mode.dat', 'w') as output_file:
 with open('oct3_freq.dat', 'w') as output_file:
 	output_file.writelines(freq_value_set)
 
+for igroup in range(1, ngroup + 1, 1):
+    iniline = (igroup - 1) * (ndim + 2) + 1
+    endline = iniline + ndim - 1
+    print("igroup =", igroup)
+    print("iniline =", iniline)
+    ixyz = 0
+    for line in range(iniline, endline + 1, 1):
+        ixyz += 1
+        print(ixyz)
+        for icolumn in range(1, 6, 1):
+            imode = (igroup - 1) * 5 + icolumn
+            print(ixyz, imode, end=" ")
+            cutini = (icolumn - 1) * 12
+            cutfnl = icolumn * 12
+            with open("mode.dat", "r") as mode_file:
+                lines = mode_file.readlines()
+                disp = lines[line - 1][cutini:cutfnl]
+                nrmmod[ixyz, imode] = disp
+                print(nrmmod[ixyz, imode], disp)
+
+            if ixyz == 1:
+                cutini = (icolumn - 1) * 12
+                cutfnl = icolumn * 12
+                with open("freq.dat", "r") as freq_file:
+                    lines = freq_file.readlines()
+                    freq = lines[igroup - 1][cutini:cutfnl].lstrip()
+                    freqcm[imode] = freq
+                    print("frequency:", imode, freqcm[imode])
 
 print('----------------------------')
+# print('The following arguments were passed to this ' + str(sys.argv[0]) + ' program: ' + str(sys.argv[1:]))
+
 #print(f'The location of target string in the output file {hessout} is: {target_idx}.')
 #print(f'{data[target_index:target_index+100]}')
 #print(f'The location of next equal sign is at: {equal_sign_index}')
 #print(f'The location of natoms integer is at: {natoms_idx}')
 #print(f'The string for natoms is: {natoms}')
 
+
+# target_idx = data.find(target_str)
+# eq_idx = data[target_idx:].find('=')
+# newline_idx = data[target_idx:].find('\n')
+
+# natoms = int(data[target_idx+eq_idx+1:target_idx+newline_idx].strip()) # +1 to go past the = sign.
+# ndim = natoms*3
+# print(f'Dimension of all xyz coordinates: {ndim}')
+# natom = ndim/3
+# print(f'# of atoms: {natom}')
+# ngroup = ndim//5
+# nleft = ndim - 5 * ngroup
+# print(f'{ngroup} {nleft}')
+
+# header_str = 'FREQUENCIES IN CM'
+# footer_str = 'REFERENCE ON SAYVETZ CONDITIONS'
+
+		# print(idx, modeline)
+		# print(selected_lines[idx][19:])
+		# print(selected_lines[idx+1][19:])
+		# print(selected_lines[idx+2][19:])
+
+#print(selected_lines)
+#myFilter(selected_lines)
+#print(filtered_set)
 
