@@ -25,7 +25,7 @@ natom = ndim // 3
 print("# of atoms:", natom)
 
 ngroup = ndim // 5
-nleft = ndim - 5 * ngroup
+nleft = ndim % 5
 print(ngroup, nleft)
 
 # Create dictionaries to store data
@@ -141,6 +141,21 @@ if nleft != 0:
 # Print all frequencies
 for imode in range(1, ndim + 1):
     print("frequency:", imode, freqcm[imode].lstrip(), "CM-1")
+
+#read in reference structure
+#The ref_structure has to be prepared by human-being and adopts the following format
+# N           7.0   0.0000000000  -0.0000000000  -0.1693806842
+# H           1.0  -0.4653267700   0.8059696078   0.2564602281
+# H           1.0  -0.4653267700  -0.8059696078   0.2564602281
+# H           1.0   0.9306535400   0.0000000000   0.2564602281
+#The # symbol before each line shall not be in ref_structure.
+
+atmlst = {}
+chrglst = {}
+refcoord = {}
+
+# for iatom in range(1, natom, 1):
+# 	linecontent = 
 
 print('----------------------------')
 # print('The following arguments were passed to this ' + str(sys.argv[0]) + ' program: ' + str(sys.argv[1:]))
