@@ -159,8 +159,19 @@ atmlst = {}
 chrglst = {}
 refcoord = {}
 
-# for iatom in range(1, natom, 1):
-# 	linecontent = 
+for iatom in range(1, natom + 1, 1):
+	with open("oct3_ref_structure") as struct_file:
+		linecontent = struct_file.readlines()
+		atmnam = linecontent[iatom - 1].split(' ')[1]
+		atmlst[iatom] = atmnam
+		chrglst[iatom] = linecontent[iatom - 1].split(' ')[12]
+		print(atmlst[iatom], chrglst[iatom])
+		for ixyz in range(1, 4, 1):
+			icomp = (iatom - 1)*3 + ixyz
+			ifield = ixyz + 2
+			refcoord[icomp] = linecontent[iatom - 1].split(' ')[13+ifield]
+			print(refcoord[icomp])
+
 
 print('----------------------------')
 # print('The following arguments were passed to this ' + str(sys.argv[0]) + ' program: ' + str(sys.argv[1:]))
