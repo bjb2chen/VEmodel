@@ -191,29 +191,49 @@ distcoord_mm = {}
 # echo ${distcoord[$icomp]}
 #done
 
-#List of modes not considered
-# Consider 3N - 6 vibrations for non-linear
-# (-3 for translations, -3 for rotations)
+
+# List of excluded modes
 modes_excluded = [1, 2, 3, 4, 5, 6]
-#modes_excluded = [2, 3, 5, 7, 8, 9, 13]
-#ndim = 15
-nexclud = len(modes_excluded)
-print("NUMBER OF EXCLUDED MODES: ", str(len(modes_excluded)), str(nexclud))
-print("They are modes: ", modes_excluded)
+modes_included = []
+print("NUMBER OF EXCLUDED MODES:", len(modes_excluded))
+print("They are modes:", *modes_excluded)
 
-modes_included = {}
-modes_included_lst = list(range(1, ndim + 1))
+# Iterate through modes to check inclusion
+for imode in range(1, ndim + 1):
+    if imode not in modes_excluded:
+        modes_included.append(imode)
+        print(len(modes_included), imode)
 
-for omit in range(len(modes_excluded)):
-	modes_included_lst.remove(modes_excluded[omit])
+# Number of included modes
+print("Number of Modes Included:", len(modes_included))
 
-for remaining in range(len(modes_included_lst)):
-	modes_included[remaining+1] = modes_included_lst[remaining]
-	print(remaining+1, modes_included[remaining+1])
+#Do diabatization calculation at the reference nondistorted structure.
+#This calculation shall be a repetition of a calcualtion in preparing temp.inp
 
-nmodes_included = len(modes_included)
-print("Number of Modes Included: ", nmodes_included)
-pprint.pprint(modes_included)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 print('----------------------------')
 # print('The following arguments were passed to this ' + str(sys.argv[0]) + ' program: ' + str(sys.argv[1:]))
@@ -281,3 +301,11 @@ print('----------------------------')
 
 # nmodes_included = icount
 # print("Number of Modes Included: ", nmodes_included)
+# pprint.pprint(modes_included)
+
+#List of modes not considered
+# Consider 3N - 6 vibrations for non-linear
+# (-3 for translations, -3 for rotations)
+
+#modes_excluded = [2, 3, 5, 7, 8, 9, 13]
+#ndim = 15
