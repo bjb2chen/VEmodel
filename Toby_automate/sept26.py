@@ -162,16 +162,34 @@ refcoord = {}
 for iatom in range(1, natom + 1, 1):
 	with open("oct3_ref_structure") as struct_file:
 		linecontent = struct_file.readlines()
-		atmnam = linecontent[iatom - 1].split(' ')[1]
+		atmnam = linecontent[iatom - 1].split()[0]
 		atmlst[iatom] = atmnam
-		chrglst[iatom] = linecontent[iatom - 1].split(' ')[12]
+		chrglst[iatom] = linecontent[iatom - 1].split()[1]
 		print(atmlst[iatom], chrglst[iatom])
 		for ixyz in range(1, 4, 1):
 			icomp = (iatom - 1)*3 + ixyz
-			ifield = ixyz + 2
-			refcoord[icomp] = linecontent[iatom - 1].split(' ')[13+ifield]
+			ifield = ixyz + 1
+			refcoord[icomp] = linecontent[iatom - 1].split()[ifield]
 			print(refcoord[icomp])
 
+distcoord_plus = {}
+distcoord_minus = {}
+distcoord_plus_x2 = {}
+distcoord_minus_x2 = {}
+distcoord_pp = {}
+distcoord_pm = {}
+distcoord_mp = {}
+distcoord_mm = {}
+
+#first copy refcoord to distcoord_plus and dist_coord_minus
+#for icomp in $(seq 1 1 $ndim)
+#do
+#  distcoord_plus[$icomp]=${refcoord[$icomp]}
+#  distcoord_minus[$icomp]=${refcoord[$icomp]}
+# echo ${distcoord[$icomp]}
+#done
+
+modes_excluded = [1, 2, 3, 4, 5, 6]
 
 print('----------------------------')
 # print('The following arguments were passed to this ' + str(sys.argv[0]) + ' program: ' + str(sys.argv[1:]))
