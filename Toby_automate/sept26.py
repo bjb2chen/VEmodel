@@ -90,14 +90,17 @@ for igroup in range(1, ngroup + 1, 1):
     print("igroup =", igroup)
     print("iniline =", iniline)
     ixyz = 0
+
     for line in range(iniline, endline + 1, 1):
         ixyz += 1
         print(ixyz)
+
         for icolumn in range(1, 6, 1):
             imode = (igroup - 1) * 5 + icolumn
             print(ixyz, imode, end=" ")
             cutini = (icolumn - 1) * 12
             cutfnl = icolumn * 12
+
             with open("oct3_mode.dat", "r") as mode_file:
                 lines = mode_file.readlines()
                 disp = lines[line - 1][cutini:cutfnl]
@@ -122,14 +125,17 @@ if nleft != 0:
         print("igroup=leftover")
         print("iniline =", iniline)
         ixyz = 0
+
         for line in range(iniline, endline + 1):
             ixyz += 1
             print(ixyz)
+
             for icolumn in range(1, nleft + 1):
                 imode = ngroup * 5 + icolumn
                 print(ixyz, imode, end=" ")
                 cutini = (icolumn - 1) * 12
                 cutfnl = icolumn * 12
+                
                 with open("oct3_mode.dat", "r") as mode_file:
                     lines = mode_file.readlines()
                     disp = lines[line - 1][cutini:cutfnl]
