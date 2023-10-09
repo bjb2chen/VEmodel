@@ -1,5 +1,7 @@
 import sys
 import pprint
+import subprocess
+import shutil
 
 # Function to get the number of atoms from the HESS output file
 def get_number_of_atoms(hessout):
@@ -194,6 +196,63 @@ def diabatization_placeholder():
 
     return
 
+#Do diabatization calculation at the reference nondistorted structure.
+#This calculation shall be a repetition of a calcualtion in preparing temp.inp
+# def get_grace(refGout, filnam):
+#     try:
+#         fp = open(refGout)
+#         fp.close()
+
+#         with open(refGout, 'r') as ref_file:
+#             for line in ref_file:
+#                 if 'grace' in line:
+#                     print("Calculation at the reference structure is done.")
+
+#     except FileNotFoundError:
+
+#         # with open(refGout, 'r') as ref_file:
+#         #     for line in ref_file:
+#         #         if 'grace' not in line:
+#         print("Run calculation at the undistorted reference structure")
+
+#         shutil.copy("temp.inp", f"{filnam}_refG.inp")
+#         with open(f"{filnam}_refG.inp", "a") as inp_file:
+#             with open("oct3_ref_structure", "r") as ref_structure:
+#                 inp_file.write(ref_structure.read())
+
+#             with open(f"{filnam}_refG.inp", "a") as inp_file:
+#                     inp_file.write(" $END    ")
+
+#             subprocess.run(f"./subgam.diab {filnam}_refG.inp 4 0 1")
+
+#             return
+
+#Do diabatization calculation at the reference nondistorted structure.
+#This calculation shall be a repetition of a calcualtion in preparing temp.inp
+def refG_calc(refgeo, filnam):
+    # Check if the calculation has already been run
+    grep_process = subprocess.run(["grep", "grace", f"{filnam}_refG.out"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if grep_process.returncode != 0:
+        print("Run calculation at the undistorted reference structure")
+
+        shutil.copy("temp.inp", f"{filnam}_refG.inp")
+
+        with open(f"{filnam}_refG.inp", "a") as inp_file:
+            with open(refgeo, "r") as ref_structure:
+                inp_file.write(ref_structure.read())
+
+        with open(f"{filnam}_refG.inp", "a") as inp_file:
+            inp_file.write(" $END\n")
+
+        # Run the calculation (you may need to customize this command based on your setup)
+        subprocess.run(["./subgam.diab", f"{filnam}_refG.inp", "4", "4", "1"])
+
+        print("Calculation at the reference structure is done.")
+    else:
+        print("Calculation at the reference structure has already been done.")
+
+    return 
+
 def main():
     if len(sys.argv) != 2:
         print("Usage: python your_script.py <hessout_file>")
@@ -201,6 +260,7 @@ def main():
 
     hessout = sys.argv[1]
     filnam = "nh3cat_ccd_gmcpt_7o7e_C3vinC1_3st_diab"
+    refgeo = "oct3_ref_structure"
 
     natoms = get_number_of_atoms(hessout)
     ndim = natoms * 3
@@ -228,8 +288,18 @@ def main():
         output_file.writelines(freq_value_set)
 
     nrmmod, freqcm = process_mode_freq(natoms, ndim, ngroup, nleft)
-    atmlst, chrglst, refcoord = read_reference_structure("oct3_ref_structure")
-    modes_included = filter_modes(modes_excluded, ndim) 
+    atmlst, chrglst, refcoord = read_reference_structure(refgeo)
+    modes_included = filter_modes(modes_excluded, ndim)
+
+    repetition = refG_calc(refgeo, filnam)
+
+    qsize = 0.05
+    #Set conversion constants
+    ha2ev = 27.2113961318
+    wn2ev = 0.000123981
+    wn2eh = 0.00000455633
+    ang2br = 1.889725989
+    amu2me = 1822.88839 
 
     # pprint.pprint(nrmmod)
     # print('---------nrm mod done-----------')
