@@ -196,39 +196,6 @@ def diabatization_placeholder():
 
     return
 
-#Do diabatization calculation at the reference nondistorted structure.
-#This calculation shall be a repetition of a calcualtion in preparing temp.inp
-# def get_grace(refGout, filnam):
-#     try:
-#         fp = open(refGout)
-#         fp.close()
-
-#         with open(refGout, 'r') as ref_file:
-#             for line in ref_file:
-#                 if 'grace' in line:
-#                     print("Calculation at the reference structure is done.")
-
-#     except FileNotFoundError:
-
-#         # with open(refGout, 'r') as ref_file:
-#         #     for line in ref_file:
-#         #         if 'grace' not in line:
-#         print("Run calculation at the undistorted reference structure")
-
-#         shutil.copy("temp.inp", f"{filnam}_refG.inp")
-#         with open(f"{filnam}_refG.inp", "a") as inp_file:
-#             with open("oct3_ref_structure", "r") as ref_structure:
-#                 inp_file.write(ref_structure.read())
-
-#             with open(f"{filnam}_refG.inp", "a") as inp_file:
-#                     inp_file.write(" $END    ")
-
-#             subprocess.run(f"./subgam.diab {filnam}_refG.inp 4 0 1")
-
-#             return
-
-#Do diabatization calculation at the reference nondistorted structure.
-#This calculation shall be a repetition of a calcualtion in preparing temp.inp
 def refG_calc(refgeo, filnam):
     # Check if the calculation has already been run
     grep_process = subprocess.run(["grep", "grace", f"{filnam}_refG.out"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -247,7 +214,9 @@ def refG_calc(refgeo, filnam):
         # Run the calculation (you may need to customize this command based on your setup)
         subprocess.run(["./subgam.diab", f"{filnam}_refG.inp", "4", "4", "1"])
 
-        print("Calculation at the reference structure is done.")
+        # might want to do a sleep(1 min) here? What if refG.inp calculation fails?
+
+        print("Calculation at the reference structure is processing.")
     else:
         print("Calculation at the reference structure has already been done.")
 
