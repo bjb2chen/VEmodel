@@ -2,7 +2,6 @@ import sys
 import pprint
 import subprocess
 import shutil
-import os
 
 # Function to get the number of atoms from the HESS output file
 def get_number_of_atoms(hessout):
@@ -179,7 +178,7 @@ def filter_modes(excluded_set, ndim):
     for imode in range(1, ndim + 1):
         if imode not in excluded_set:
             modes_included[len(modes_included)+1] = imode
-            print(len(modes_included), imode, 'gulu')
+            print(len(modes_included), imode)
 
     print("Number of Modes Included:", len(modes_included))        
 
@@ -300,14 +299,16 @@ def diabatization(modes_included, freqcm, ndim, refcoord, nrmmod, natom, atmlst,
                         inp_file.write(' $END')
 
                 # Check if the calculation is done already
-                if not os.path.exists(f'{filnam}_mode{imode}_{displacement}{qsize}{suffix}.out'):
+                grace1 = subprocess.run(["grep", "grace", f'{filnam}_mode{imode}_{displacement}{qsize}{suffix}.out'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                #if not os.path.exists(f'{filnam}_mode{imode}_{displacement}{qsize}{suffix}.out'):
+                if grace1.returncode != 0:
                     print(f"Running calculations for {filnam}_mode{imode}_{displacement}{qsize}{suffix}")
                     try:
                         subprocess.run(['./subgam.diab', f'{filnam}_mode{imode}_{displacement}{qsize}{suffix}.inp', '4', '0', '1'])
                     except Exception as e:
                         print(f"Error running diabatization calculation: {str(e)}")
                 else:
-                    print(f"{filnam}_mode{imode}_{displacement}{qsize} is done")
+                    print(f"{filnam}_mode{imode}_{displacement}{qsize}{suffix} is done")
 
         # 2D distortion to get bilinear vibronic coupling
         for lmode in range(1, kmode):
@@ -377,7 +378,9 @@ def diabatization(modes_included, freqcm, ndim, refcoord, nrmmod, natom, atmlst,
  
                     # Check if the calculation is done already
                     output_filename = f'{filnam}_mode{imode}_{displacement1}{qsize}_mode{jmode}_{displacement2}{qsize}.out'
-                    if not os.path.exists(output_filename):
+                    grace2 = subprocess.run(["grep", "grace", output_filename])
+                    if grace2.returncode != 0:
+                    #if not os.path.exists(output_filename):
                         print(f"Running calculations for {output_filename}!")
                         try:
                             subprocess.run(['./subgam.diab', f'{filnam}_mode{imode}_{displacement1}{qsize}_mode{jmode}_{displacement2}{qsize}.inp', '4', '0', '1'])
