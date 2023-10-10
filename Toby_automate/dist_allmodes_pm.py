@@ -2,6 +2,7 @@ import sys
 import pprint
 import subprocess
 import shutil
+import os
 
 # Function to get the number of atoms from the HESS output file
 def get_number_of_atoms(hessout):
@@ -82,14 +83,14 @@ def process_mode_freq(natoms, ndim, ngroup, nleft):
                 cutfnl = icolumn * 12
 
                 disp = lines_mode[line - 1][cutini:cutfnl].lstrip()
-                nrmmod[ixyz, imode] = disp
+                nrmmod[ixyz, imode] = float(disp) # no need to suppress sci notation, GMS is OK with E^...
                 print(nrmmod[ixyz, imode], disp)
 
                 if ixyz == 1:
                     cutini = (icolumn - 1) * 12
                     cutfnl = icolumn * 12
                     freq = lines_freq[igroup - 1][cutini:cutfnl].lstrip()
-                    freqcm[imode] = freq
+                    freqcm[imode] = float(freq)
                     print("frequency:", imode, freqcm[imode])
 
     # For the leftover nleft modes
@@ -113,14 +114,14 @@ def process_mode_freq(natoms, ndim, ngroup, nleft):
                     cutfnl = icolumn * 12
 
                     disp = lines_mode[line - 1][cutini:cutfnl].lstrip()
-                    nrmmod[ixyz, imode] = disp
+                    nrmmod[ixyz, imode] = float(disp)
                     print(nrmmod[ixyz, imode], disp)
 
                     if ixyz == 1:
                         cutini = (icolumn - 1) * 12
                         cutfnl = icolumn * 12
                         freq = lines_freq[-1][cutini:cutfnl].lstrip()
-                        freqcm[imode] = freq
+                        freqcm[imode] = float(freq)
                         print("frequency:", imode, freqcm[imode])
 
     # # Check if imode is in modes_excluded and exclude if necessary
@@ -130,7 +131,7 @@ def process_mode_freq(natoms, ndim, ngroup, nleft):
 
     #Print all frequencies
     for imode in range(1, ndim + 1):
-        print("frequency:", imode, freqcm[imode].lstrip(), "CM-1")
+        print("frequency:", imode, str(freqcm[imode]), "CM-1")
 
     return nrmmod, freqcm
 
@@ -164,38 +165,29 @@ def read_reference_structure(file_path):
 
             for ixyz, coord in enumerate(coords):
                 icomp = (iatom * 3) + ixyz + 1
-                refcoord[icomp] = coord
+                refcoord[icomp] = float(coord)
                 print(refcoord[icomp])
 
     return atmlst, chrglst, refcoord
 
 def filter_modes(excluded_set, ndim):
-    modes_included = []
+    modes_included = {}
     print("NUMBER OF EXCLUDED MODES:", len(excluded_set))
     print("They are modes:", *excluded_set)
 
     # Iterate through modes to check inclusion
     for imode in range(1, ndim + 1):
         if imode not in excluded_set:
-            modes_included.append(imode)
-            print(len(modes_included), imode)
+            modes_included[len(modes_included)+1] = imode
+            print(len(modes_included), imode, 'gulu')
 
     print("Number of Modes Included:", len(modes_included))        
 
     return modes_included
 
-def diabatization_placeholder():
-    distcoord_plus = {}
-    distcoord_minus = {}
-    distcoord_plus_x2 = {}
-    distcoord_minus_x2 = {}
-    distcoord_pp = {}
-    distcoord_pm = {}
-    distcoord_mp = {}
-    distcoord_mm = {}
 
-    return
-
+#Do diabatization calculation at the reference nondistorted structure.
+#This calculation shall be a repetition of a calcualtion in preparing temp.inp
 def refG_calc(refgeo, filnam):
     # Check if the calculation has already been run
     grep_process = subprocess.run(["grep", "grace", f"{filnam}_refG.out"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -212,16 +204,189 @@ def refG_calc(refgeo, filnam):
             inp_file.write(" $END\n")
 
         # Run the calculation (you may need to customize this command based on your setup)
-        subprocess.run(["./subgam.diab", f"{filnam}_refG.inp", "4", "4", "1"])
+        subprocess.run(["./subgam.diab", f"{filnam}_refG.inp", "4", "0", "1"])
 
         # might want to do a sleep(1 min) here? What if refG.inp calculation fails?
 
-        print("Calculation at the reference structure is processing.")
+        print("Calculation at the reference structure is done.")
     else:
         print("Calculation at the reference structure has already been done.")
 
-    return 
+    return
 
+def diabatization(modes_included, freqcm, ndim, refcoord, nrmmod, natom, atmlst, chrglst, filnam):
+
+    distcoord_plus = {}
+    distcoord_minus = {}
+    distcoord_plus_x2 = {}
+    distcoord_minus_x2 = {}
+    distcoord_pp = {}
+    distcoord_pm = {}
+    distcoord_mp = {}
+    distcoord_mm = {}
+
+    #Loop over all considered modes and do + and - displacements
+    #Set step size in reduced dimensionless coordinates
+    qsize = 0.05
+
+    # Set conversion constants
+    ha2ev = 27.2113961318
+    wn2ev = 0.000123981
+    wn2eh = 0.00000455633
+    ang2br = 1.889725989
+    amu2me = 1822.88839
+
+    for kmode in range(1, len(modes_included) + 1):
+        imode = modes_included[kmode]
+
+        # Convert the reduced dimensionless qsize to the actual rsize in sqrt(amu)*Angs unit
+        omga = freqcm[imode]
+        rsize = qsize / (pow(amu2me, 0.5) * ang2br * pow(omga * wn2eh, 0.5))
+        print(imode, omga, rsize, type(rsize))
+
+        # Loop over components
+        for icomp in range(1, ndim + 1):
+            coord_disp_plus = refcoord[icomp] + rsize * nrmmod[icomp, imode]
+            coord_disp_minus = refcoord[icomp] - rsize * nrmmod[icomp, imode]
+            distcoord_plus[icomp] = coord_disp_plus
+            distcoord_minus[icomp] = coord_disp_minus
+            coord_disp_plusx2 = refcoord[icomp] + 2.0 * rsize * nrmmod[icomp, imode]
+            coord_disp_minusx2 = refcoord[icomp] - 2.0 * rsize * nrmmod[icomp, imode]
+            distcoord_plus_x2[icomp] = coord_disp_plusx2
+            distcoord_minus_x2[icomp] = coord_disp_minusx2
+            print(imode, icomp, refcoord[icomp], nrmmod[icomp, imode], coord_disp_plus, coord_disp_minus,
+            distcoord_plus[icomp], distcoord_minus[icomp])
+
+        # Delete existing dist_structure files
+        for dist_file in ['dist_structure_plus', 'dist_structure_minus', 'dist_structure_plusx2', 'dist_structure_minusx2']:
+            try:
+                subprocess.run(['rm', '-f', dist_file])
+            except Exception as e:
+                print(f"Error deleting {dist_file}: {str(e)}")
+
+        # Print the distorted structure
+        for iatom in range(1, natom + 1):
+            with open('dist_structure_plus', 'a') as f_plus, \
+                    open('dist_structure_minus', 'a') as f_minus, \
+                    open('dist_structure_plusx2', 'a') as f_plusx2, \
+                    open('dist_structure_minusx2', 'a') as f_minusx2:
+                f_plus.write(f"{atmlst[iatom]} {chrglst[iatom]} ")
+                f_minus.write(f"{atmlst[iatom]} {chrglst[iatom]} ")
+                f_plusx2.write(f"{atmlst[iatom]} {chrglst[iatom]} ")
+                f_minusx2.write(f"{atmlst[iatom]} {chrglst[iatom]} ")
+                for ixyz in range(1, 4):
+                    icomp = (iatom - 1) * 3 + ixyz
+                    f_plus.write(f"{distcoord_plus[icomp]} ")
+                    f_minus.write(f"{distcoord_minus[icomp]} ")
+                    f_plusx2.write(f"{distcoord_plus_x2[icomp]} ")
+                    f_minusx2.write(f"{distcoord_minus_x2[icomp]} ")
+                f_plus.write('\n')
+                f_minus.write('\n')
+                f_plusx2.write('\n')
+                f_minusx2.write('\n')
+ 
+        # Create input files for diabatization calculations
+        for displacement in ['+', '-']:
+            if displacement == '+':
+                p_or_m = 'plus'
+            elif displacement == '-':
+                p_or_m = 'minus'
+
+            for suffix in ['', 'x2']:
+                shutil.copy('temp.inp', f'{filnam}_mode{imode}_{displacement}{qsize}{suffix}.inp')
+                with open(f'{filnam}_mode{imode}_{displacement}{qsize}{suffix}.inp', 'a') as inp_file:
+                    with open(f'dist_structure_{p_or_m}{suffix}', 'r') as dist_file:
+                        inp_file.write(dist_file.read())
+                        inp_file.write(' $END')
+
+                # Check if the calculation is done already
+                if not os.path.exists(f'{filnam}_mode{imode}_{displacement}{qsize}{suffix}.out'):
+                    print(f"Running calculations for {filnam}_mode{imode}_{displacement}{qsize}{suffix}")
+                    try:
+                        subprocess.run(['./subgam.diab', f'{filnam}_mode{imode}_{displacement}{qsize}{suffix}.inp', '4', '0', '1'])
+                    except Exception as e:
+                        print(f"Error running diabatization calculation: {str(e)}")
+                else:
+                    print(f"{filnam}_mode{imode}_{displacement}{qsize} is done")
+
+        # 2D distortion to get bilinear vibronic coupling
+        for lmode in range(1, kmode):
+            jmode = modes_included[lmode]
+ 
+            # Convert the reduced dimensionless qsize to the actual rsizep in sqrt(amu)*Angs unit for jmode
+            omgap = freqcm[jmode]
+            rsizep = qsize / (pow(amu2me, 0.5) * ang2br * pow(omgap * wn2eh, 0.5))
+            print(imode, jmode, rsize, rsizep)
+ 
+            # Loop over components
+            for icomp in range(1, ndim + 1):
+                coord_disp_pp = distcoord_plus[icomp] + rsizep * nrmmod[icomp, jmode]
+                coord_disp_pm = distcoord_plus[icomp] - rsizep * nrmmod[icomp, jmode]
+                coord_disp_mp = distcoord_minus[icomp] + rsizep * nrmmod[icomp, jmode]
+                coord_disp_mm = distcoord_minus[icomp] - rsizep * nrmmod[icomp, jmode]
+                distcoord_pp[icomp] = coord_disp_pp
+                distcoord_pm[icomp] = coord_disp_pm
+                distcoord_mp[icomp] = coord_disp_mp
+                distcoord_mm[icomp] = coord_disp_mm
+
+            # Delete existing dist_structure files
+            for dist_file in ['dist_structure_pp', 'dist_structure_pm', 'dist_structure_mp', 'dist_structure_mm']:
+                try:
+                    subprocess.run(['rm', '-f', dist_file])
+                except Exception as e:
+                    print(f"Error deleting {dist_file}: {str(e)}")
+ 
+            # Print the distorted structure
+            for iatom in range(1, natom + 1):
+                with open(f'dist_structure_pp', 'a') as f_pp, \
+                        open(f'dist_structure_pm', 'a') as f_pm, \
+                        open(f'dist_structure_mp', 'a') as f_mp, \
+                        open(f'dist_structure_mm', 'a') as f_mm:
+                    f_pp.write(f"{atmlst[iatom]} {chrglst[iatom]} ")
+                    f_pm.write(f"{atmlst[iatom]} {chrglst[iatom]} ")
+                    f_mp.write(f"{atmlst[iatom]} {chrglst[iatom]} ")
+                    f_mm.write(f"{atmlst[iatom]} {chrglst[iatom]} ")
+                    for ixyz in range(1, 4):
+                        icomp = (iatom - 1) * 3 + ixyz
+                        f_pp.write(f"{distcoord_pp[icomp]} ")
+                        f_pm.write(f"{distcoord_pm[icomp]} ")
+                        f_mp.write(f"{distcoord_mp[icomp]} ")
+                        f_mm.write(f"{distcoord_mm[icomp]} ")
+                    f_pp.write('\n')
+                    f_pm.write('\n')
+                    f_mp.write('\n')
+                    f_mm.write('\n')
+ 
+            # Create input files for diabatization calculations
+            for displacement1 in ['+', '-']:
+                for displacement2 in ['+', '-']:
+                    if displacement1 == '+' and displacement2 == '+':
+                        suffix1 = 'pp'
+                    elif displacement1 == '+' and displacement2 == '-':
+                        suffix1 = 'pm'
+                    elif displacement1 == '-' and displacement2 == '+':
+                        suffix1 = 'mp'
+                    elif displacement1 == '-' and displacement2 == '-':
+                        suffix1 = 'mm'
+
+                    shutil.copy('temp.inp', f'{filnam}_mode{imode}_{displacement1}{qsize}_mode{jmode}_{displacement2}{qsize}.inp')
+                    with open(f'{filnam}_mode{imode}_{displacement1}{qsize}_mode{jmode}_{displacement2}{qsize}.inp', 'a') as inp_file:
+                        with open(f'dist_structure_{suffix1}', 'r') as dist_file:
+                            inp_file.write(dist_file.read())
+                        inp_file.write(' $END ')
+ 
+                    # Check if the calculation is done already
+                    output_filename = f'{filnam}_mode{imode}_{displacement1}{qsize}_mode{jmode}_{displacement2}{qsize}.out'
+                    if not os.path.exists(output_filename):
+                        print(f"Running calculations for {output_filename}!")
+                        try:
+                            subprocess.run(['./subgam.diab', f'{filnam}_mode{imode}_{displacement1}{qsize}_mode{jmode}_{displacement2}{qsize}.inp', '4', '0', '1'])
+                        except Exception as e:
+                            print(f"Error running diabatization calculation: {str(e)}")
+                    else:
+                        print(f"{output_filename} is already done.")
+ 
+    
 def main():
     if len(sys.argv) != 2:
         print("Usage: python your_script.py <hessout_file>")
@@ -240,8 +405,8 @@ def main():
     print("# of atoms:", natoms)
     print(ngroup, nleft)
 
-    #modes_excluded = [1, 2, 3, 4, 5, 6]
-    modes_excluded = [1, 2, 4, 7, 12]
+    modes_excluded = [1, 2, 3, 4, 5, 6]
+    #modes_excluded = [1, 2, 4, 7, 12]
 
     selected_lines = extract_lines_between_patterns(hessout, 
         "FREQUENCIES IN CM",
@@ -261,6 +426,7 @@ def main():
     modes_included = filter_modes(modes_excluded, ndim)
 
     repetition = refG_calc(refgeo, filnam)
+    diabatize = diabatization(modes_included, freqcm, ndim, refcoord, nrmmod, natoms, atmlst, chrglst, filnam)
 
     qsize = 0.05
     #Set conversion constants
