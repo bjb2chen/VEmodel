@@ -189,8 +189,9 @@ def filter_modes(excluded_set, ndim):
 #This calculation shall be a repetition of a calcualtion in preparing temp.inp
 def refG_calc(refgeo, filnam):
     # Check if the calculation has already been run
-    grep_process = subprocess.run(["grep", "grace", f"{filnam}_refG.out"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if grep_process.returncode != 0:
+    #grace_exists = subprocess.run(["grep", "grace", f"{filnam}_refG.out"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    grace_exists = subprocess.call(["grep", "grace", f"{filnam}_refG.out"]) == 0
+    if not grace_exists:
         print("Run calculation at the undistorted reference structure")
 
         shutil.copy("temp.inp", f"{filnam}_refG.inp")
@@ -421,8 +422,40 @@ def mctdh(filnam, modes_included):
         for idx in strlst:
             mctdh_file.write(idx+'\n')
 
+    refG_exists = subprocess.call(["ls", f"{filnam}_refG.out"]) == 0
+    if refG_exists:
+        with open("mctdh.op", "a") as mctdh_file:
+            mctdh_file.write("#Diagonal and Off-diagonal diabatic Hamiltonian elements at reference structure\n")
+    
+            for ist in range(1, nstate + 1):
+                with open(f"{filnam}_refG.out", "r") as refG_out:
+                    lines = refG_out.readlines()
+    
+                    # Extract diabatic energy for state ist
+                    Ediab = None
+                    for line in reversed(lines):
+                        if ("STATE #" in line) and ("S GMC-PT-LEVEL DIABATIC ENERGY=" in line):
+                            Ediab = line[61:].strip().replace(" ", "")
+                            break
+    
+                    mctdh_file.write(f"v{ist} = {Ediab} ev\n")
+    
+                    # Extract coupling energy between state jst and ist
+                    for jst in range(1, ist):
+                        Coup_ev = None
+                        for line in reversed(lines):
+                            if ("STATE #" in line) and ("S GMC-PT-LEVEL COUPLING" in line):
+                                Coup_ev = line[61:].strip().replace(" ", "")
+                                break
+    
+                        mctdh_file.write(f"v{jst}{ist} = {Coup_ev} ev\n")
+    
+                mctdh_file.write("\n")
+    
+        # mctdh_file.write("\n")
+    else:
+        print(f"Skip extracting Hamiltonians from the non-existing {filnam}_refG.out")
     return
- 
     
 def main():
     if len(sys.argv) != 2:
