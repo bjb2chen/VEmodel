@@ -392,7 +392,7 @@ def diabatization(modes_included, freqcm, ndim, refcoord, nrmmod, natom, atmlst,
 #Now we move on to extract vibronic coupling constants using finite difference
 #and write the data in an mctdh operator file
 
-def mctdh(filnam):
+def mctdh(filnam, modes_included):
     try:
         subprocess.run(['rm', '-f', 'mctdh.op'])
     except Exception as e:
@@ -401,22 +401,25 @@ def mctdh(filnam):
     #Heading for mctdh.op
     str1 = "OP_DEFINE-SECTION"
     str2 = "title"
+
     # nstate=`grep '# of states in CI      = ' "$filnam"_refG.out|tail -1|cut -d'=' -f2`
+    with open(f'{filnam}_refG.out', 'r') as refGout_file:
+        for line in refGout_file:
+            if '# of states in CI      = ' in line:
+                nstate = int(line.split('=')[1]) # this will hopefully grab the last line
+    
     str3 = "end-title "
     str4 = "end-op_define-section"
     str5 = ""
     # lines 482,483
     str6 = "PARAMETER-SECTION"
     str7 = ""
-    str8 = '# of states in CI      = '
+    str8 = f'{filnam} {nstate} states +' + str(len(modes_included)) + ' modes'
+    strlst = [str1, str2, str8, str3, str4, str5, str6, str7]
 
-    with open('mctdh.op', 'a') as mctdh_file:
-        mctdh_file.write()
-
-    with open(filnam, 'r') as refGout_file:
-        for line in refGout_file:
-            if '# of states in CI      = ' in line:
-                nstate = int(line.split('=')[1])
+    with open('mctdh.op', 'w') as mctdh_file:
+        for idx in strlst:
+            mctdh_file.write(idx+'\n')
 
     return
  
@@ -461,7 +464,7 @@ def main():
 
     repetition = refG_calc(refgeo, filnam)
     diabatize = diabatization(modes_included, freqcm, ndim, refcoord, nrmmod, natoms, atmlst, chrglst, filnam)
-    make_mctdh = mctdh(filnam)
+    make_mctdh = mctdh(filnam, modes_included)
 
     qsize = 0.05
     #Set conversion constants
