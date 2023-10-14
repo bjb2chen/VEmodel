@@ -2,6 +2,7 @@ import sys
 import pprint
 import subprocess
 import shutil
+import re
 
 # Function to get the number of atoms from the HESS output file
 def get_number_of_atoms(hessout):
@@ -415,7 +416,7 @@ def mctdh(filnam, modes_included):
     # lines 482,483
     str6 = "PARAMETER-SECTION"
     str7 = ""
-    str8 = f'{filnam} {nstate} states +' + str(len(modes_included)) + ' modes'
+    str8 = f'{filnam} {nstate} states + ' + str(len(modes_included)) + ' modes'
     strlst = [str1, str2, str8, str3, str4, str5, str6, str7]
 
     with open('mctdh.op', 'w') as mctdh_file:
@@ -434,7 +435,10 @@ def mctdh(filnam, modes_included):
                     # Extract diabatic energy for state ist
                     Ediab = None
                     for line in reversed(lines):
-                        if ("STATE #" in line) and ("S GMC-PT-LEVEL DIABATIC ENERGY=" in line):
+                        state_pattern = re.compile(fr"STATE #..* {ist}\.S GMC-PT-LEVEL DIABATIC ENERGY=")
+                        #if ("STATE #" in line) and ("S GMC-PT-LEVEL DIABATIC ENERGY=" in line):
+                        match = state_pattern.search(line)
+                        if match:
                             Ediab = line[61:].strip().replace(" ", "")
                             break
     
@@ -444,7 +448,10 @@ def mctdh(filnam, modes_included):
                     for jst in range(1, ist):
                         Coup_ev = None
                         for line in reversed(lines):
-                            if ("STATE #" in line) and ("S GMC-PT-LEVEL COUPLING" in line):
+                            state_pattern = re.compile(f"STATE #..* {jst} &..* {ist}.S GMC-PT-LEVEL COUPLING")
+                            #if ("STATE #" in line) and ("S GMC-PT-LEVEL COUPLING" in line):
+                            match = state_pattern.search(line)
+                            if match:
                                 Coup_ev = line[61:].strip().replace(" ", "")
                                 break
     
