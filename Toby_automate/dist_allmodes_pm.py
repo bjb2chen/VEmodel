@@ -57,10 +57,10 @@ def process_mode_freq(natoms, ndim, ngroup, nleft):
     nrmmod = {}  # normal modes
     freqcm = {}  # frequencies in cm
 
-    with open("oct3_mode.dat", "r") as mode_file:
+    with open("mode.dat", "r") as mode_file:
         lines_mode = mode_file.readlines()
 
-    with open("oct3_freq.dat", "r") as freq_file:
+    with open("freq.dat", "r") as freq_file:
         lines_freq = freq_file.readlines()
 
     for igroup in range(1, ngroup + 1):
@@ -78,7 +78,7 @@ def process_mode_freq(natoms, ndim, ngroup, nleft):
 
             for icolumn in range(1, 6, 1):
                 imode = (igroup - 1) * 5 + icolumn
-                print(ixyz, imode, end=" ")
+                print(ixyz, imode, "")
                 cutini = (icolumn - 1) * 12
                 cutfnl = icolumn * 12
 
@@ -109,7 +109,7 @@ def process_mode_freq(natoms, ndim, ngroup, nleft):
 
                 for icolumn in range(1, nleft + 1):
                     imode = ngroup * 5 + icolumn
-                    print(ixyz, imode, end=" ")
+                    print(ixyz, imode, "")
                     cutini = (icolumn - 1) * 12
                     cutfnl = icolumn * 12
 
@@ -396,6 +396,20 @@ def diabatization(modes_included, freqcm, ndim, refcoord, \
 #Now we move on to extract vibronic coupling constants using finite difference
 #and write the data in an mctdh operator file
 
+def extract_diabatic_energy(file_path, pattern):
+    with open(file_path, 'r') as file:
+        for line in reversed(file.readlines()):
+            match = re.search(pattern, line)
+            if match:
+                return float(line[44:62].strip().replace(" ", ""))
+
+def extract_coupling_energy(file_path, pattern):
+    with open(file_path, 'r') as file:
+        for line in reversed(file.readlines()):
+            match = re.search(pattern, line)
+            if match:
+                return float(line[62:].strip().replace(" ", ""))
+
 def mctdh(filnam, modes_included, freqcm, qsize, ha2ev, wn2ev, wn2eh, ang2br, amu2me):
     nmodes = len(modes_included)
 
@@ -487,61 +501,17 @@ def mctdh(filnam, modes_included, freqcm, qsize, ha2ev, wn2ev, wn2eh, ang2br, am
                 print("\n good to extract\n")
                 # Extract the diagonal and off-diagonal vibronic coupling
                 for ist in range(1, nstate + 1):
-                    
+                    pattern = f'STATE #..* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY='
                     # Extract Ediab_au_plus
-                    with open(f'{filnam}_mode{imode}_+{qsize}.out', "r") as grep_plus:
-                        lines = grep_plus.readlines()
-
-                        for line in reversed(lines):
-                            state_pattern = re.compile(f'STATE #..* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY=')
-                            match = state_pattern.search(line)
-                            if match:
-                                Ediab_au_plus = float(line[44:62].strip().replace(" ", ""))
-                                break
-
+                    Ediab_au_plus = extract_diabatic_energy(f'{filnam}_mode{imode}_+{qsize}.out', pattern)
                     # Extract Ediab_au_plusx2
-                    with open(f'{filnam}_mode{imode}_+{qsize}x2.out', "r") as grep_plusx2:
-                        lines = grep_plusx2.readlines()
-                        
-                        for line in reversed(lines):
-                            state_pattern = re.compile(f'STATE #..* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY=')
-                            match = state_pattern.search(line)
-                            if match:
-                                Ediab_au_plusx2 = float(line[44:62].strip().replace(" ", ""))
-                                break
-
+                    Ediab_au_plusx2 = extract_diabatic_energy(f'{filnam}_mode{imode}_+{qsize}x2.out', pattern)
                     # Extract Ediab_au_minus
-                    with open(f'{filnam}_mode{imode}_-{qsize}.out', "r") as grep_minus:
-                        lines = grep_minus.readlines()
-                        
-                        for line in reversed(lines):
-                            state_pattern = re.compile(f'STATE #..* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY=')
-                            match = state_pattern.search(line)
-                            if match:
-                                Ediab_au_minus = float(line[44:62].strip().replace(" ", ""))
-                                break
-
+                    Ediab_au_minus = extract_diabatic_energy(f'{filnam}_mode{imode}_-{qsize}.out', pattern)
                     # Extract Ediab_au_minusx2
-                    with open(f'{filnam}_mode{imode}_-{qsize}x2.out', "r") as grep_minusx2:
-                        lines = grep_minusx2.readlines()
-                        
-                        for line in reversed(lines):
-                            state_pattern = re.compile(f'STATE #..* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY=')
-                            match = state_pattern.search(line)
-                            if match:
-                                Ediab_au_minusx2 = float(line[44:62].strip().replace(" ", ""))
-                                break
-
+                    Ediab_au_minusx2 = extract_diabatic_energy(f'{filnam}_mode{imode}_-{qsize}x2.out', pattern)
                     # Extract Ediab_au_0
-                    with open(f'{filnam}_refG.out', "r") as grep_0:
-                        lines = grep_0.readlines()
-                        
-                        for line in reversed(lines):
-                            state_pattern = re.compile(f'STATE #..* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY=')
-                            match = state_pattern.search(line)
-                            if match:
-                                Ediab_au_0 = float(line[44:62].strip().replace(" ", ""))
-                                break
+                    Ediab_au_0 = extract_diabatic_energy(f'{filnam}_refG.out', pattern)
 
                     # print("Ediab_au_plus: ", Ediab_au_plus)
                     # print("Ediab_au_plusx2: ", Ediab_au_plusx2)
@@ -565,62 +535,17 @@ def mctdh(filnam, modes_included, freqcm, qsize, ha2ev, wn2ev, wn2eh, ang2br, am
                     # # Loop over jst
                     jlast = ist - 1
                     for jst in range(1, jlast + 1):
-                        # Example: Extract off-diagonal couplings (replace with actual code)
-
+                        pattern = f'STATE #..* {jst} &..* {ist}.S GMC-PT-LEVEL COUPLING'
                         # Extract Coup_ev_plus
-                        with open(f'{filnam}_mode{imode}_+{qsize}.out', "r") as grep_coup_plus:
-                            lines = grep_coup_plus.readlines()
-    
-                            for line in reversed(lines):
-                                state_pattern = re.compile(f'STATE #..* {jst} &..* {ist}.S GMC-PT-LEVEL COUPLING')
-                                match = state_pattern.search(line)
-                                if match:
-                                    Coup_ev_plus = float(line[62:].strip().replace(" ", ""))
-                                    break
-    
+                        Coup_ev_plus = extract_coupling_energy(f'{filnam}_mode{imode}_+{qsize}.out', pattern)
                         # Extract Coup_ev_plusx2
-                        with open(f'{filnam}_mode{imode}_+{qsize}x2.out', "r") as grep_coup_plusx2:
-                            lines = grep_coup_plusx2.readlines()
-                            
-                            for line in reversed(lines):
-                                state_pattern = re.compile(f'STATE #..* {jst} &..* {ist}.S GMC-PT-LEVEL COUPLING')
-                                match = state_pattern.search(line)
-                                if match:
-                                    Coup_ev_plusx2 = float(line[62:].strip().replace(" ", ""))
-                                    break
-    
+                        Coup_ev_plusx2 = extract_coupling_energy(f'{filnam}_mode{imode}_+{qsize}x2.out', pattern)
                         # Extract Coup_ev_minus
-                        with open(f'{filnam}_mode{imode}_-{qsize}.out', "r") as grep_coup_minus:
-                            lines = grep_coup_minus.readlines()
-                            
-                            for line in reversed(lines):
-                                state_pattern = re.compile(f'STATE #..* {jst} &..* {ist}.S GMC-PT-LEVEL COUPLING')
-                                match = state_pattern.search(line)
-                                if match:
-                                    Coup_ev_minus = float(line[62:].strip().replace(" ", ""))
-                                    break
-    
+                        Coup_ev_minus = extract_coupling_energy(f'{filnam}_mode{imode}_-{qsize}.out', pattern)
                         # Extract Coup_ev_minusx2
-                        with open(f'{filnam}_mode{imode}_-{qsize}x2.out', "r") as grep_coup_minusx2:
-                            lines = grep_coup_minusx2.readlines()
-                            
-                            for line in reversed(lines):
-                                state_pattern = re.compile(f'STATE #..* {jst} &..* {ist}.S GMC-PT-LEVEL COUPLING')
-                                match = state_pattern.search(line)
-                                if match:
-                                    Coup_ev_minusx2 = float(line[62:].strip().replace(" ", ""))
-                                    break
-    
+                        Coup_ev_minusx2 = extract_coupling_energy(f'{filnam}_mode{imode}_-{qsize}x2.out', pattern)
                         # Extract Coup_ev_0
-                        with open(f'{filnam}_refG.out', "r") as grep_coup_0:
-                            lines = grep_coup_0.readlines()
-                            
-                            for line in reversed(lines):
-                                state_pattern = re.compile(f'STATE #..* {jst} &..* {ist}.S GMC-PT-LEVEL COUPLING')
-                                match = state_pattern.search(line)
-                                if match:
-                                    Coup_ev_0 = float(line[62:].strip().replace(" ", ""))
-                                    break
+                        Coup_ev_0= extract_coupling_energy(f'{filnam}_refG.out', pattern)
 
                         # print("Coup_ev_plus: ", Coup_ev_plus)
                         # print("Coup_ev_plusx2: ", Coup_ev_plusx2)
@@ -874,7 +799,7 @@ def main():
 
     hessout = sys.argv[1]
     filnam = "nh3cat_ccd_gmcpt_7o7e_C3vinC1_3st_diab"
-    refgeo = "oct3_ref_structure"
+    refgeo = "ref_structure"
 
     natoms = get_number_of_atoms(hessout)
     ndim = natoms * 3
@@ -895,10 +820,10 @@ def main():
     freq_value_set = read_freq_values(selected_lines)
     filtered_set = read_mode_values(selected_lines)
     
-    with open('oct3_mode.dat', 'w') as output_file:
+    with open('mode.dat', 'w') as output_file:
         output_file.writelines(filtered_set)
 
-    with open('oct3_freq.dat', 'w') as output_file:
+    with open('freq.dat', 'w') as output_file:
         output_file.writelines(freq_value_set)
 
     nrmmod, freqcm = process_mode_freq(natoms, ndim, ngroup, nleft)
@@ -914,10 +839,10 @@ def main():
     amu2me = 1822.88839 
 
     repetition = refG_calc(refgeo, filnam)
-    diabatize = diabatization(modes_included, freqcm, ndim, refcoord,\
-                             nrmmod, natoms, atmlst, chrglst, filnam, \
-                             qsize, ha2ev, wn2ev, wn2eh, ang2br, amu2me)
-    make_mctdh = mctdh(filnam, modes_included, freqcm, qsize, ha2ev, wn2ev, wn2eh, ang2br, amu2me)
+    #diabatize = diabatization(modes_included, freqcm, ndim, refcoord,\
+    #                         nrmmod, natoms, atmlst, chrglst, filnam, \
+    #                         qsize, ha2ev, wn2ev, wn2eh, ang2br, amu2me)
+    #make_mctdh = mctdh(filnam, modes_included, freqcm, qsize, ha2ev, wn2ev, wn2eh, ang2br, amu2me)
 
     # pprint.pprint(nrmmod)
     # print('---------nrm mod done-----------')
