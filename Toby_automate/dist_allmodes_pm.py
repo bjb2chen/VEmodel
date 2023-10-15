@@ -396,9 +396,6 @@ def diabatization(modes_included, freqcm, ndim, refcoord, \
 #Now we move on to extract vibronic coupling constants using finite difference
 #and write the data in an mctdh operator file
 
-#Now we move on to extract vibronic coupling constants using finite difference
-#and write the data in an mctdh operator file
-
 def mctdh(filnam, modes_included, freqcm, qsize, ha2ev, wn2ev, wn2eh, ang2br, amu2me):
     nmodes = len(modes_included)
 
@@ -546,11 +543,11 @@ def mctdh(filnam, modes_included, freqcm, qsize, ha2ev, wn2ev, wn2eh, ang2br, am
                                 Ediab_au_0 = float(line[44:62].strip().replace(" ", ""))
                                 break
 
-                    print("Ediab_au_plus: ", Ediab_au_plus)
-                    print("Ediab_au_plusx2: ", Ediab_au_plusx2)
-                    print("Ediab_au_minus: ", Ediab_au_minus)
-                    print("Ediab_au_minusx2: ", Ediab_au_minusx2)
-                    print("Ediab_au_0: ", Ediab_au_0)
+                    # print("Ediab_au_plus: ", Ediab_au_plus)
+                    # print("Ediab_au_plusx2: ", Ediab_au_plusx2)
+                    # print("Ediab_au_minus: ", Ediab_au_minus)
+                    # print("Ediab_au_minusx2: ", Ediab_au_minusx2)
+                    # print("Ediab_au_0: ", Ediab_au_0)
     
                     # Example: Compute linear and quadratic diagonal couplings (replace with actual code)
                     linear_diag_ev = (Ediab_au_plus - Ediab_au_minus) * ha2ev / (2 * qsize)
@@ -561,9 +558,9 @@ def mctdh(filnam, modes_included, freqcm, qsize, ha2ev, wn2ev, wn2eh, ang2br, am
                     quadratic_diag_ev = quadratic_diag_ev - vibron_ev
     
                     # Placeholder: Print or store results (replace with actual code)
-                    print(f"{ist} {linear_diag_ev} {quadratic_diag_ev} ev\n")
-                    mctdh_file.write(f"l{ist}_m{imode} = {linear_diag_ev} ev\n")
-                    mctdh_file.write(f"q{ist}_m{imode} = {quadratic_diag_ev} ev\n")
+                    print(f"{ist} {linear_diag_ev} {quadratic_diag_ev}, ev\n")
+                    mctdh_file.write(f"l{ist}_m{imode} = {linear_diag_ev}, ev\n")
+                    mctdh_file.write(f"q{ist}_m{imode} = {quadratic_diag_ev}, ev\n")
     
                     # # Loop over jst
                     jlast = ist - 1
@@ -625,11 +622,11 @@ def mctdh(filnam, modes_included, freqcm, qsize, ha2ev, wn2ev, wn2eh, ang2br, am
                                     Coup_ev_0 = float(line[62:].strip().replace(" ", ""))
                                     break
 
-                        print("Coup_ev_plus: ", Coup_ev_plus)
-                        print("Coup_ev_plusx2: ", Coup_ev_plusx2)
-                        print("Coup_ev_minus: ", Coup_ev_minus)
-                        print("Coup_ev_minusx2: ", Coup_ev_minusx2)
-                        print("Coup_ev_0: ", Coup_ev_0)
+                        # print("Coup_ev_plus: ", Coup_ev_plus)
+                        # print("Coup_ev_plusx2: ", Coup_ev_plusx2)
+                        # print("Coup_ev_minus: ", Coup_ev_minus)
+                        # print("Coup_ev_minusx2: ", Coup_ev_minusx2)
+                        # print("Coup_ev_0: ", Coup_ev_0)
     
                         # Example: Compute linear off-diagonal coupling (replace with actual code)
                         linear_offdiag_ev = (Coup_ev_plus - Coup_ev_minus) / (2 * qsize)
@@ -639,8 +636,8 @@ def mctdh(filnam, modes_included, freqcm, qsize, ha2ev, wn2ev, wn2eh, ang2br, am
     
                         # Placeholder: Print or store results (replace with actual code)
                         print(f"{jst} {ist} {linear_offdiag_ev}\n")
-                        mctdh_file.write(f"l{jst}{ist}_m{imode} = {linear_offdiag_ev} ev\n")
-                        mctdh_file.write(f"q{jst}{ist}_m{imode} = {quadratic_offdiag_ev} ev\n")
+                        mctdh_file.write(f"l{jst}{ist}_m{imode} = {linear_offdiag_ev}, ev\n")
+                        mctdh_file.write(f"q{jst}{ist}_m{imode} = {quadratic_offdiag_ev}, ev\n")
                     mctdh_file.write("\n")
     
             else:
@@ -657,118 +654,217 @@ def mctdh(filnam, modes_included, freqcm, qsize, ha2ev, wn2ev, wn2eh, ang2br, am
                 grace_code_mp = subprocess.call(["grep", "grace", f"{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out"])
                 grace_code_mm = subprocess.call(["grep", "grace", f"{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out"])
 
-                if all(code == 0 for code in [grace_code_plus, grace_code_minus, grace_code_plusx2, grace_code_minusx2]):
+                if all(code == 0 for code in [grace_code_pp, grace_code_pm, grace_code_mp, grace_code_mm]):
                     print(f"\n Good to extract bilinear for modes {imode} {jmode} \n")
 
-                for ist in range(1, nstate + 1):
-
-                    # Extract Ediab_au_pp
-                    with open(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out', "r") as grep_pp:
-                        lines = grep_pp.readlines()
-
-                        for line in reversed(lines):
-                            state_pattern = re.compile(f'STATE #..* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY=')
-                            match = state_pattern.search(line)
-                            if match:
-                                Ediab_au_pp = float(line[44:62].strip().replace(" ", ""))
-                                break
-
-                    # Extract Ediab_au_pm
-                    with open(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out', "r") as grep_pm:
-                        lines = grep_pm.readlines()
-                        
-                        for line in reversed(lines):
-                            state_pattern = re.compile(f'STATE #..* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY=')
-                            match = state_pattern.search(line)
-                            if match:
-                                Ediab_au_pm = float(line[44:62].strip().replace(" ", ""))
-                                break
-
-                    # Extract Ediab_au_mp
-                    with open(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out', "r") as grep_mp:
-                        lines = grep_mp.readlines()
-                        
-                        for line in reversed(lines):
-                            state_pattern = re.compile(f'STATE #..* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY=')
-                            match = state_pattern.search(line)
-                            if match:
-                                Ediab_au_mp = float(line[44:62].strip().replace(" ", ""))
-                                break
-
-                    # Extract Ediab_au_mm
-                    with open(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out', "r") as grep_mm:
-                        lines = grep_mm.readlines()
-                        
-                        for line in reversed(lines):
-                            state_pattern = re.compile(f'STATE #..* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY=')
-                            match = state_pattern.search(line)
-                            if match:
-                                Ediab_au_mm = float(line[44:62].strip().replace(" ", ""))
-                                break
-
-                    bilinear_diag_ev = ( Ediab_au_pp + Ediab_au_mm - Ediab_au_pm - Ediab_au_mp ) * ha2ev / (4.0 * qsize * qsize )
-                
-                    print(f"{ist} {bilinear_diag_ev}")
-                    mctdh_file.write(f"b{ist}_m{imode}_m{jmode} = {bilinear_diag_ev} ev\n")
-
-                    # # Loop over jst
-                    jlast = ist - 1
-                    for jst in range(1, jlast + 1):
+                    for ist in range(1, nstate + 1):
     
-                        # Extract Coup_ev_pp
-                        with open(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out', "r") as grep_coup_pp:
-                            lines = grep_coup_pp.readlines()
+                        # Extract Ediab_au_pp
+                        with open(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out', "r") as grep_pp:
+                            lines = grep_pp.readlines()
     
                             for line in reversed(lines):
-                                state_pattern = re.compile(f'STATE #..* {jst} &..* {ist}.S GMC-PT-LEVEL COUPLING')
+                                state_pattern = re.compile(f'STATE #..* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY=')
                                 match = state_pattern.search(line)
                                 if match:
-                                    Coup_ev_pp = float(line[62:].strip().replace(" ", ""))
+                                    Ediab_au_pp = float(line[44:62].strip().replace(" ", ""))
                                     break
     
-                        # Extract Coup_ev_pm
-                        with open(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out', "r") as grep_coup_pm:
-                            lines = grep_coup_pm.readlines()
+                        # Extract Ediab_au_pm
+                        with open(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out', "r") as grep_pm:
+                            lines = grep_pm.readlines()
                             
                             for line in reversed(lines):
-                                state_pattern = re.compile(f'STATE #..* {jst} &..* {ist}.S GMC-PT-LEVEL COUPLING')
+                                state_pattern = re.compile(f'STATE #..* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY=')
                                 match = state_pattern.search(line)
                                 if match:
-                                    Coup_ev_pm = float(line[62:].strip().replace(" ", ""))
+                                    Ediab_au_pm = float(line[44:62].strip().replace(" ", ""))
                                     break
     
-                        # Extract Coup_ev_mp
-                        with open(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out', "r") as grep_coup_mp:
-                            lines = grep_coup_mp.readlines()
+                        # Extract Ediab_au_mp
+                        with open(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out', "r") as grep_mp:
+                            lines = grep_mp.readlines()
                             
                             for line in reversed(lines):
-                                state_pattern = re.compile(f'STATE #..* {jst} &..* {ist}.S GMC-PT-LEVEL COUPLING')
+                                state_pattern = re.compile(f'STATE #..* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY=')
                                 match = state_pattern.search(line)
                                 if match:
-                                    Coup_ev_mp = float(line[62:].strip().replace(" ", ""))
+                                    Ediab_au_mp = float(line[44:62].strip().replace(" ", ""))
                                     break
     
-                        # Extract Coup_ev_mm
-                        with open(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out', "r") as grep_coup_mm:
-                            lines = grep_coup_mm.readlines()
+                        # Extract Ediab_au_mm
+                        with open(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out', "r") as grep_mm:
+                            lines = grep_mm.readlines()
                             
                             for line in reversed(lines):
-                                state_pattern = re.compile(f'STATE #..* {jst} &..* {ist}.S GMC-PT-LEVEL COUPLING')
+                                state_pattern = re.compile(f'STATE #..* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY=')
                                 match = state_pattern.search(line)
                                 if match:
-                                    Coup_ev_mm = float(line[62:].strip().replace(" ", ""))
+                                    Ediab_au_mm = float(line[44:62].strip().replace(" ", ""))
                                     break
     
-                        bilinear_offdiag_ev = ( Coup_ev_pp + Coup_ev_mm - Coup_ev_pm - Coup_ev_mp ) / (4.0 * qsize * qsize )
-                        
-                        print(f"{jst} {ist} {bilinear_offdiag_ev}")
-                        mctdh_file.write(f"b{jst}{ist}_m{imode}_m{jmode} = {bilinear_offdiag_ev} ev\n")
+                        bilinear_diag_ev = ( Ediab_au_pp + Ediab_au_mm - Ediab_au_pm - Ediab_au_mp ) * ha2ev / (4.0 * qsize * qsize )
                     
-                    mctdh_file.write("\n")
+                        print(f"{ist} {bilinear_diag_ev}")
+                        mctdh_file.write(f"b{ist}_m{imode}_m{jmode} = {bilinear_diag_ev}, ev\n")
+    
+                        # # Loop over jst
+                        jlast = ist - 1
+                        for jst in range(1, jlast + 1):
+        
+                            # Extract Coup_ev_pp
+                            with open(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out', "r") as grep_coup_pp:
+                                lines = grep_coup_pp.readlines()
+        
+                                for line in reversed(lines):
+                                    state_pattern = re.compile(f'STATE #..* {jst} &..* {ist}.S GMC-PT-LEVEL COUPLING')
+                                    match = state_pattern.search(line)
+                                    if match:
+                                        Coup_ev_pp = float(line[62:].strip().replace(" ", ""))
+                                        break
+        
+                            # Extract Coup_ev_pm
+                            with open(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out', "r") as grep_coup_pm:
+                                lines = grep_coup_pm.readlines()
+                                
+                                for line in reversed(lines):
+                                    state_pattern = re.compile(f'STATE #..* {jst} &..* {ist}.S GMC-PT-LEVEL COUPLING')
+                                    match = state_pattern.search(line)
+                                    if match:
+                                        Coup_ev_pm = float(line[62:].strip().replace(" ", ""))
+                                        break
+        
+                            # Extract Coup_ev_mp
+                            with open(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out', "r") as grep_coup_mp:
+                                lines = grep_coup_mp.readlines()
+                                
+                                for line in reversed(lines):
+                                    state_pattern = re.compile(f'STATE #..* {jst} &..* {ist}.S GMC-PT-LEVEL COUPLING')
+                                    match = state_pattern.search(line)
+                                    if match:
+                                        Coup_ev_mp = float(line[62:].strip().replace(" ", ""))
+                                        break
+        
+                            # Extract Coup_ev_mm
+                            with open(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out', "r") as grep_coup_mm:
+                                lines = grep_coup_mm.readlines()
+                                
+                                for line in reversed(lines):
+                                    state_pattern = re.compile(f'STATE #..* {jst} &..* {ist}.S GMC-PT-LEVEL COUPLING')
+                                    match = state_pattern.search(line)
+                                    if match:
+                                        Coup_ev_mm = float(line[62:].strip().replace(" ", ""))
+                                        break
+        
+                            bilinear_offdiag_ev = ( Coup_ev_pp + Coup_ev_mm - Coup_ev_pm - Coup_ev_mp ) / (4.0 * qsize * qsize )
+                            
+                            print(f"{jst} {ist} {bilinear_offdiag_ev}")
+                            mctdh_file.write(f"b{jst}{ist}_m{imode}_m{jmode} = {bilinear_offdiag_ev}, ev\n")
+                        
+                        mctdh_file.write("\n")
 
                 else:
                     print(f"not good to extract. Skipping mode {imode} mode {jmode} for extracting bilinear vibronic couplings")
 
+    # Open mctdh.op file for writing
+    with open('mctdh.op', 'a') as mctdh_file:
+        mctdh_file.write("end-parameter-section\n")
+        # Write the header
+        mctdh_file.write("-----------------------------------------\n")
+        mctdh_file.write("HAMILTONIAN-SECTION\n")
+        mctdh_file.write("-----------------------------------------\n")
+    
+        # Write modes and mode labels
+        mctdh_file.write(" modes | el")
+        for imode_include in range(1, nmodes + 1):
+            mctdh_file.write(f" | m{modes_included[imode_include]}")
+        mctdh_file.write("\n")
+        mctdh_file.write("-----------------------------------------\n")
+    
+        # Write KINETIC OPERATOR FOR NORMAL MODES
+        mctdh_file.write("# KINETIC OPERATOR FOR NORMAL MODES\n")
+        mctdh_file.write("-----------------------------------------\n")
+        for imode_include in range(1, nmodes + 1):
+            mode_count = imode_include + 1
+            mctdh_file.write(f"w_{modes_included[imode_include]}   |{mode_count} KE\n")
+    
+        # Write HARMONIC OSCILLATOR POTENTIALS FOR NORMAL MODES
+        mctdh_file.write("-----------------------------------------\n")
+        mctdh_file.write("# HARMONIC OSCILLATOR POTENTIALS FOR NORMAL MODES\n")
+        mctdh_file.write("-----------------------------------------\n")
+        for imode_include in range(1, nmodes + 1):
+            mode_count = imode_include + 1
+            mctdh_file.write(f"0.5*w_{modes_included[imode_include]}   |{mode_count}  q^2\n")
+    
+        # Write ELECTRONIC COUPLING AT REFERENCE STRUCTURE
+        mctdh_file.write("-----------------------------------------\n")
+        mctdh_file.write("# ELECTRONIC COUPLING AT REFERENCE STRUCTURE\n")
+        mctdh_file.write("-----------------------------------------\n")
+        for ist in range(1, nstate + 1):
+            mctdh_file.write(f"v{ist}  |1 S{ist}&{ist}\n")
+        for ist in range(1, nstate + 1):
+            jlast = ist - 1
+            for jst in range(1, jlast + 1):
+                mctdh_file.write(f"v{jst}{ist}  |1 S{jst}&{ist}\n")
+    
+        # Write LINEAR AND QUADRATIC DIAGONAL VIBRONIC COUPLINGS
+        mctdh_file.write("-----------------------------------------\n")
+        mctdh_file.write("# LINEAR AND QUADRATIC DIAGONAL VIBRONIC COUPLINGS\n")
+        mctdh_file.write("-----------------------------------------\n")
+        for kmode in range(1, nmodes + 1):
+            imode = modes_included[kmode]
+            kmode_count = kmode + 1
+            for ist in range(1, nstate + 1):
+                mctdh_file.write(f"l{ist}_m{imode} |1 S{ist}&{ist} |{kmode_count} q\n")
+                mctdh_file.write(f"q{ist}_m{imode} |1 S{ist}&{ist} |{kmode_count} q^2\n")
+    
+        # Write LINEAR AND QUADRATIC OFF-DIAGONAL VIBRONIC COUPLINGS
+        mctdh_file.write("-----------------------------------------\n")
+        mctdh_file.write("# LINEAR AND QUADRATIC OFF-DIAGONAL VIBRONIC COUPLINGS\n")
+        mctdh_file.write("-----------------------------------------\n")
+        for kmode in range(1, nmodes + 1):
+            imode = modes_included[kmode]
+            kmode_count = kmode + 1
+            for ist in range(1, nstate + 1):
+                jlast = ist - 1
+                for jst in range(1, jlast + 1):
+                    mctdh_file.write(f"l{jst}{ist}_m{imode} |1 S{jst}&{ist} |{kmode_count} q\n")
+                    mctdh_file.write(f"q{jst}{ist}_m{imode} |1 S{jst}&{ist} |{kmode_count} q^2\n")
+    
+        # Write BILINEAR DIAGONAL VIBRONIC COUPLINGS
+        mctdh_file.write("-----------------------------------------\n")
+        mctdh_file.write("# BILINEAR DIAGONAL VIBRONIC COUPLINGS\n")
+        mctdh_file.write("-----------------------------------------\n")
+        for kmode in range(1, nmodes + 1):
+            imode = modes_included[kmode]
+            kmode_count = kmode + 1
+            lmode_last = kmode - 1
+            for lmode in range(1, lmode_last + 1):
+                jmode = modes_included[lmode]
+                lmode_count = lmode + 1
+                for ist in range(1, nstate + 1):
+                    mctdh_file.write(f"b{ist}_m{imode}_m{jmode} |1 S{ist}&{ist} |{lmode_count} q |{kmode_count} q\n")
+    
+        # Write BILINEAR OFF-DIAGONAL VIBRONIC COUPLINGS
+        mctdh_file.write("-----------------------------------------\n")
+        mctdh_file.write("# BILINEAR OFF-DIAGONAL VIBRONIC COUPLINGS\n")
+        mctdh_file.write("-----------------------------------------\n")
+        for kmode in range(1, nmodes + 1):
+            imode = modes_included[kmode]
+            kmode_count = kmode + 1
+            lmode_last = kmode - 1
+            for lmode in range(1, lmode_last + 1):
+                jmode = modes_included[lmode]
+                lmode_count = lmode + 1
+                for ist in range(1, nstate + 1):
+                    jlast = ist - 1
+                    for jst in range(1, jlast + 1):
+                        mctdh_file.write(f"b{jst}{ist}_m{imode}_m{jmode} |1 S{jst}&{ist} |{lmode_count} q |{kmode_count} q\n")
+    
+        # Close the file
+        mctdh_file.write("-----------------------------------------\n")
+        mctdh_file.write("\nend-hamiltonian-section\n\nend-operator\n")
+    
     return
 
 def main():
