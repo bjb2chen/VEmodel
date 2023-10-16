@@ -4,7 +4,12 @@ import subprocess
 import shutil
 import re
 
-# Function to get the number of atoms from the hessout file
+## TO-DO LIST (OCT 16):
+## Make sure subgam.diab is implemented within this python file
+## Make sure to figure out how to smoothly get across refG.out problem, 
+## say with asking if refG is done yet to the user?
+
+# Function to get the number of atoms from thFe hessout file
 def get_number_of_atoms(hessout):
     with open(hessout, 'r') as hess_file:
         for line in hess_file:
@@ -481,7 +486,7 @@ def mctdh(filnam, modes_included, freqcm, qsize, ha2ev, wn2ev, wn2eh, ang2br, am
         with open("mctdh.op", "a") as mctdh_file:
             mctdh_file.write(f"#Parameters for mode {imode}\n")
             mctdh_file.write("#Vibron:\n")
-            mctdh_file.write(f"w_m{imode} = {vibron_ev} ev\n\n")
+            mctdh_file.write(f"w_m{imode} = {vibron_ev:.16f} ev\n\n")
             mctdh_file.write("#Linear and quadratic diagonal and off-diagonal vibronic coupling constants:\n")
     
             grace_code_plus = subprocess.call(["grep", "grace", f"{filnam}_mode{imode}_+{qsize}.out"])
@@ -520,8 +525,8 @@ def mctdh(filnam, modes_included, freqcm, qsize, ha2ev, wn2ev, wn2eh, ang2br, am
     
                     # Print and store results
                     print(f"{ist} {linear_diag_ev} {quadratic_diag_ev}, ev\n")
-                    mctdh_file.write(f"l{ist}_m{imode} = {linear_diag_ev}, ev\n")
-                    mctdh_file.write(f"q{ist}_m{imode} = {quadratic_diag_ev}, ev\n")
+                    mctdh_file.write(f"l{ist}_m{imode} = {linear_diag_ev:.16f}, ev\n")
+                    mctdh_file.write(f"q{ist}_m{imode} = {quadratic_diag_ev:.16f}, ev\n")
     
                     # # Loop over jst
                     jlast = ist - 1
@@ -552,8 +557,8 @@ def mctdh(filnam, modes_included, freqcm, qsize, ha2ev, wn2ev, wn2eh, ang2br, am
     
                         # Print and store results
                         print(f"{jst} {ist} {linear_offdiag_ev}\n")
-                        mctdh_file.write(f"l{jst}{ist}_m{imode} = {linear_offdiag_ev}, ev\n")
-                        mctdh_file.write(f"q{jst}{ist}_m{imode} = {quadratic_offdiag_ev}, ev\n")
+                        mctdh_file.write(f"l{jst}{ist}_m{imode} = {linear_offdiag_ev:.16f}, ev\n")
+                        mctdh_file.write(f"q{jst}{ist}_m{imode} = {quadratic_offdiag_ev:.16f}, ev\n")
                     mctdh_file.write("\n")
     
             else:
@@ -622,7 +627,7 @@ def mctdh(filnam, modes_included, freqcm, qsize, ha2ev, wn2ev, wn2eh, ang2br, am
                         bilinear_diag_ev = ( Ediab_au_pp + Ediab_au_mm - Ediab_au_pm - Ediab_au_mp ) * ha2ev / (4.0 * qsize * qsize )
                     
                         print(f"{ist} {bilinear_diag_ev}")
-                        mctdh_file.write(f"b{ist}_m{imode}_m{jmode} = {bilinear_diag_ev}, ev\n")
+                        mctdh_file.write(f"b{ist}_m{imode}_m{jmode} = {bilinear_diag_ev:.16f}, ev\n")
     
                         # # Loop over jst
                         jlast = ist - 1
@@ -675,7 +680,7 @@ def mctdh(filnam, modes_included, freqcm, qsize, ha2ev, wn2ev, wn2eh, ang2br, am
                             bilinear_offdiag_ev = ( Coup_ev_pp + Coup_ev_mm - Coup_ev_pm - Coup_ev_mp ) / (4.0 * qsize * qsize )
                             
                             print(f"{jst} {ist} {bilinear_offdiag_ev}")
-                            mctdh_file.write(f"b{jst}{ist}_m{imode}_m{jmode} = {bilinear_offdiag_ev}, ev\n")
+                            mctdh_file.write(f"b{jst}{ist}_m{imode}_m{jmode} = {bilinear_offdiag_ev:.16f}, ev\n")
                         
                         mctdh_file.write("\n")
 
@@ -831,8 +836,8 @@ def main():
 
     repetition = refG_calc(refgeo, filnam)
     #diabatize = diabatization(modes_included, freqcm, ndim, refcoord,\
-    #                         nrmmod, natoms, atmlst, chrglst, filnam, \
-    #                         qsize, ha2ev, wn2ev, wn2eh, ang2br, amu2me)
+    #                        nrmmod, natoms, atmlst, chrglst, filnam, \
+    #                        qsize, ha2ev, wn2ev, wn2eh, ang2br, amu2me)
     #make_mctdh = mctdh(filnam, modes_included, freqcm, qsize, ha2ev, wn2ev, wn2eh, ang2br, amu2me)
 
     # pprint.pprint(nrmmod)
