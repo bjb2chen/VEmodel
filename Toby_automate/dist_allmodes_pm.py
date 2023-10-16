@@ -4,7 +4,7 @@ import subprocess
 import shutil
 import re
 
-# Function to get the number of atoms from the HESS output file
+# Function to get the number of atoms from the hessout file
 def get_number_of_atoms(hessout):
     with open(hessout, 'r') as hess_file:
         for line in hess_file:
@@ -208,6 +208,7 @@ def refG_calc(refgeo, filnam):
         subprocess.run(["./subgam.diab", f"{filnam}_refG.inp", "4", "0", "1"])
 
         # might want to do a sleep(1 min) here? What if refG.inp calculation fails?
+        # not needed if opt for just waiting until refG.out is available and uncomment diabatize function
 
         print("Calculation at the reference structure is done.")
     else:
@@ -229,15 +230,6 @@ def diabatization(modes_included, freqcm, ndim, refcoord, \
     distcoord_mm = {}
 
     #Loop over all considered modes and do + and - displacements
-    #Set step size in reduced dimensionless coordinates
-    # qsize = 0.05
-
-    # # Set conversion constants
-    # ha2ev = 27.2113961318
-    # wn2ev = 0.000123981
-    # wn2eh = 0.00000455633
-    # ang2br = 1.889725989
-    # amu2me = 1822.88839
 
     for kmode in range(1, len(modes_included) + 1):
         imode = modes_included[kmode]
@@ -519,7 +511,6 @@ def mctdh(filnam, modes_included, freqcm, qsize, ha2ev, wn2ev, wn2eh, ang2br, am
                     # print("Ediab_au_minusx2: ", Ediab_au_minusx2)
                     # print("Ediab_au_0: ", Ediab_au_0)
     
-                    # Example: Compute linear and quadratic diagonal couplings (replace with actual code)
                     linear_diag_ev = (Ediab_au_plus - Ediab_au_minus) * ha2ev / (2 * qsize)
                     quadratic_diag_ev = (Ediab_au_plusx2 + Ediab_au_minusx2 - 2.0 * Ediab_au_0) * ha2ev / (4.0 * qsize * qsize)
     
@@ -527,7 +518,7 @@ def mctdh(filnam, modes_included, freqcm, qsize, ha2ev, wn2ev, wn2eh, ang2br, am
                     # as the quadratic diagonal coupling for the diabatic state.
                     quadratic_diag_ev = quadratic_diag_ev - vibron_ev
     
-                    # Placeholder: Print or store results (replace with actual code)
+                    # Print and store results
                     print(f"{ist} {linear_diag_ev} {quadratic_diag_ev}, ev\n")
                     mctdh_file.write(f"l{ist}_m{imode} = {linear_diag_ev}, ev\n")
                     mctdh_file.write(f"q{ist}_m{imode} = {quadratic_diag_ev}, ev\n")
@@ -553,13 +544,13 @@ def mctdh(filnam, modes_included, freqcm, qsize, ha2ev, wn2ev, wn2eh, ang2br, am
                         # print("Coup_ev_minusx2: ", Coup_ev_minusx2)
                         # print("Coup_ev_0: ", Coup_ev_0)
     
-                        # Example: Compute linear off-diagonal coupling (replace with actual code)
+                        # Compute linear off-diagonal coupling
                         linear_offdiag_ev = (Coup_ev_plus - Coup_ev_minus) / (2 * qsize)
     
-                        # Example: Compute quadratic off-diagonal coupling (replace with actual code)
+                        # Compute quadratic off-diagonal coupling
                         quadratic_offdiag_ev = (Coup_ev_plusx2 + Coup_ev_minusx2 - 2.0 * Coup_ev_0) / (4.0 * qsize * qsize)
     
-                        # Placeholder: Print or store results (replace with actual code)
+                        # Print and store results
                         print(f"{jst} {ist} {linear_offdiag_ev}\n")
                         mctdh_file.write(f"l{jst}{ist}_m{imode} = {linear_offdiag_ev}, ev\n")
                         mctdh_file.write(f"q{jst}{ist}_m{imode} = {quadratic_offdiag_ev}, ev\n")
@@ -803,7 +794,7 @@ def main():
 
     natoms = get_number_of_atoms(hessout)
     ndim = natoms * 3
-    #ndim = 15 note that you can only test like this if you have proper hessout structure
+    #ndim = 15 # note: can only test like this if you have proper hessout structure
     ngroup = ndim // 5
     nleft = ndim % 5
     print("Dimension of all xyz coordinates:", ndim)
