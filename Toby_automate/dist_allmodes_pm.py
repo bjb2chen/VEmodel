@@ -3,11 +3,54 @@ import pprint
 import subprocess
 import shutil
 import re
+import json
+import os
 
 ## TO-DO LIST (OCT 16):
 ## Make sure subgam.diab is implemented within this python file
 ## Make sure to figure out how to smoothly get across refG.out problem, 
-## say with asking if refG is done yet to the user?
+## say perhaps with asking if refG is done yet to the user?
+
+# ask the user for how much memory and processors desired
+molecule_name = input("Name of molecule: ")
+natoms = input("Amount of atoms in molecule: ")
+# nstates = input("Amount of excited states to calculate: ")
+ndisplacements = input("Desired number of displacements along each normal mode, e.g. 2: ")
+
+# store data in master file
+with open('master_values.json', 'w') as fp:
+
+    dictionary = {
+        "molecule_name": molecule_name,
+        "num_atoms": int(natoms),
+        # "num_excited_states": int(nstates),
+        # "num_freqs": int(nfreqs),
+        "num_displacements": int(ndisplacements),
+        "scaling_factor": '1.d0',
+        "sorting_atoms": 'no',
+        "step1": {
+            "nproc":8,
+            "mem": 30
+            },
+        "step1b": {
+            "nproc": 7,
+            "mem": 25
+            },
+        "step4": {
+            "nproc": 10,
+            "mem": 35
+            },
+        "step5": {
+            "nproc": 11,
+            "mem": 40
+            }
+    }
+
+    json.dump(dictionary, fp, indent=0)
+
+with open('master_values.json') as fp:
+        value = json.load(fp)
+
 
 # Function to get the number of atoms from thFe hessout file
 def get_number_of_atoms(hessout):
@@ -787,6 +830,23 @@ def mctdh(filnam, modes_included, freqcm, qsize, ha2ev, wn2ev, wn2eh, ang2br, am
         mctdh_file.write("\nend-hamiltonian-section\n\nend-operator\n")
     
     return
+
+def my_subgam(filnam, ncpus, ngb, nhour):
+    # Remove the ".inp" extension from the filename
+    input_no_ext, extension = os.path.splitext(input)
+    print(f"running calculations for {input_no_ext}")
+    wd = os.getcwd()
+
+    command = (
+        "sbatch"
+        f" --job-name={molecule_name}_opt_freq"
+        " --output='slurm-%j.out'"
+        " submit"
+    )
+
+    return
+
+
 
 def main():
     if len(sys.argv) != 2:
