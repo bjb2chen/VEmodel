@@ -5,51 +5,81 @@ import shutil
 import re
 import json
 import os
+import time
 
 ## TO-DO LIST (OCT 16):
 ## Make sure subgam.diab is implemented within this python file
 ## Make sure to figure out how to smoothly get across refG.out problem, 
 ## say perhaps with asking if refG is done yet to the user?
 
-# ask the user for how much memory and processors desired
-molecule_name = input("Name of molecule: ")
-natoms = input("Amount of atoms in molecule: ")
-# nstates = input("Amount of excited states to calculate: ")
-ndisplacements = input("Desired number of displacements along each normal mode, e.g. 2: ")
+def my_subgam(filnam, ncpus, ngb, nhour):
+    # Remove the ".inp" extension from the filename
+    input_no_ext, extension = os.path.splitext(filnam)
+    print(f"running calculations for {input_no_ext}")
+    wd = os.getcwd()
 
-# store data in master file
-with open('master_values.json', 'w') as fp:
+    with open(f"{input_no_ext}.slurm", "w") as slurm_file:
+        slurm_file.write("#!/bin/bash\n")
+        slurm_file.write("#SBATCH --nodes=1\n")
+        slurm_file.write(f"#SBATCH --ntasks={ncpus}\n")
+        slurm_file.write(f"#SBATCH --mem-per-cpu={ngb}G\n")
+        slurm_file.write(f"#SBATCH --time={nhour}:00:00\n")
+        slurm_file.write("\n")
+        slurm_file.write("cd $SLURM_SUBMIT_DIR\n")
+        slurm_file.write("\n")
+        slurm_file.write("export SLURM_CPUS_PER_TASK\n")
+        slurm_file.write('mkdir -p /home/$USER/.gamess_ascii_files/$SLURM_JOBID\n')
+        slurm_file.write("\n")
+        slurm_file.write(f"/home/$USER/LOCAL/runG_diab {input_no_ext}.inp {ncpus} \n")
 
-    dictionary = {
-        "molecule_name": molecule_name,
-        "num_atoms": int(natoms),
-        # "num_excited_states": int(nstates),
-        # "num_freqs": int(nfreqs),
-        "num_displacements": int(ndisplacements),
-        "scaling_factor": '1.d0',
-        "sorting_atoms": 'no',
-        "step1": {
-            "nproc":8,
-            "mem": 30
-            },
-        "step1b": {
-            "nproc": 7,
-            "mem": 25
-            },
-        "step4": {
-            "nproc": 10,
-            "mem": 35
-            },
-        "step5": {
-            "nproc": 11,
-            "mem": 40
-            }
-    }
+    command = (
+        "sbatch"
+        f" {input_no_ext}.slurm"
+    )
 
-    json.dump(dictionary, fp, indent=0)
+    #return ["sbatch ", f"{input_no_ext}.slurm"]
+    #return (f"sbatch -W {input_no_ext}.slurm")
+    return f"{input_no_ext}.slurm"
 
-with open('master_values.json') as fp:
-        value = json.load(fp)
+# # ask the user for how much memory and processors desired
+# molecule_name = input("Name of molecule: ")
+# natoms = input("Amount of atoms in molecule: ")
+# # nstates = input("Amount of excited states to calculate: ")
+# ndisplacements = input("Desired number of displacements along each normal mode, e.g. 2: ")
+
+# # store data in master file
+# with open('master_values.json', 'w') as fp:
+
+#     dictionary = {
+#         "molecule_name": molecule_name,
+#         "num_atoms": int(natoms),
+#         # "num_excited_states": int(nstates),
+#         # "num_freqs": int(nfreqs),
+#         "num_displacements": int(ndisplacements),
+#         "scaling_factor": '1.d0',
+#         "sorting_atoms": 'no',
+#         "step1": {
+#             "nproc":8,
+#             "mem": 30
+#             },
+#         "step1b": {
+#             "nproc": 7,
+#             "mem": 25
+#             },
+#         "step4": {
+#             "nproc": 10,
+#             "mem": 35
+#             },
+#         "step5": {
+#             "nproc": 11,
+#             "mem": 40
+#             }
+#     }
+
+#     json.dump(dictionary, fp, indent=0)
+
+# with open('master_values.json') as fp:
+#         value = json.load(fp)
 
 
 # Function to get the number of atoms from thFe hessout file
@@ -252,12 +282,31 @@ def refG_calc(refgeo, filnam):
         with open(f"{filnam}_refG.inp", "a") as inp_file:
             inp_file.write(" $END\n")
 
-        # Run the calculation (you may need to customize this command based on your setup)
-        subprocess.run(["./subgam.diab", f"{filnam}_refG.inp", "4", "0", "1"])
+        # Submit and run the refG calculation (you may need to customize this command based on your setup)
+        #refG_job_result = subprocess.run(["./subgam.diab", f"{filnam}_refG.inp", "4", "0", "1"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        cmd = my_subgam(f"{filnam}_refG.inp", "4", "0", "1")
+        print(cmd)
+        #cat_refG = subprocess.run(["cat",f"{cmd[1]}"])
+        #refG_job_result = subprocess.Popen(cmd, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        #refG_job_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        # print(refG_job_result.returncode)
+        os.system("sbatch" + ' -W' + " " + cmd)
+
+        # if refG_job_result.returncode == 0:
+        #     print("refG job submitted successfully.")
+        #     refG_job_id = int(refG_job_result.stdout.decode().split()[-1])
+
+        #     # Check the status of refG job periodically
+        #     while True:
+        #         refG_job_status = subprocess.run(["squeue", "-j", str(refG_job_id)], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        #         if not refG_job_status.stdout: # break when stdout is no more
+        #             break 
+        #         time.sleep(1)
 
         # might want to do a sleep(1 min) here? What if refG.inp calculation fails?
         # not needed if opt for just waiting until refG.out is available and uncomment diabatize function
 
+        # At this point, refG calculation has completed successfully. 
         print("Calculation at the reference structure is done.")
     else:
         print("Calculation at the reference structure has already been done.")
@@ -830,36 +879,6 @@ def mctdh(filnam, modes_included, freqcm, qsize, ha2ev, wn2ev, wn2eh, ang2br, am
         mctdh_file.write("\nend-hamiltonian-section\n\nend-operator\n")
     
     return
-
-def my_subgam(filnam, ncpus, ngb, nhour):
-    # Remove the ".inp" extension from the filename
-    input_no_ext, extension = os.path.splitext(filnam)
-    print(f"running calculations for {input_no_ext}")
-    wd = os.getcwd()
-
-    with open(f"{input_no_ext}.slurm", "w") as slurm_file:
-        slurm_file.write("#!/bin/bash\n")
-        slurm_file.write("\n#SBATCH --nodes=1\n")
-        slurm_file.write(f"#SBATCH --ntasks={ncpus}\n")
-        slurm_file.write(f"#SBATCH --mem-per-cpu={ngb}G\n")
-        slurm_file.write(f"#SBATCH --time={nhour}:00:00\n\n")
-        slurm_file.write("cd $SLURM_SUBMIT_DIR\n\n")
-        slurm_file.write("export SLURM_CPUS_PER_TASK\n")
-        slurm_file.write('mkdir -p /home/$USER/.gamess_ascii_files/$SLURM_JOBID\n\n')
-        slurm_file.write(f"/home/$USER/LOCAL/runG_diab {input_no_ext}.inp {ncpus} \n")
-
-
-
-    command = (
-        "sbatch"
-        f"{input_no_ext}.slurm"
-    )
-    with open(f"{input_no_ext}.slurm", "a") as slurm_file:    
-        slurm_file.write(f"this would be {command} here...")
-
-    return
-
-
 
 def main():
     if len(sys.argv) != 2:
