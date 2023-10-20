@@ -1,16 +1,10 @@
 import sys
 import pprint
 import subprocess
+import os
 import shutil
 import re
 import json
-import os
-import time
-
-## TO-DO LIST (OCT 16):
-## Make sure subgam.diab is implemented within this python file
-## Make sure to figure out how to smoothly get across refG.out problem, 
-## say perhaps with asking if refG is done yet to the user?
 
 def my_subgam(filnam, ncpus, ngb, nhour):
     # Remove the ".inp" extension from the filename
@@ -43,8 +37,6 @@ def my_subgam(filnam, ncpus, ngb, nhour):
 
 # # ask the user for how much memory and processors desired
 # molecule_name = input("Name of molecule: ")
-# natoms = input("Amount of atoms in molecule: ")
-# # nstates = input("Amount of excited states to calculate: ")
 # ndisplacements = input("Desired number of displacements along each normal mode, e.g. 2: ")
 
 # # store data in master file
@@ -268,8 +260,8 @@ def filter_modes(excluded_set, ndim):
 #This calculation shall be a repetition of a calcualtion in preparing temp.inp
 def refG_calc(refgeo, filnam):
     # Check if the calculation has already been run
-    #grace_exists = subprocess.run(["grep", "grace", f"{filnam}_refG.out"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     grace_exists = subprocess.call(["grep", "grace", f"{filnam}_refG.out"]) == 0
+    #grace_exists = subprocess.run(["grep", "grace", f"{filnam}_refG.out"], shell=True).returncode == 0
     if not grace_exists:
         print("Run calculation at the undistorted reference structure")
 
@@ -284,27 +276,7 @@ def refG_calc(refgeo, filnam):
 
         # Submit and run the refG calculation (you may need to customize this command based on your setup)
         #refG_job_result = subprocess.run(["./subgam.diab", f"{filnam}_refG.inp", "4", "0", "1"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        cmd = my_subgam(f"{filnam}_refG.inp", "4", "0", "1")
-        print(cmd)
-        #cat_refG = subprocess.run(["cat",f"{cmd[1]}"])
-        #refG_job_result = subprocess.Popen(cmd, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        #refG_job_result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        # print(refG_job_result.returncode)
-        os.system("sbatch" + ' -W' + " " + cmd)
-
-        # if refG_job_result.returncode == 0:
-        #     print("refG job submitted successfully.")
-        #     refG_job_id = int(refG_job_result.stdout.decode().split()[-1])
-
-        #     # Check the status of refG job periodically
-        #     while True:
-        #         refG_job_status = subprocess.run(["squeue", "-j", str(refG_job_id)], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        #         if not refG_job_status.stdout: # break when stdout is no more
-        #             break 
-        #         time.sleep(1)
-
-        # might want to do a sleep(1 min) here? What if refG.inp calculation fails?
-        # not needed if opt for just waiting until refG.out is available and uncomment diabatize function
+        os.system("sbatch" + ' -W' + " " + my_subgam(f"{filnam}_refG.inp", 2, 1, 1)) # the wait 
 
         # At this point, refG calculation has completed successfully. 
         print("Calculation at the reference structure is done.")
@@ -397,7 +369,8 @@ def diabatization(modes_included, freqcm, ndim, refcoord, \
                 if grace1.returncode != 0:
                     print(f"Running calculations for {filnam}_mode{imode}_{displacement}{qsize}{suffix}")
                     try:
-                        subprocess.run(['./subgam.diab', f'{filnam}_mode{imode}_{displacement}{qsize}{suffix}.inp', '4', '0', '1'])
+                        #subprocess.run(['./subgam.diab', f'{filnam}_mode{imode}_{displacement}{qsize}{suffix}.inp', '4', '0', '1'])
+                        os.system("sbatch" + " " + my_subgam(f'{filnam}_mode{imode}_{displacement}{qsize}{suffix}.inp', 2, 1, 1))
                     except Exception as e:
                         print(f"Error running diabatization calculation: {str(e)}")
                 else:
@@ -476,7 +449,8 @@ def diabatization(modes_included, freqcm, ndim, refcoord, \
                     #if not os.path.exists(output_filename):
                         print(f"Running calculations for {output_filename}!")
                         try:
-                            subprocess.run(['./subgam.diab', f'{filnam}_mode{imode}_{displacement1}{qsize}_mode{jmode}_{displacement2}{qsize}.inp', '4', '0', '1'])
+                            #subprocess.run(['./subgam.diab', f'{filnam}_mode{imode}_{displacement1}{qsize}_mode{jmode}_{displacement2}{qsize}.inp', '4', '0', '1'])
+                            os.system("sbatch" + " " + my_subgam(f'{filnam}_mode{imode}_{displacement1}{qsize}_mode{jmode}_{displacement2}{qsize}.inp', 2, 1, 1))
                         except Exception as e:
                             print(f"Error running diabatization calculation: {str(e)}")
                     else:
@@ -894,11 +868,14 @@ def main():
     #ndim = 15 # note: can only test like this if you have proper hessout structure
     ngroup = ndim // 5
     nleft = ndim % 5
+    qsize = input("Enter desired qsize, default is 0.05: ")
+    qsize = 0.05
     print("Dimension of all xyz coordinates:", ndim)
     print("# of atoms:", natoms)
     print(ngroup, nleft)
 
-    modes_excluded = [1, 2, 3, 4, 5, 6]
+    #modes_excluded = [1, 2, 3, 4, 5, 6]
+    modes_excluded = [2, 4, 5, 6, 7, 8, 9, 10, 11]
     #modes_excluded = [1, 2, 4, 7, 12]
 
     selected_lines = extract_lines_between_patterns(hessout, 
@@ -918,7 +895,6 @@ def main():
     atmlst, chrglst, refcoord = read_reference_structure(refgeo)
     modes_included = filter_modes(modes_excluded, ndim)
 
-    qsize = 0.05
     #Set conversion constants
     ha2ev = 27.2113961318
     wn2ev = 0.000123981
@@ -927,11 +903,10 @@ def main():
     amu2me = 1822.88839 
 
     repetition = refG_calc(refgeo, filnam)
-    #diabatize = diabatization(modes_included, freqcm, ndim, refcoord,\
-    #                        nrmmod, natoms, atmlst, chrglst, filnam, \
-    #                        qsize, ha2ev, wn2ev, wn2eh, ang2br, amu2me)
-    #make_mctdh = mctdh(filnam, modes_included, freqcm, qsize, ha2ev, wn2ev, wn2eh, ang2br, amu2me)
-    write_submit_script = my_subgam(filnam, 6, 5, 2)
+    diabatize = diabatization(modes_included, freqcm, ndim, refcoord,\
+                           nrmmod, natoms, atmlst, chrglst, filnam, \
+                           qsize, ha2ev, wn2ev, wn2eh, ang2br, amu2me)
+    make_mctdh = mctdh(filnam, modes_included, freqcm, qsize, ha2ev, wn2ev, wn2eh, ang2br, amu2me)
 
     # pprint.pprint(nrmmod)
     # print('---------nrm mod done-----------')
