@@ -833,16 +833,29 @@ def mctdh(filnam, modes_included, freqcm, qsize, ha2ev, wn2ev, wn2eh, ang2br, am
 
 def my_subgam(filnam, ncpus, ngb, nhour):
     # Remove the ".inp" extension from the filename
-    input_no_ext, extension = os.path.splitext(input)
+    input_no_ext, extension = os.path.splitext(filnam)
     print(f"running calculations for {input_no_ext}")
     wd = os.getcwd()
 
+    with open(f"{input_no_ext}.slurm", "w") as slurm_file:
+        slurm_file.write("#!/bin/bash\n")
+        slurm_file.write("\n#SBATCH --nodes=1\n")
+        slurm_file.write(f"#SBATCH --ntasks={ncpus}\n")
+        slurm_file.write(f"#SBATCH --mem-per-cpu={ngb}G\n")
+        slurm_file.write(f"#SBATCH --time={nhour}:00:00\n\n")
+        slurm_file.write("cd $SLURM_SUBMIT_DIR\n\n")
+        slurm_file.write("export SLURM_CPUS_PER_TASK\n")
+        slurm_file.write('mkdir -p /home/$USER/.gamess_ascii_files/$SLURM_JOBID\n\n')
+        slurm_file.write(f"/home/$USER/LOCAL/runG_diab {input_no_ext}.inp {ncpus} \n")
+
+
+
     command = (
         "sbatch"
-        f" --job-name={molecule_name}_opt_freq"
-        " --output='slurm-%j.out'"
-        " submit"
+        f"{input_no_ext}.slurm"
     )
+    with open(f"{input_no_ext}.slurm", "a") as slurm_file:    
+        slurm_file.write(f"this would be {command} here...")
 
     return
 
@@ -899,6 +912,7 @@ def main():
     #                        nrmmod, natoms, atmlst, chrglst, filnam, \
     #                        qsize, ha2ev, wn2ev, wn2eh, ang2br, amu2me)
     #make_mctdh = mctdh(filnam, modes_included, freqcm, qsize, ha2ev, wn2ev, wn2eh, ang2br, amu2me)
+    write_submit_script = my_subgam(filnam, 6, 5, 2)
 
     # pprint.pprint(nrmmod)
     # print('---------nrm mod done-----------')
