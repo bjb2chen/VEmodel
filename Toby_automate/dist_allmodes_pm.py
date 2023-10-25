@@ -159,7 +159,8 @@ def process_mode_freq(natoms, ndim, ngroup, nleft):
                 if ixyz == 1:
                     cutini = (icolumn - 1) * 12
                     cutfnl = icolumn * 12
-                    freq = lines_freq[igroup - 1][cutini:cutfnl].lstrip()
+                    # sometimes imaginary freq ('I ... freqval') so +2
+                    freq = lines_freq[igroup - 1][cutini+2:cutfnl].lstrip()
                     freqcm[imode] = float(freq)
                     print("frequency:", imode, freqcm[imode])
 
@@ -190,7 +191,7 @@ def process_mode_freq(natoms, ndim, ngroup, nleft):
                     if ixyz == 1:
                         cutini = (icolumn - 1) * 12
                         cutfnl = icolumn * 12
-                        freq = lines_freq[-1][cutini:cutfnl].lstrip()
+                        freq = lines_freq[-1][cutini+2:cutfnl].lstrip()
                         freqcm[imode] = float(freq)
                         print("frequency:", imode, freqcm[imode])
 
