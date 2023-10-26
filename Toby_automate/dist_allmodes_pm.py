@@ -31,48 +31,7 @@ def my_subgam(filnam, ncpus, ngb, nhour):
         f" {input_no_ext}.slurm"
     )
 
-    #return ["sbatch ", f"{input_no_ext}.slurm"]
-    #return (f"sbatch -W {input_no_ext}.slurm")
     return f"{input_no_ext}.slurm"
-
-# # ask the user for how much memory and processors desired
-# molecule_name = input("Name of molecule: ")
-# ndisplacements = input("Desired number of displacements along each normal mode, e.g. 2: ")
-
-# # store data in master file
-# with open('master_values.json', 'w') as fp:
-
-#     dictionary = {
-#         "molecule_name": molecule_name,
-#         "num_atoms": int(natoms),
-#         # "num_excited_states": int(nstates),
-#         # "num_freqs": int(nfreqs),
-#         "num_displacements": int(ndisplacements),
-#         "scaling_factor": '1.d0',
-#         "sorting_atoms": 'no',
-#         "step1": {
-#             "nproc":8,
-#             "mem": 30
-#             },
-#         "step1b": {
-#             "nproc": 7,
-#             "mem": 25
-#             },
-#         "step4": {
-#             "nproc": 10,
-#             "mem": 35
-#             },
-#         "step5": {
-#             "nproc": 11,
-#             "mem": 40
-#             }
-#     }
-
-#     json.dump(dictionary, fp, indent=0)
-
-# with open('master_values.json') as fp:
-#         value = json.load(fp)
-
 
 # Function to get the number of atoms from thFe hessout file
 def get_number_of_atoms(hessout):
@@ -205,6 +164,26 @@ def process_mode_freq(natoms, ndim, ngroup, nleft):
         print("frequency:", imode, str(freqcm[imode]), "CM-1")
 
     return nrmmod, freqcm
+
+def compose_ref_structure(hessout, natoms):
+    coord_lines = extract_lines_between_patterns(hessout, 'EQUILIBRIUM GEOMETRY LOCATED', 'INTERNUCLEAR DISTANCES')
+    ref_file = 'py_ref_structure'
+
+    if len(coord_lines) > 2:
+        try:
+            subprocess.run(['rm', '-f', ref_file])
+        except Exception as e:
+            print(f"Error deleting {ref_file}: {str(e)}")
+
+        for atom_line in coord_lines[-natoms-1:-1]:
+            with open(f'{ref_file}', "a") as python_ref_file:
+                python_ref_file.write(atom_line)
+
+        print(f'Sucessfully extracted equilibrium geometry from {hessout} and prepared ref_structure.')
+    else:
+        print(f'Unsucessful extraction of equilibrium geometry from {hessout}. Please prepare ref_structure manually.')
+
+    return coord_lines
 
 def read_reference_structure(file_path):
     ##### SAMPLE REF STRUCT #######
@@ -592,6 +571,7 @@ def mctdh(filnam, modes_included, freqcm, qsize, ha2ev, wn2ev, wn2eh, ang2br, am
     
                     # Print and store results
                     print(f"{ist} {linear_diag_ev} {quadratic_diag_ev}, ev\n")
+                    # machine accuracy is typically 16 digits
                     mctdh_file.write(f"l{ist}_m{imode} = {linear_diag_ev:.16f}, ev\n")
                     mctdh_file.write(f"q{ist}_m{imode} = {quadratic_diag_ev:.16f}, ev\n")
     
@@ -863,6 +843,7 @@ def main():
     hessout = sys.argv[1]
     filnam = "nh3cat_ccd_gmcpt_7o7e_C3vinC1_3st_diab"
     refgeo = "ref_structure"
+    py_refgeo = "py_ref_structure"
 
     natoms = get_number_of_atoms(hessout)
     ndim = natoms * 3
@@ -893,7 +874,8 @@ def main():
         output_file.writelines(freq_value_set)
 
     nrmmod, freqcm = process_mode_freq(natoms, ndim, ngroup, nleft)
-    atmlst, chrglst, refcoord = read_reference_structure(refgeo)
+    ref_file = compose_ref_structure(hessout, natoms)
+    atmlst, chrglst, refcoord = read_reference_structure(py_refgeo)
     modes_included = filter_modes(modes_excluded, ndim)
 
     #Set conversion constants
