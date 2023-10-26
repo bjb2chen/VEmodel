@@ -6,33 +6,6 @@ import shutil
 import re
 import json
 
-def my_subgam(filnam, ncpus, ngb, nhour):
-    # Remove the ".inp" extension from the filename
-    input_no_ext, extension = os.path.splitext(filnam)
-    print(f"running calculations for {input_no_ext}")
-    wd = os.getcwd()
-
-    with open(f"{input_no_ext}.slurm", "w") as slurm_file:
-        slurm_file.write("#!/bin/bash\n")
-        slurm_file.write("#SBATCH --nodes=1\n")
-        slurm_file.write(f"#SBATCH --ntasks={ncpus}\n")
-        slurm_file.write(f"#SBATCH --mem-per-cpu={ngb}G\n")
-        slurm_file.write(f"#SBATCH --time={nhour}:00:00\n")
-        slurm_file.write("\n")
-        slurm_file.write("cd $SLURM_SUBMIT_DIR\n")
-        slurm_file.write("\n")
-        slurm_file.write("export SLURM_CPUS_PER_TASK\n")
-        slurm_file.write('mkdir -p /home/$USER/.gamess_ascii_files/$SLURM_JOBID\n')
-        slurm_file.write("\n")
-        slurm_file.write(f"/home/$USER/LOCAL/runG_diab {input_no_ext}.inp {ncpus} \n")
-
-    command = (
-        "sbatch"
-        f" {input_no_ext}.slurm"
-    )
-
-    return f"{input_no_ext}.slurm"
-
 # Function to get the number of atoms from thFe hessout file
 def get_number_of_atoms(hessout):
     with open(hessout, 'r') as hess_file:
@@ -235,6 +208,32 @@ def filter_modes(excluded_set, ndim):
 
     return modes_included
 
+def my_subgam(filnam, ncpus, ngb, nhour):
+    # Remove the ".inp" extension from the filename
+    input_no_ext, extension = os.path.splitext(filnam)
+    print(f"running calculations for {input_no_ext}")
+    wd = os.getcwd()
+
+    with open(f"{input_no_ext}.slurm", "w") as slurm_file:
+        slurm_file.write("#!/bin/bash\n")
+        slurm_file.write("#SBATCH --nodes=1\n")
+        slurm_file.write(f"#SBATCH --ntasks={ncpus}\n")
+        slurm_file.write(f"#SBATCH --mem-per-cpu={ngb}G\n")
+        slurm_file.write(f"#SBATCH --time={nhour}:00:00\n")
+        slurm_file.write("\n")
+        slurm_file.write("cd $SLURM_SUBMIT_DIR\n")
+        slurm_file.write("\n")
+        slurm_file.write("export SLURM_CPUS_PER_TASK\n")
+        slurm_file.write('mkdir -p /home/$USER/.gamess_ascii_files/$SLURM_JOBID\n')
+        slurm_file.write("\n")
+        slurm_file.write(f"/home/$USER/LOCAL/runG_diab {input_no_ext}.inp {ncpus} \n")
+
+    command = (
+        "sbatch"
+        f" {input_no_ext}.slurm"
+    )
+
+    return f"{input_no_ext}.slurm"
 
 #Do diabatization calculation at the reference nondistorted structure.
 #This calculation shall be a repetition of a calcualtion in preparing temp.inp
@@ -850,7 +849,7 @@ def main():
     #ndim = 15 # note: can only test like this if you have proper hessout structure
     ngroup = ndim // 5
     nleft = ndim % 5
-    qsize = input("Enter desired qsize, default is 0.05: ")
+    # qsize = input("Enter desired qsize, default is 0.05: ")
     qsize = 0.05
     print("Dimension of all xyz coordinates:", ndim)
     print("# of atoms:", natoms)

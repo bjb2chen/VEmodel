@@ -1,0 +1,13 @@
+#!/bin/bash
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=2       # Number of CPUs
+#SBATCH --mem-per-cpu=20G        # memory per CPU in MB
+
+export SLURM_CPUS_PER_TASK
+mkdir -p /home/$USER/.gamess_ascii_files/$SLURM_JOBID
+
+# rungms JOB VERNO NCPUS >& JOB.log
+/home/bjb2chen/gamess/rungms ph3cat_cct_gmcpt_7o7e_D3hinC1_3st.inp 00 2 &> step2_ph3cat_cct_gmcpt_7o7e_D3hinC1_3st.log
+sleep 10
+cp /home/$USER/.gamess_ascii_files/$SLURM_JOBID/* . 
