@@ -208,7 +208,7 @@ def filter_modes(excluded_set, ndim):
 
     return modes_included
 
-def my_subgam(filnam, ncpus, ngb, nhour):
+def my_subgam(filnam, **kwargs):
     # Remove the ".inp" extension from the filename
     input_no_ext, extension = os.path.splitext(filnam)
     print(f"running calculations for {input_no_ext}")
@@ -255,7 +255,7 @@ def refG_calc(refgeo, filnam):
 
         # Submit and run the refG calculation (you may need to customize this command based on your setup)
         #refG_job_result = subprocess.run(["./subgam.diab", f"{filnam}_refG.inp", "4", "0", "1"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        os.system("sbatch" + ' -W' + " " + my_subgam(f"{filnam}_refG.inp", 2, 1, 1)) # the wait 
+        os.system("sbatch" + ' -W' + " " + my_subgam(f"{filnam}_refG.inp", ncpus=2, ngb=1, nhour=1)) # the wait 
 
         # At this point, refG calculation has completed successfully. 
         print("Calculation at the reference structure is done.")
@@ -349,7 +349,7 @@ def diabatization(modes_included, freqcm, ndim, refcoord, \
                     print(f"Running calculations for {filnam}_mode{imode}_{displacement}{qsize}{suffix}")
                     try:
                         #subprocess.run(['./subgam.diab', f'{filnam}_mode{imode}_{displacement}{qsize}{suffix}.inp', '4', '0', '1'])
-                        os.system("sbatch" + " " + my_subgam(f'{filnam}_mode{imode}_{displacement}{qsize}{suffix}.inp', 2, 1, 1))
+                        os.system("sbatch" + " " + my_subgam(f'{filnam}_mode{imode}_{displacement}{qsize}{suffix}.inp', ncpus=2, ngb=1, nhour=1))
                     except Exception as e:
                         print(f"Error running diabatization calculation: {str(e)}")
                 else:
@@ -429,7 +429,7 @@ def diabatization(modes_included, freqcm, ndim, refcoord, \
                         print(f"Running calculations for {output_filename}!")
                         try:
                             #subprocess.run(['./subgam.diab', f'{filnam}_mode{imode}_{displacement1}{qsize}_mode{jmode}_{displacement2}{qsize}.inp', '4', '0', '1'])
-                            os.system("sbatch" + " " + my_subgam(f'{filnam}_mode{imode}_{displacement1}{qsize}_mode{jmode}_{displacement2}{qsize}.inp', 2, 1, 1))
+                            os.system("sbatch" + " " + my_subgam(f'{filnam}_mode{imode}_{displacement1}{qsize}_mode{jmode}_{displacement2}{qsize}.inp', ncpus=2, ngb=1, nhour=1))
                         except Exception as e:
                             print(f"Error running diabatization calculation: {str(e)}")
                     else:
