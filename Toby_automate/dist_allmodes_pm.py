@@ -275,6 +275,16 @@ def convert_qsize_to_realsize(mode_idx, qsize, frequency, constants):
     # if debug_print: print(mode_idx, omega, real_size, type(real_size))
     return real_size
 
+def convert_qsize_to_realsize(imode, qsize, amu2me, ang2br, wn2eh, debug_print=True, **kwargs):
+    """ Convert the reduced dimensionless qsize to the actual rsize in sqrt(amu)*Angs unit """
+    constant_dictionarys = kwargs['constants_dictionary']
+    amu2me, ang2br, wn2eh = [constant_dictionarys.get(x) for x in ['amu2me', 'ang2br', 'wn2eh']]
+
+    omega = kwargs['freqcm'][imode]
+    rsize = qsize / (pow(amu2me, 0.5) * ang2br * pow(omega * wn2eh, 0.5))
+    if debug_print: print(imode, omega, rsize, type(rsize))
+    return rsize
+
 def diabatization(modes_included, freqcm, ndim, refcoord, \
                     nrmmod, natom, atmlst, chrglst, filnam, \
                     qsize, ha2ev, wn2ev, wn2eh, ang2br, amu2me):
