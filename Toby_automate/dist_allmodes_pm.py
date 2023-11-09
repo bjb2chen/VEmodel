@@ -264,6 +264,17 @@ def refG_calc(refgeo, filnam):
 
     return
 
+def convert_qsize_to_realsize(mode_idx, qsize, frequency, constants):
+    """ Convert the reduced dimensionless qsize to the actual rsize in sqrt(amu)*Angs unit """
+    omega = frequency[mode_idx]  # frequency of a specific mode
+    real_size = qsize
+    real_size /= pow(constants['atomic_mass_units_to_<me>'], 0.5)
+    real_size *= constants['angstrom_to_bohr-radius']
+    real_size *= pow(omega * constants['wavemumbers_to_eh'], 0.5)
+
+    # if debug_print: print(mode_idx, omega, real_size, type(real_size))
+    return real_size
+
 def diabatization(modes_included, freqcm, ndim, refcoord, \
                     nrmmod, natom, atmlst, chrglst, filnam, \
                     qsize, ha2ev, wn2ev, wn2eh, ang2br, amu2me):
