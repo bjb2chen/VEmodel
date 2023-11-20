@@ -1,0 +1,3 @@
+# to open Python interpreter in Sublime, use ctrl+b
+print('hello world')
+print(2**100) # forgot parens on this line ...
