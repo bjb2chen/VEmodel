@@ -9,4 +9,7 @@
 #### - Have an input geometry written in ref_structure
 #### - Have temp.inp written
 
+#### The following are human input to parameters:
+#### modes_excluded and qsize.
+
 [Project Poster Reference](https://github.com/bjb2chen/vmodels/files/10171706/SCP2022_bjc_20685630_White.pdf)
