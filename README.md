@@ -9,6 +9,8 @@
 #### - Have an input geometry written in ref_structure
 #### - Have temp.inp written
 
+### The main diabatization function (lines ~300-450) works by first doing linear coupling (+, -, +x2, -x2), then the subroutine loops over bilinear couplings (plusplus, pm, mp, mm)
+
 #### The following are human input to parameters:
 #### modes_excluded and qsize.
 
