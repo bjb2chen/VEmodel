@@ -1,0 +1,206 @@
+OP_DEFINE-SECTION
+title
+ph3_cct_gmcpt_D3h_3st_diab 3 states + 3 modes
+end-title 
+end-op_define-section
+
+PARAMETER-SECTION
+
+#Diagonal and Off-diagonal diabatic Hamiltonian elements at reference structure
+v1 = 0.000000000, ev
+
+v2 = 6.486897274, ev
+v12 = 0.000000000, ev
+
+v3 = 6.486897284, ev
+v13 = 0.000000000, ev
+v23 = -0.000000102, ev
+
+
+#Parameters for mode 1
+#Vibron:
+w_m1 = 0.1367374050900000 ev
+
+#Linear and quadratic diagonal and off-diagonal vibronic coupling constants:
+l1_m1 = -0.0000002721110836, ev
+q1_m1 = -0.1174009870036339, ev
+
+l2_m1 = 0.0000000000000000, ev
+q2_m1 = -0.2812897834587083, ev
+l12_m1 = -0.0000407600000000, ev
+q12_m1 = -0.0000012000000000, ev
+
+l3_m1 = 0.0000000000000000, ev
+q3_m1 = -0.2812952256803803, ev
+l13_m1 = -0.0000831800000000, ev
+q13_m1 = -0.0000002000000000, ev
+l23_m1 = 0.0000012500000000, ev
+q23_m1 = 0.0000274000000000, ev
+
+#Bilinear diagonal and off-diagonal vibronic coupling constants:
+#Parameters for mode 3
+#Vibron:
+w_m3 = 0.0000024796200000 ev
+
+#Linear and quadratic diagonal and off-diagonal vibronic coupling constants:
+l1_m3 = -0.0001722481411320, ev
+q1_m3 = 0.0008356314888748, ev
+
+l2_m3 = -0.0017649311579951, ev
+q2_m3 = 0.0019594623291111, ev
+l12_m3 = 0.0000033400000000, ev
+q12_m3 = 0.0000052000000000, ev
+
+l3_m3 = 0.0000043538237413, ev
+q3_m3 = 0.0019540197980813, ev
+l13_m3 = 0.0006033200000000, ev
+q13_m3 = 0.0000015000000000, ev
+l23_m3 = -0.0000457900000000, ev
+q23_m3 = 0.0000230000000000, ev
+
+#Bilinear diagonal and off-diagonal vibronic coupling constants:
+b1_m3_m1 = -0.0000000001546789, ev
+
+b2_m3_m1 = 0.0000680286989742, ev
+b12_m3_m1 = 0.0000082000000000, ev
+
+b3_m3_m1 = -0.0000653071241016, ev
+b13_m3_m1 = -0.0000935000000000, ev
+b23_m3_m1 = 0.0000117000000000, ev
+
+#Parameters for mode 11
+#Vibron:
+w_m11 = 0.3393533543400000 ev
+
+#Linear and quadratic diagonal and off-diagonal vibronic coupling constants:
+l1_m11 = -0.0000231296741246, ev
+q1_m11 = -0.0071783996057919, ev
+
+l2_m11 = 0.2888288335155050, ev
+q2_m11 = -0.1700630956442044, ev
+l12_m11 = 0.0000000000000000, ev
+q12_m11 = 0.0000000000000000, ev
+
+l3_m11 = -0.2869719278367748, ev
+q3_m11 = -1.3044136813859235, ev
+l13_m11 = 0.0000000000000000, ev
+q13_m11 = 0.0000000000000000, ev
+l23_m11 = 0.0155579300000000, ev
+q23_m11 = 0.0306445000000000, ev
+
+#Bilinear diagonal and off-diagonal vibronic coupling constants:
+b1_m11_m1 = 0.0000000000000000, ev
+
+b2_m11_m1 = -0.0000000001546789, ev
+b12_m11_m1 = -0.0040172000000000, ev
+
+b3_m11_m1 = 0.0000000001546789, ev
+b13_m11_m1 = 0.1657179999999999, ev
+b23_m11_m1 = 0.0000000000000000, ev
+
+b1_m11_m3 = -0.0004136133327653, ev
+
+b2_m11_m3 = -0.0003755173170241, ev
+b12_m11_m3 = 0.0000100000000000, ev
+
+b3_m11_m3 = -0.0002204122979023, ev
+b13_m11_m3 = -0.0000277000000000, ev
+b23_m11_m3 = -0.0000095000000000, ev
+
+end-parameter-section
+-----------------------------------------
+HAMILTONIAN-SECTION
+-----------------------------------------
+ modes | el | m1 | m3 | m11
+-----------------------------------------
+# KINETIC OPERATOR FOR NORMAL MODES
+-----------------------------------------
+w_1   |2 KE
+w_3   |3 KE
+w_11   |4 KE
+-----------------------------------------
+# HARMONIC OSCILLATOR POTENTIALS FOR NORMAL MODES
+-----------------------------------------
+0.5*w_1   |2  q^2
+0.5*w_3   |3  q^2
+0.5*w_11   |4  q^2
+-----------------------------------------
+# ELECTRONIC COUPLING AT REFERENCE STRUCTURE
+-----------------------------------------
+v1  |1 S1&1
+v2  |1 S2&2
+v3  |1 S3&3
+v12  |1 S1&2
+v13  |1 S1&3
+v23  |1 S2&3
+-----------------------------------------
+# LINEAR AND QUADRATIC DIAGONAL VIBRONIC COUPLINGS
+-----------------------------------------
+l1_m1 |1 S1&1 |2 q
+q1_m1 |1 S1&1 |2 q^2
+l2_m1 |1 S2&2 |2 q
+q2_m1 |1 S2&2 |2 q^2
+l3_m1 |1 S3&3 |2 q
+q3_m1 |1 S3&3 |2 q^2
+l1_m3 |1 S1&1 |3 q
+q1_m3 |1 S1&1 |3 q^2
+l2_m3 |1 S2&2 |3 q
+q2_m3 |1 S2&2 |3 q^2
+l3_m3 |1 S3&3 |3 q
+q3_m3 |1 S3&3 |3 q^2
+l1_m11 |1 S1&1 |4 q
+q1_m11 |1 S1&1 |4 q^2
+l2_m11 |1 S2&2 |4 q
+q2_m11 |1 S2&2 |4 q^2
+l3_m11 |1 S3&3 |4 q
+q3_m11 |1 S3&3 |4 q^2
+-----------------------------------------
+# LINEAR AND QUADRATIC OFF-DIAGONAL VIBRONIC COUPLINGS
+-----------------------------------------
+l12_m1 |1 S1&2 |2 q
+q12_m1 |1 S1&2 |2 q^2
+l13_m1 |1 S1&3 |2 q
+q13_m1 |1 S1&3 |2 q^2
+l23_m1 |1 S2&3 |2 q
+q23_m1 |1 S2&3 |2 q^2
+l12_m3 |1 S1&2 |3 q
+q12_m3 |1 S1&2 |3 q^2
+l13_m3 |1 S1&3 |3 q
+q13_m3 |1 S1&3 |3 q^2
+l23_m3 |1 S2&3 |3 q
+q23_m3 |1 S2&3 |3 q^2
+l12_m11 |1 S1&2 |4 q
+q12_m11 |1 S1&2 |4 q^2
+l13_m11 |1 S1&3 |4 q
+q13_m11 |1 S1&3 |4 q^2
+l23_m11 |1 S2&3 |4 q
+q23_m11 |1 S2&3 |4 q^2
+-----------------------------------------
+# BILINEAR DIAGONAL VIBRONIC COUPLINGS
+-----------------------------------------
+b1_m3_m1 |1 S1&1 |2 q |3 q
+b2_m3_m1 |1 S2&2 |2 q |3 q
+b3_m3_m1 |1 S3&3 |2 q |3 q
+b1_m11_m1 |1 S1&1 |2 q |4 q
+b2_m11_m1 |1 S2&2 |2 q |4 q
+b3_m11_m1 |1 S3&3 |2 q |4 q
+b1_m11_m3 |1 S1&1 |3 q |4 q
+b2_m11_m3 |1 S2&2 |3 q |4 q
+b3_m11_m3 |1 S3&3 |3 q |4 q
+-----------------------------------------
+# BILINEAR OFF-DIAGONAL VIBRONIC COUPLINGS
+-----------------------------------------
+b12_m3_m1 |1 S1&2 |2 q |3 q
+b13_m3_m1 |1 S1&3 |2 q |3 q
+b23_m3_m1 |1 S2&3 |2 q |3 q
+b12_m11_m1 |1 S1&2 |2 q |4 q
+b13_m11_m1 |1 S1&3 |2 q |4 q
+b23_m11_m1 |1 S2&3 |2 q |4 q
+b12_m11_m3 |1 S1&2 |3 q |4 q
+b13_m11_m3 |1 S1&3 |3 q |4 q
+b23_m11_m3 |1 S2&3 |3 q |4 q
+-----------------------------------------
+
+end-hamiltonian-section
+
+end-operator
