@@ -1,6 +1,6 @@
 # vmodels
 
-### Repository for vibronic models construction. Deveolped in collaboration between Nooijen/Zeng group.
+### Repository for vibronic models construction. Developed in collaboration between Nooijen/Zeng group.
 
 ### Protocol procedure. Instructions on how to run the code:
 #### - You first need to ensure you have GAMESS with Toby's diabatization (gmcpt.src) module installed.
@@ -14,6 +14,6 @@
 #### The following are human input to parameters:
 #### modes_excluded and qsize.
 
-Video recording of diabatization code being run: https://youtu.be/nLIn-N0oB-0
+Video recording on how to run the diabatization code (assuming you have GAMESS with gmcpt module already): https://youtu.be/nLIn-N0oB-0
 
 [Project Poster Reference](https://github.com/bjb2chen/vmodels/files/10171706/SCP2022_bjc_20685630_White.pdf)
