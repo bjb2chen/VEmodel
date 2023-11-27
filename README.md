@@ -14,4 +14,6 @@
 #### The following are human input to parameters:
 #### modes_excluded and qsize.
 
+Video recording of diabatization code being run: https://youtu.be/nLIn-N0oB-0
+
 [Project Poster Reference](https://github.com/bjb2chen/vmodels/files/10171706/SCP2022_bjc_20685630_White.pdf)
