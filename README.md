@@ -17,3 +17,5 @@
 Video recording on how to run the diabatization code (assuming you have GAMESS with gmcpt module already): https://youtu.be/nLIn-N0oB-0
 
 [Project Poster Reference](https://github.com/bjb2chen/vmodels/files/10171706/SCP2022_bjc_20685630_White.pdf)
+
+Note to self: I have to get good, ignore the math and just focus on the process. The math will fall out once you are making progress.
