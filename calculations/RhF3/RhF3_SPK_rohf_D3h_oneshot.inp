@@ -1,0 +1,28 @@
+ !Step 1: Geometry optimization for RhF3 model, no valence electrons to start.
+ $system kdiag=3 mwords=200 memddi=3000 parall=.t. $end
+ $contrl runtyp=energy ispher=1 relwfn=LUT-IOTC $end
+ $contrl icut=9 itol=20 inttyp=rysquad qmttol=1.0d-05 nosym=0 $end
+ $scf    npunch=2 conv=1.0d-06 dirscf=.t. diis=.t. soscf=.f. ethrsh=10.0 $end
+ $contrl scftyp=rohf  mult=5 maxit=200 icharg=0 $end
+ -relwfn norder=3 $end
+ -guess  guess=moread norb=158 purify=.t. norder=1
+         iorder(25)=27,25,26 $end
+ $basis  gbasis=SPKrTZP $end
+ -mcscf  cistep=gmcci fullnr=.t. finci=mos
+         acurcy=1.d-6 maxit=100 $end
+ $trans  dirtrf=.t. $end
+ -mrmp   mrpt=gmcpt rdvecs=.f. $end
+ -gmcpt  nmofzc=27 nmodoc=0 nmoact=5 nelact=5 stsym(1)=A nsolut=100
+         reftyp=ormas nspace=1 mstart(1)=28 mine(1)=5 maxe(1)=5
+         kstate(1)=1
+         wstate(1)=1
+         iwgt=0 thrwgt=-1.0 krot=.f. kszdoe=.f. knospn=.f.
+         thrde=-1.0 edshft=0.02 $end
+ $statpt hssend=.t. $end
+ $data
+ FeH4- 10 states calculation at opt geometry.
+ DNH 3
+
+ Rh    45.0    0.0  0.0  0.0
+ F      9.0    2.07 0.0  0.0
+ $end
