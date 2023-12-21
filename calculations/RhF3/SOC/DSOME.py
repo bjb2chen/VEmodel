@@ -2,20 +2,13 @@ import sys
 import re
 import pprint
 
-# def get_number_of_atoms(hessout):
-#     with open(hessout, 'r') as hess_file:
-#         for line in hess_file:
-#             if ' TOTAL NUMBER OF ATOMS' in line:
-#                 natoms = int(line.split('=')[1])
-#                 return natoms
-
 # Function to extract lines between patterns in a file
 def extract_lines_between_patterns(filename, start_pattern, end_pattern):
     selected_lines = []
     reversed_rightmost = []
     collecting = False
 
-    with open(filename, 'r') as file:
+    with open(filename, 'r', encoding = "utf-8", errors="replace") as file:
         for line in file.readlines():
             if start_pattern in line:
                 collecting = True
@@ -26,8 +19,6 @@ def extract_lines_between_patterns(filename, start_pattern, end_pattern):
                 selected_lines.append(line)
 
     selected_lines.reverse()
-    #pprint.pprint('New set\n')
-    #pprint.pprint(selected_lines)
 
     for line in selected_lines:
         # if end_pattern in line:
@@ -43,59 +34,49 @@ def extract_lines_between_patterns(filename, start_pattern, end_pattern):
 
     return reversed_rightmost
 
-# def extract_diabatic_energy(file_path, pattern):
-#     with open(file_path, 'r') as file:
-#         for line in reversed(file.readlines()):
-#             match = re.search(pattern, line)
-#             if match:
-#                 return float(line[44:62].strip().replace(" ", ""))
-
-# def extract_coupling_energy(file_path, pattern):
-#     with open(file_path, 'r') as file:
-#         for line in reversed(file.readlines()):
-#             match = re.search(pattern, line)
-#             if match:
-#                return float(line[62:].strip().replace(" ", ""))
-
-def extract_DSOME(selected_lines, pattern):
+def extract_DSOME(selected_lines, pattern, nstate):
     DSOME_set = {}
-    # for ist in range(1, nstate + 1):
+    full_extracted_set = {}
+    summed_set_real = {}
+    summed_set_imag = {}
+
     for DSOMEline in selected_lines:
         if "STATE #" in DSOMEline:
-            ist = DSOMEline[9:16] + ',' + DSOMEline[31:33]
-            DSOME_set[ist] = DSOMEline[48:61].strip().replace(" ", "") + "+" + \
-                             DSOMEline[63:77].strip().replace(" ", "")
-    print(DSOME_set['12 & 13, 2'])
-    return DSOME_set
-    # with open(file_path, 'r') as file:
-    #     for line in reversed(file.readlines()):
-    #         match = re.search(pattern, line)
-    #         if match:
-    #             return line[48:61].strip().replace(" ", "") + "+" + \
-    #                    line[63:77].strip().replace(" ", "")  
+            ist = DSOMEline[9:12].strip().replace(" ", "")
+            jst = DSOMEline[14:16].strip().replace(" ", "") 
+            kst = ist + ' & ' + jst + ',' + DSOMEline[31:33]
+            real = float(DSOMEline[48:61].strip().replace(" ", ""))
+            imaginary = float(DSOMEline[63:75].strip().replace(" ", ""))
+            DSOME_set[kst] = str(real) + "+" + str(imaginary)  # + "I"
 
-# def read_freq_values(selected_lines):
-#     freq_value_set = []
-
-#     for freqline in selected_lines:
-#         if "FREQUENCY:" in freqline:
-#             freq_value_set.append(freqline[18:])
-
-#     return freq_value_set
+    for left_state_idx in range(1, int(nstate)):
+        for right_state_idx in range(left_state_idx+1, int(nstate)+1):
+            for level_idx in range(1, 3):
+                full_extracted_set[left_state_idx, right_state_idx, level_idx] = DSOME_set[f'{left_state_idx} & {right_state_idx}, {level_idx}']
+            summed_set_real[left_state_idx, right_state_idx] = float(full_extracted_set[left_state_idx, right_state_idx, 1].split('+')[0]) + \
+                                                               float(full_extracted_set[left_state_idx, right_state_idx, 2].split('+')[0])
+            summed_set_imag[left_state_idx, right_state_idx] = float(full_extracted_set[left_state_idx, right_state_idx, 1].split('+')[1]) + \
+                                                               float(full_extracted_set[left_state_idx, right_state_idx, 2].split('+')[1])
+    
+    return full_extracted_set, summed_set_real, summed_set_imag
 
 def main():
-    if len(sys.argv) != 2:
-        print("Usage: python3 your_script.py <SOC_out_file>")
+    if len(sys.argv) != 3:
+        print("Usage: python3 DSOME.py <SOC_out_file> <nstate>")
         sys.exit(1)
 
     filnam = sys.argv[1]
+    nstate = sys.argv[2]
     selected_lines = extract_lines_between_patterns(filnam,
         'DIABATIC SPIN-ORBIT MATRIX ELEMENTS',
         'SOC EIG. VALUES and VECTORS IN DIABATS (DIRECT MAX.)'
         )
-    pprint.pprint(selected_lines)
-    DSOME_block = extract_DSOME(selected_lines, 'DIABATIC SPIN-ORBIT MATRIX ELEMENTS')
-    pprint.pprint(DSOME_block)
+    #pprint.pprint(selected_lines)
+    #DSOME_block = extract_DSOME(selected_lines, 'DIABATIC SPIN-ORBIT MATRIX ELEMENTS')
+    #pprint.pprint(DSOME_block)
+    extracted = extract_DSOME(selected_lines, 'DIABATIC SPIN-ORBIT MATRIX ELEMENTS', nstate)
+    pprint.pprint(extracted)
+    #pprint.pprint(extracted)
 
 if __name__ == "__main__":
     main()
