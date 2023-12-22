@@ -78,9 +78,40 @@ def mctdh(filnam, modes_included, qsize, ha2ev, wn2ev, wn2eh, ang2br, amu2me, ns
     str1 = "OP_DEFINE-SECTION"
     str2 = "title"
 
+    # nstate=`grep '# of states in CI      = ' "$filnam"_refG.out|tail -1|cut -d'=' -f2`
+    with open(f'{filnam}_refG.out', 'r') as refGout_file:
+        for line in refGout_file:
+            if '# of states in CI      = ' in line:
+                nstate = int(line.split('=')[1]) # this will hopefully grab the last line
+    
+    str3 = "end-title "
+    str4 = "end-op_define-section"
+    str5 = ""
+    # lines 482,483
+    str6 = "PARAMETER-SECTION"
+    str7 = ""
+    str8 = f'{filnam} {nstate} states + ' + str(nmodes) + ' modes'
+    strlst = [str1, str2, str8, str3, str4, str5, str6, str7]
+
+    with open('mctdh.op', 'w') as mctdh_file:
+        for idx in strlst:
+            mctdh_file.write(idx+'\n')
+
+    # Write SOC ELECTRONIC COUPLING AT REFERENCE STRUCTURE
+    mctdh_file.write("-----------------------------------------\n")
+    mctdh_file.write("# SOC REAL AND IMAG COUPLINGS (OFF DIAGONAL ELEMENT)\n")
+    mctdh_file.write("-----------------------------------------\n")
+    # for ist in range(1, nstate + 1):
+    #     mctdh_file.write(f"v{ist}  |1 S{ist}&{ist}\n")
+    for ist in range(1, nstate + 1):
+        jlast = ist - 1
+        for jst in range(1, jlast + 1):
+            mctdh_file.write(f"SOr_{jst}_{ist} = {summed_set_real[jst, ist]:.16f}, CM-1\n")
+            mctdh_file.write(f"SOi_{jst}_{ist} = {summed_set_imag[jst, ist]:.16f}, CM-1\n")
+
     # Open mctdh.op file for writing
     with open('mctdh.op', 'a') as mctdh_file:
-        #mctdh_file.write("end-parameter-section\n")
+        mctdh_file.write("end-parameter-section\n")
         # Write the header
         mctdh_file.write("-----------------------------------------\n")
         mctdh_file.write("HAMILTONIAN-SECTION\n")
@@ -172,18 +203,6 @@ def mctdh(filnam, modes_included, qsize, ha2ev, wn2ev, wn2eh, ang2br, amu2me, ns
         #             jlast = ist - 1
         #             for jst in range(1, jlast + 1):
         #                 mctdh_file.write(f"b{jst}{ist}_m{imode}_m{jmode} |1 S{jst}&{ist} |{lmode_count} q |{kmode_count} q\n")
-
-        # Write SOC ELECTRONIC COUPLING AT REFERENCE STRUCTURE
-        mctdh_file.write("-----------------------------------------\n")
-        mctdh_file.write("# SOC REAL AND IMAG COUPLINGS (OFF DIAGONAL ELEMENT)\n")
-        mctdh_file.write("-----------------------------------------\n")
-        # for ist in range(1, nstate + 1):
-        #     mctdh_file.write(f"v{ist}  |1 S{ist}&{ist}\n")
-        for ist in range(1, nstate + 1):
-            jlast = ist - 1
-            for jst in range(1, jlast + 1):
-                mctdh_file.write(f"SOr_{jst}_{ist} = {summed_set_real[jst, ist]:.16f}, CM-1\n")
-                mctdh_file.write(f"SOi_{jst}_{ist} = {summed_set_imag[jst, ist]:.16f}, CM-1\n")
 
         # Write SOC LINEAR AND QUADRATIC OFF-DIAGONAL VIBRONIC COUPLINGS
         mctdh_file.write("-----------------------------------------\n")
