@@ -217,6 +217,7 @@ def mctdh(filnam, modes_included, qsize, ha2ev, wn2ev, wn2eh, ang2br, amu2me, ns
                     #mctdh_file.write(f"l{jst}{ist}_m{imode} |1 S{jst}&{ist} |{kmode_count} q\n")
                     #mctdh_file.write(f"q{jst}{ist}_m{imode} |1 S{jst}&{ist} |{kmode_count} q^2\n")
                     mctdh_file.write(f"I*lSOi_{jst}_{ist}_m{imode} |1 Z{jst}&{ist}|{kmode_count} q\n")
+                    #note to self: the I* is performing ARITHMETIC on SOr_{jst}_{ist} prepared earlier, does that mean we neeed to remove the l and _m{imode}
                     mctdh_file.write(f"-I*lSOi_{jst}_{ist}_m{imode} |1 Z{ist}&{jst}|{kmode_count} q\n")
                     mctdh_file.write(f"I*qSOi_{jst}_{ist}_m{imode} |1 Z{jst}&{ist}|{kmode_count} q^2\n")
                     mctdh_file.write(f"-I*qSOi_{jst}_{ist}_m{imode} |1 Z{ist}&{jst}|{kmode_count} q^2\n")
