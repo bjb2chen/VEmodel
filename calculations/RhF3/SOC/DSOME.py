@@ -66,7 +66,7 @@ def extract_DSOME(selected_lines, pattern, nstate):
     
     return full_extracted_set, summed_set_real, summed_set_imag, append_I
 
-def mctdh(filnam, modes_included, qsize, ha2ev, wn2ev, wn2eh, ang2br, amu2me, nstate, summed_set_real, summed_set_imag):
+def mctdh(filnam, modes_included, **kwargs):
     nmodes = len(modes_included)
 
     try:
@@ -281,7 +281,7 @@ def main():
     pprint.pprint(append_I)
 
     modes_included = {1: 7, 2: 8, 3: 9, 4: 10, 5: 11, 6: 12}
-    make_mctdh = mctdh(filnam, modes_included, qsize, ha2ev, wn2ev, wn2eh, ang2br, amu2me, nstate, summed_set_real, summed_set_imag)
+    make_mctdh = mctdh(filnam, modes_included, qsize=qsize, ha2ev=ha2ev, wn2ev=wn2ev, wn2eh=wn2eh, ang2br=ang2br, amu2me=amu2me, nstate=nstate, summed_set_real=summed_set_real, summed_set_imag=summed_set_imag)
 
 if __name__ == "__main__":
     main()
