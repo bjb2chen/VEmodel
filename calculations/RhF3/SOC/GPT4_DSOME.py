@@ -2,9 +2,10 @@ import sys
 import re
 import os
 import subprocess
+import pprint
 
 # Function to extract lines between patterns in a file
-def extract_lines_between_patterns(filename, start_pattern, end_pattern, encoding='ISO-8859-1'):
+def extract_lines_between_patterns(filename, start_pattern, end_pattern, encoding="utf-8"):
     collecting = False
     selected_lines = []
     with open(filename, 'r', encoding=encoding, errors='replace') as file:
@@ -18,11 +19,12 @@ def extract_lines_between_patterns(filename, start_pattern, end_pattern, encodin
     return selected_lines[::-1]
 
 # Function to extract all levels of DSOME
-def extract_all_levels_DSOME(file_path, pattern, nstate, encoding='ISO-8859-1'):
+def extract_all_levels_DSOME(file_path, pattern, nstate, encoding="utf-8"):
     all_extracted_data = []
     with open(file_path, 'r', encoding=encoding, errors='replace') as file:
         lines = file.readlines()
     occurrence_indices = [loc for loc, val in enumerate(lines) if pattern in val]
+
     for index in occurrence_indices:
         DSOME_set = {}
         full_extracted_set = {}
@@ -30,15 +32,26 @@ def extract_all_levels_DSOME(file_path, pattern, nstate, encoding='ISO-8859-1'):
         summed_set_imag = {}
         subsequent_lines = lines[index:]
         state_lines = [line.strip() for line in subsequent_lines if line.startswith(" STATE #")]
+
         for line in state_lines:
-            match = re.search(r"STATE # (\d+) & (\d+)'S.*LEVEL (\d+)-El.*=\s*([-\d.]+)\s*\+\s*([-\d.]+)I", line)
-            if match:
-                ist, jst, level, real, imaginary = match.groups()
+            try:
+                ist = line[9:11].strip().replace(" ", "")
+                jst = line[14:15].strip().replace(" ", "")
+                level = line[31:32].strip().replace(" ", "")
+                real = float(line[48:60].strip().replace(" ", ""))
+                #print(real)
+                imaginary = float(line[63:74].strip().replace(" ", ""))
+                #print(imaginary)
                 kst = f"{ist} & {jst}, {level}"
-                DSOME_set[kst] = complex(float(real), float(imaginary))
+                #print(kst)
+                DSOME_set[kst] = complex(real, imaginary)
+                #print(DSOME_set[kst])
+            except Exception as e:
+                print(f"Error processing line: {line} - {e}")
+
         for left_state_idx in range(1, nstate):
             for right_state_idx in range(left_state_idx + 1, nstate + 1):
-                for level_idx in range(1, 3):
+                for level_idx in range(1, 3):  # Assuming only 2 levels as per the data structure
                     key = f"{left_state_idx} & {right_state_idx}, {level_idx}"
                     if key in DSOME_set:
                         full_extracted_set[key] = DSOME_set[key]
@@ -48,7 +61,18 @@ def extract_all_levels_DSOME(file_path, pattern, nstate, encoding='ISO-8859-1'):
                         else:
                             summed_set_real[(left_state_idx, right_state_idx)] += DSOME_set[key].real
                             summed_set_imag[(left_state_idx, right_state_idx)] += DSOME_set[key].imag
+
         all_extracted_data.append((full_extracted_set, summed_set_real, summed_set_imag))
+    
+    # Print the extracted data for diagnostic purposes
+    for i, data in enumerate(all_extracted_data):
+        full_extracted_set, summed_set_real, summed_set_imag = data
+        print(f"Section {i+1}:")
+        print("Full Extracted Set:", full_extracted_set)
+        print("Summed Real Set:", summed_set_real)
+        print("Summed Imaginary Set:", summed_set_imag)
+        print("\n")
+
     return all_extracted_data
 
 # Function to create MCTDH operator files
@@ -71,7 +95,8 @@ def mctdh(filnam, modes_included, nstate, summed_set_real, summed_set_imag):
         mctdh_file.writelines(f"{line}\n" for line in strlst)
         mctdh_file.write("# SOC REAL AND IMAG COUPLINGS (OFF DIAGONAL ELEMENT)\n")
         for ist in range(1, nstate + 1):
-            for jst in range(1, ist):
+            jlast = ist - 1
+            for jst in range(1, jlast + 1):
                 mctdh_file.write(f"SOr_{jst}_{ist} = {summed_set_real[(jst, ist)]:.16f}, CM-1\n")
                 mctdh_file.write(f"SOi_{jst}_{ist} = {summed_set_imag[(jst, ist)]:.16f}, CM-1\n")
         mctdh_file.write("end-parameter-section\n")
@@ -108,7 +133,7 @@ def mctdh(filnam, modes_included, nstate, summed_set_real, summed_set_imag):
                         mctdh_file.write(f"-I*SOi_b{jst}{ist}_m{imode}_m{jmode} |1 Z{ist}&{jst} |{lmode_count} q |{kmode_count} q\n")
         mctdh_file.write("\nend-hamiltonian-section\n\nend-operator\n")
 
-def find_nstate(file_path, pattern='# of states in CI      = ', encoding='ISO-8859-1'):
+def find_nstate(file_path, pattern='# of states in CI      = ', encoding="utf-8"):
     with open(file_path, 'r', encoding=encoding, errors='replace') as file:
         for line in file:
             if pattern in line:
@@ -133,6 +158,9 @@ def main():
         full_extracted_set, summed_set_real, summed_set_imag = all_levels_data[0]
         modes_included = {1: 7, 2: 8, 3: 9, 4: 10, 5: 11, 6: 12}
         mctdh(filnam, modes_included, nstate, summed_set_real, summed_set_imag)
+        pprint.pprint(full_extracted_set)
+        pprint.pprint(summed_set_real)
+        pprint.pprint(summed_set_imag)
     else:
         print("No data extracted or an error occurred")
 
