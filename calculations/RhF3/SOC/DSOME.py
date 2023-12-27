@@ -6,37 +6,25 @@ import shutil
 import re
 import json
 
-# Function to extract lines between patterns in a file
-def extract_lines_between_patterns(filename, start_pattern, end_pattern):
+def extract_lines_between_patterns(filename, start_pattern, end_pattern, encoding='ISO-8859-1'):
     selected_lines = []
-    reversed_rightmost = []
     collecting = False
 
-    with open(filename, 'r', encoding = "utf-8", errors="replace") as file:
-        for line in file.readlines():
-            if start_pattern in line:
-                collecting = True
-                selected_lines.append(line)
-            elif end_pattern in line:
-                collecting = False
-            elif collecting:
-                selected_lines.append(line)
+    with open(filename, 'r', encoding=encoding, errors='replace') as file:
+        lines = file.readlines()
 
-    selected_lines.reverse()
+    # Find the last occurrence of the start pattern
+    last_start_index = max(i for i, line in enumerate(lines) if start_pattern in line)
 
-    for line in selected_lines:
-        # if end_pattern in line:
-        # end_pattern line not included in intial collection
-        collecting = True
-        reversed_rightmost.append(line)
-        if start_pattern in line:
-            collecting = False
-        elif collecting:
-            reversed_rightmost.append(line)
+    for line in lines[last_start_index:]:  # Start iterating from the last occurrence of the start pattern
+        if end_pattern in line:
+            break  # Stop collecting when the end pattern is found
+        if collecting:
+            selected_lines.append(line)
+        elif start_pattern in line:
+            collecting = True  # Start collecting after the start pattern is found
 
-    reversed_rightmost.reverse()
-
-    return reversed_rightmost
+    return selected_lines
 
 def extract_DSOME(selected_lines, pattern, nstate):
     DSOME_set = {}
@@ -70,8 +58,17 @@ def extract_DSOME(selected_lines, pattern, nstate):
     
     return full_extracted_set, summed_set_real, summed_set_imag, append_J
 
-def mctdh(filnam, modes_included, qsize, ha2ev, wn2ev, wn2eh, ang2br, amu2me, state, summed_set_real, summed_set_imag):
+def mctdh(filnam, modes_included, **kwargs):
     nmodes = len(modes_included)
+    #qsize=qsize, ha2ev=ha2ev, wn2ev=wn2ev, wn2eh=wn2eh, ang2br=ang2br, amu2me=amu2me, nstate=nstate, summed_set_real=summed_set_real, summed_set_imag=summed_set_imag
+    qsize = kwargs['qsize']
+    ha2ev = kwargs['ha2ev']
+    wn2eh = kwargs['wn2eh']
+    ang2br = kwargs['ang2br']
+    amu2me = kwargs['amu2me']
+    nstate = kwargs['nstate']
+    summed_set_real = kwargs['summed_set_real']
+    summed_set_imag = kwargs['summed_set_imag']
 
     try:
         os.remove('mctdh.op')
@@ -279,9 +276,10 @@ def main():
 
     selected_lines = extract_lines_between_patterns(filnam,
         'DIABATIC SPIN-ORBIT MATRIX ELEMENTS',
+        #'HSO MATRIX IN DIABATIC REPRESENTATION (DIRECT MAXIMIZATION)',
         'SOC EIG. VALUES and VECTORS IN DIABATS (DIRECT MAX.)'
         )
-    #pprint.pprint(selected_lines)
+    pprint.pprint(selected_lines)
     #DSOME_block = extract_DSOME(selected_lines, 'DIABATIC SPIN-ORBIT MATRIX ELEMENTS')
     #pprint.pprint(DSOME_block)
     extracted = extract_DSOME(selected_lines, 'DIABATIC SPIN-ORBIT MATRIX ELEMENTS', nstate)
@@ -292,7 +290,7 @@ def main():
     pprint.pprint(append_J)
 
     modes_included = {1: 7, 2: 8, 3: 9, 4: 10, 5: 11, 6: 12}
-    make_mctdh = mctdh(filnam, modes_included, qsize, ha2ev, wn2ev, wn2eh, ang2br, amu2me, nstate, summed_set_real, summed_set_imag)
+    make_mctdh = mctdh(filnam, modes_included, qsize=qsize, ha2ev=ha2ev, wn2ev=wn2ev, wn2eh=wn2eh, ang2br=ang2br, amu2me=amu2me, nstate=nstate, summed_set_real=summed_set_real, summed_set_imag=summed_set_imag)
 
 if __name__ == "__main__":
     main()
