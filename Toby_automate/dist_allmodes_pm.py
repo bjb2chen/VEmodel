@@ -473,8 +473,13 @@ def extract_coupling_energy(file_path, pattern):
             if match:
                 return float(line[62:].strip().replace(" ", ""))
 
-def mctdh(filnam, modes_included, freqcm, qsize, ha2ev, wn2ev, wn2eh, ang2br, amu2me):
+def mctdh(filnam, modes_included, **kwargs):
     nmodes = len(modes_included)
+    qsize = kwargs.get('qsize')
+    qsize = kwargs.get('qsize'
+    qsize = kwargs.get('qsize'
+    qsize = kwargs.get('qsize'
+    qsize = kwargs.get('qsize'
 
     try:
         subprocess.run(['rm', '-f', 'mctdh.op'])
@@ -909,7 +914,7 @@ def main():
     diabatize = diabatization(modes_included, freqcm, ndim, refcoord,\
                            nrmmod, natoms, atmlst, chrglst, filnam, \
                            qsize, ha2ev, wn2ev, wn2eh, ang2br, amu2me)
-    make_mctdh = mctdh(filnam, modes_included, freqcm, qsize, ha2ev, wn2ev, wn2eh, ang2br, amu2me)
+    make_mctdh = mctdh(filnam, modes_included, freqcm=freqcm, qsize=qsize, ha2ev=ha2ev, wn2ev=wn2ev, wn2eh=wn2eh, ang2br=ang2br, amu2me=amu2me)
 
     # pprint.pprint(nrmmod)
     # print('---------nrm mod done-----------')
