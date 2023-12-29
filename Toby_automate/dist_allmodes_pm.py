@@ -285,9 +285,7 @@ def convert_qsize_to_realsize(imode, qsize, amu2me, ang2br, wn2eh, debug_print=T
     if debug_print: print(imode, omega, rsize, type(rsize))
     return rsize
 
-def diabatization(modes_included, freqcm, ndim, refcoord, \
-                    nrmmod, natom, atmlst, chrglst, filnam, \
-                    qsize, ha2ev, wn2ev, wn2eh, ang2br, amu2me):
+def diabatization(filnam, modes_included, **kwargs):
 
     distcoord_plus = {}
     distcoord_minus = {}
@@ -297,6 +295,20 @@ def diabatization(modes_included, freqcm, ndim, refcoord, \
     distcoord_pm = {}
     distcoord_mp = {}
     distcoord_mm = {}
+
+    freqcm = kwargs.get('freqcm')
+    ndim = kwargs.get('ndim')
+    refcoord = kwargs.get('refcoord')
+    nrmmod = kwargs.get('nrmmod')
+    natoms = kwargs.get('natoms')
+    atmlst = kwargs.get('atmlst')
+    chrglst = kwargs.get('chrglst')
+    qsize = kwargs.get('qsize')
+    ha2ev = kwargs.get('ha2ev')
+    wn2ev = kwargs.get('wn2ev')
+    wn2eh = kwargs.get('wn2eh')
+    ang2br = kwargs.get('ang2br')
+    amu2me = kwargs.get('amu2me')
 
     #Loop over all considered modes and do + and - displacements
 
@@ -475,11 +487,13 @@ def extract_coupling_energy(file_path, pattern):
 
 def mctdh(filnam, modes_included, **kwargs):
     nmodes = len(modes_included)
+    freqcm = kwargs.get('freqcm')
     qsize = kwargs.get('qsize')
-    qsize = kwargs.get('qsize'
-    qsize = kwargs.get('qsize'
-    qsize = kwargs.get('qsize'
-    qsize = kwargs.get('qsize'
+    ha2ev = kwargs.get('ha2ev')
+    wn2ev = kwargs.get('wn2ev')
+    wn2eh = kwargs.get('wn2eh')
+    ang2br = kwargs.get('ang2br')
+    amu2me = kwargs.get('amu2me')
 
     try:
         subprocess.run(['rm', '-f', 'mctdh.op'])
@@ -911,9 +925,9 @@ def main():
     amu2me = 1822.88839 
 
     repetition = refG_calc(refgeo, filnam)
-    diabatize = diabatization(modes_included, freqcm, ndim, refcoord,\
-                           nrmmod, natoms, atmlst, chrglst, filnam, \
-                           qsize, ha2ev, wn2ev, wn2eh, ang2br, amu2me)
+    diabatize = diabatization(filnam, modes_included, freqcm=freqcm, ndim=ndim, refcoord=refcoord,\
+                           nrmmod=nrmmod, natoms=natoms, atmlst=atmlst, chrglst=chrglst, \
+                           qsize=qsize, ha2ev=ha2ev, wn2ev=wn2ev, wn2eh=wn2eh, ang2br=ang2br, amu2me=amu2me)
     make_mctdh = mctdh(filnam, modes_included, freqcm=freqcm, qsize=qsize, ha2ev=ha2ev, wn2ev=wn2ev, wn2eh=wn2eh, ang2br=ang2br, amu2me=amu2me)
 
     # pprint.pprint(nrmmod)
