@@ -5,35 +5,64 @@
 file=$1
 
 # Prompt the user to choose between "OPTIMIZED RHF" and "Semi-canonical MOs"
-read -p "Do you want (1) OPTIMIZED RHF \n (2) OPTIMIZED ROHF \n (3) Semi-canonical MOs? \n (4) DMO group \n (5) REFDET GROUP" num
+read -p $'Do you want:\n (1) OPTIMIZED RHF \n (2) OPTIMIZED ROHF \n (3) Semi-canonical MOs \n (4) MCSCF Natural Orbitals \n (5) OPTIMIZED MCSCF \n (6) DMO group \n (7) REFDET GROUP? \nYour choice: ' num
 
 # Perform the corresponding operation based on the user's choice
+
+# Handle OPTIMIZED RHF
 if [ "$num" == "1" ]; then
   # Remove existing vec.dat
   if [ -f vec.dat ]; then
     rm -f vec.dat
   fi
   sed -n "/OPTIMIZED RHF/,/END/ p" $file > vec.dat
-  echo "You have selected 1"
+  echo "You have selected 1 - OPTIMIZED RHF"
   echo "OPTIMIZED RHF orbitals prepared in vec.dat file"
+
+# Handle OPTIMIZED ROHF
 elif [ "$num" == "2" ]; then
   # Remove existing vec.dat
   if [ -f vec.dat ]; then
     rm -f vec.dat
   fi
   sed -n "/OPTIMIZED ROHF/,/END/ p" $file > vec.dat
-  echo "You have selected 2"
+  echo "You have selected 2 - OPTIMIZED ROHF"
   echo "OPTIMIZED ROHF orbitals prepared in vec.dat file"
+
+# Handle Semi-canonical MOs 
 elif [ "$num" == "3" ]; then
   # Remove existing active_space_orbs
   if [ -f active_space_orbs ]; then
     rm -f active_space_orbs
   fi
   sed -n "/Semi-canonical MOs/,/END/ p" $file > active_space_orbs
-  echo "You have selected 2"
-  echo "SEmi-canonical MOs prepared in active_space_orbs  file"
+  echo "You have selected 3 - Semi-canonical MOs"
+  echo "Semi-canonical MOs prepared in active_space_orbs file"
+
+# Handle MCSCF Natural Orbitals
 elif [ "$num" == "4" ]; then
-  read -p "Please input (x) number of DMOs and (y) the initial DMO in format: x y" ndmo inidmo
+  # Remove existing nat_orbs_mcscf
+  if [ -f nat_orbs_mcscf ]; then
+    rm -f nat_orbs_mcscf
+  fi
+  sed -n "/NATURAL ORBITALS OF MCSCF/,/END/ p" $file > nat_orbs_mcscf
+  echo "You have selected 4 - MCSCF Natural Orbitals"
+  echo "Semi-canonical MOs prepared in nat_orbs_mcscf file"
+
+# Handle OPTIMIZED MCSCF
+elif [ "$num" == "5" ]; then
+  # Remove existing nat_orbs_mcscf
+  if [ -f optimized_mscsf ]; then
+    rm -f optimized_mscsf
+  fi
+  sed -n "/OPTIMIZED MCSCF/,/END/ p" $file > optimized_mscsf
+  echo "You have selected 5 - OPTIMIZED MCSCF"
+  echo "OPTIMIZED MCSCF prepared in optimized_mscsf file"
+
+# Handle DMO group  
+elif [ "$num" == "6" ]; then
+  echo "You have selected 6 - DMO group"
+  read -p $'Please input (x) number of DMOs and (y) the initial DMO in format: x y \nYour choice:' ndmo inidmo
 
   sed -n "/Semi-canonical/,/END/ p" $file > ztemp
   
@@ -73,10 +102,14 @@ elif [ "$num" == "4" ]; then
   done
   
   echo ' $END' >> dmo.dat
-elif [ "$num" == "5" ]; then
+  echo 'DMO group prepared in dmo.dat file'
+
+# Handle REFDET GROUP  
+elif [ "$num" == "7" ]; then
+  echo "You have selected 7 - REFDET group"
   nstate=`grep '# of states in CI      = ' $file|tail -1|cut -d'=' -f2`
 
-  echo $nstate
+  echo $nstate "states"
   
   sed -n "/DIABATIZATION FOR GMC-QDPT STATES/,/REFDET/ p" $file > ztemp
   
@@ -140,6 +173,7 @@ elif [ "$num" == "5" ]; then
   
   cat phase.out >> refdet.out
   echo ' $END ' >> refdet.out
+  echo "REFDET group prepared in refdet.out file"
 else
   echo "Invalid selection."
 fi
