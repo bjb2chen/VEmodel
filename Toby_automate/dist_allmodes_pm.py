@@ -209,6 +209,9 @@ def filter_modes(excluded_set, ndim):
     return modes_included
 
 def my_subgam(filnam, **kwargs):
+    ncpus = kwargs.get('ncpus')
+    ngb = kwargs.get('ngb')
+    nhour = kwargs.get('nhour')
     # Remove the ".inp" extension from the filename
     input_no_ext, extension = os.path.splitext(filnam)
     print(f"running calculations for {input_no_ext}")
@@ -341,7 +344,7 @@ def diabatization(filnam, modes_included, **kwargs):
                 print(f"Error deleting {dist_file}: {str(e)}")
 
         # Print the distorted structure
-        for iatom in range(1, natom + 1):
+        for iatom in range(1, natoms + 1):
             with open('dist_structure_plus', 'a') as f_plus, \
                     open('dist_structure_minus', 'a') as f_minus, \
                     open('dist_structure_plusx2', 'a') as f_plusx2, \
@@ -416,7 +419,7 @@ def diabatization(filnam, modes_included, **kwargs):
                     print(f"Error deleting {dist_file}: {str(e)}")
  
             # Print the distorted structure
-            for iatom in range(1, natom + 1):
+            for iatom in range(1, natoms + 1):
                 with open(f'dist_structure_pp', 'a') as f_pp, \
                         open(f'dist_structure_pm', 'a') as f_pm, \
                         open(f'dist_structure_mp', 'a') as f_mp, \
@@ -924,7 +927,7 @@ def main():
     ang2br = 1.889725989
     amu2me = 1822.88839 
 
-    repetition = refG_calc(refgeo, filnam)
+    repetition = refG_calc(py_refgeo, filnam)
     diabatize = diabatization(filnam, modes_included, freqcm=freqcm, ndim=ndim, refcoord=refcoord,\
                            nrmmod=nrmmod, natoms=natoms, atmlst=atmlst, chrglst=chrglst, \
                            qsize=qsize, ha2ev=ha2ev, wn2ev=wn2ev, wn2eh=wn2eh, ang2br=ang2br, amu2me=amu2me)
