@@ -209,9 +209,9 @@ def filter_modes(excluded_set, ndim):
     return modes_included
 
 def my_subgam(filnam, **kwargs):
-    ncpus = kwargs.get('ncpus')
-    ngb = kwargs.get('ngb')
-    nhour = kwargs.get('nhour')
+    ncpus = kwargs.get('ncpus', 2)
+    ngb = kwargs.get('ngb', 2)
+    nhour = kwargs.get('nhour', 1)
     # Remove the ".inp" extension from the filename
     input_no_ext, extension = os.path.splitext(filnam)
     print(f"running calculations for {input_no_ext}")
@@ -299,19 +299,19 @@ def diabatization(filnam, modes_included, **kwargs):
     distcoord_mp = {}
     distcoord_mm = {}
 
-    freqcm = kwargs.get('freqcm')
-    ndim = kwargs.get('ndim')
-    refcoord = kwargs.get('refcoord')
-    nrmmod = kwargs.get('nrmmod')
-    natoms = kwargs.get('natoms')
-    atmlst = kwargs.get('atmlst')
-    chrglst = kwargs.get('chrglst')
-    qsize = kwargs.get('qsize')
-    ha2ev = kwargs.get('ha2ev')
-    wn2ev = kwargs.get('wn2ev')
-    wn2eh = kwargs.get('wn2eh')
-    ang2br = kwargs.get('ang2br')
-    amu2me = kwargs.get('amu2me')
+    freqcm = kwargs.get('freqcm', freqcm)
+    ndim = kwargs.get('ndim', ndim)
+    refcoord = kwargs.get('refcoord', refcoord)
+    nrmmod = kwargs.get('nrmmod', nrmmod)
+    natoms = kwargs.get('natoms', natoms)
+    atmlst = kwargs.get('atmlst', atmlst)
+    chrglst = kwargs.get('chrglst', chrglst)
+    qsize = kwargs.get('qsize', 0.05)
+    ha2ev = kwargs.get('ha2ev', 27.2113961318)
+    wn2ev = kwargs.get('wn2ev', 0.000123981)
+    wn2eh = kwargs.get('wn2eh', 0.00000455633)
+    ang2br = kwargs.get('ang2br', 1.889725989)
+    amu2me = kwargs.get('amu2me', 1822.88839)
 
     #Loop over all considered modes and do + and - displacements
 
@@ -490,13 +490,13 @@ def extract_coupling_energy(file_path, pattern):
 
 def mctdh(filnam, modes_included, **kwargs):
     nmodes = len(modes_included)
-    freqcm = kwargs.get('freqcm')
-    qsize = kwargs.get('qsize')
-    ha2ev = kwargs.get('ha2ev')
-    wn2ev = kwargs.get('wn2ev')
-    wn2eh = kwargs.get('wn2eh')
-    ang2br = kwargs.get('ang2br')
-    amu2me = kwargs.get('amu2me')
+    freqcm = kwargs.get('freqcm', freqcm)
+    qsize = kwargs.get('qsize', 0.05)
+    ha2ev = kwargs.get('ha2ev', 27.2113961318)
+    wn2ev = kwargs.get('wn2ev', 0.000123981)
+    wn2eh = kwargs.get('wn2eh', 0.00000455633)
+    ang2br = kwargs.get('ang2br', 1.889725989)
+    amu2me = kwargs.get('amu2me', 1822.88839)
 
     try:
         subprocess.run(['rm', '-f', 'mctdh.op'])
