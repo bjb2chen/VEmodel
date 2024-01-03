@@ -471,6 +471,47 @@ def diabatization(filnam, modes_included, **kwargs):
                     else:
                         print(f"{output_filename} is already done.")
 
+def _single_mode_displacement(ndim, real_size, coord_dict, debug_print=True, **kwargs):
+    """ You should explain what is happening in more detail """
+
+    ref_q = coord_dict['reference_co_ordinate']
+    ref_q = coord_dict['reference_co_ordinate']
+
+    coord_dict['plus'] = []
+    # Loop over components (and do what?)
+    for i_comp in range(1, ndim + 1):
+
+        # list fashion (can lead to issues?)
+        coord_dict['plus'].append(ref_q[i_comp] + real_size * normal_mode_array[i_comp, i_mode])
+
+        # dictionary fashion (like how you had previously)
+        coord_dict['plus'][i_comp] = ref_q[i_comp] + real_size * normal_mode_array[i_comp, i_mode]
+
+
+        displacement = real_size * normal_mode_array[i_comp, i_mode]
+
+        coord_dict['q1_p'] = ref_q[i_comp] - displacement
+        coord_dict['q1_m'] = ref_q[i_comp] - displacement
+        coord_dict['q1_pp'] = ref_q[i_comp] + 2.0 * displacement
+        coord_dict['q1_mm'] = ref_q[i_comp] - 2.0 * displacement
+
+        # double check as always (alternative loop)
+        for name, constant in (['q1_p', 'q1_m', ..], [1.0, 1.0, 2.0, 2.0]):
+            coord_dict2[name] = ref_q[i_comp] + constant * displacement
+
+
+        distcoord_plus_x2[i_comp] = ref_q[i_comp] + 2.0 * displacement
+        distcoord_minus_x2[i_comp] = ref_q[i_comp] - 2.0 * displacement
+
+        if debug_print:
+            print(
+                imode, i_comp,
+                refcoord[i_comp], normal_mode_array[i_comp, i_mode],
+                coord_disp_plus, coord_disp_minus,
+                distcoord_plus[i_comp], distcoord_minus[i_comp]
+            )
+    return
+
 #Now we move on to extract vibronic coupling constants using finite difference
 #and write the data in an mctdh operator file
 
