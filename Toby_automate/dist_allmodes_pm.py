@@ -512,6 +512,23 @@ def _single_mode_displacement(ndim, real_size, coord_dict, debug_print=True, **k
             )
     return
 
+def _double_mode_displacement(ndim, debug_print=True, **kwargs):
+    """ You should explain what is happening in more detail """
+
+    # Loop over components (and do what?)
+
+    for icomp in range(1, ndim + 1):
+        coord_disp_q1p_q2p = distcoord_plus[icomp] + rsizep * nrmmod[icomp, jmode]
+        coord_disp_q1p_q2m = distcoord_plus[icomp] - rsizep * nrmmod[icomp, jmode]
+        coord_disp_q1m_q2p = distcoord_minus[icomp] + rsizep * nrmmod[icomp, jmode]
+        coord_disp_q1m_q2m = distcoord_minus[icomp] - rsizep * nrmmod[icomp, jmode]
+
+        distcoord_pp[icomp] = coord_disp_pp
+        distcoord_pm[icomp] = coord_disp_pm
+        distcoord_mp[icomp] = coord_disp_mp
+        distcoord_mm[icomp] = coord_disp_mm
+    return
+
 #Now we move on to extract vibronic coupling constants using finite difference
 #and write the data in an mctdh operator file
 
