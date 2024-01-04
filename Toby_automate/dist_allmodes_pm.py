@@ -546,6 +546,13 @@ def extract_coupling_energy(file_path, pattern):
             if match:
                 return float(line[62:].strip().replace(" ", ""))
 
+def find_nstate(file_path, pattern='# of states in CI      = ', encoding="utf-8"):
+    with open(file_path, 'r', encoding=encoding, errors='replace') as file:
+        for line in file:
+            if pattern in line:
+                return int(line.split('=')[1].strip())
+    return None  # Return None if the pattern is not found
+
 def mctdh(filnam, modes_included, **kwargs):
     nmodes = len(modes_included)
     freqcm = kwargs.get('freqcm', freqcm)
@@ -565,12 +572,8 @@ def mctdh(filnam, modes_included, **kwargs):
     str1 = "OP_DEFINE-SECTION"
     str2 = "title"
 
-    # nstate=`grep '# of states in CI      = ' "$filnam"_refG.out|tail -1|cut -d'=' -f2`
-    with open(f'{filnam}_refG.out', 'r') as refGout_file:
-        for line in refGout_file:
-            if '# of states in CI      = ' in line:
-                nstate = int(line.split('=')[1]) # this will hopefully grab the last line
-    
+    nstate = find_nstate(f'{filnam}_refG.out')
+
     str3 = "end-title "
     str4 = "end-op_define-section"
     str5 = ""
