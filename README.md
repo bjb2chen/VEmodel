@@ -27,3 +27,5 @@ Video recording on how to run the diabatization code (assuming you have GAMESS w
 [Project Poster Reference](https://github.com/bjb2chen/vmodels/files/10171706/SCP2022_bjc_20685630_White.pdf)
 
 Note to self: I have to get good, ignore the math and just focus on the process. The math will fall out once you are making progress.
+
+![CoF4](https://github.com/bjb2chen/vmodels/assets/51763900/eb5d7752-d0d4-4151-9af5-d399e079bf3a)[width = 200px]
