@@ -1,0 +1,58 @@
+RUN-SECTION
+title = wavefunction propagation of op_ph36Q_3st
+name = op_ph36Q_3st
+propagation
+tout = 0.50 tfinal = 5.00 tpsi=1.0
+geninwf
+psi=single
+auto=once
+end-run-section
+
+OPERATOR-SECTION
+opname = op_ph36Q_3st_Ez
+end-operator-section
+
+SPF-BASIS-SECTION
+multi-set
+      v01      =  1, 1, 1
+      v02      =  1, 1, 1
+      v03      =  1, 1, 1
+      v04      =  1, 1, 1
+      v05      =  1, 1, 1
+      v06      =  1, 1, 1
+end-spf-basis-section
+
+PRIMITIVE-BASIS-SECTION
+    v01    HO     20   0.0   1.0   1.0
+    v02    HO     20   0.0   1.0   1.0
+    v03    HO     20   0.0   1.0   1.0
+    v04    HO     20   0.0   1.0   1.0
+    v05    HO     20   0.0   1.0   1.0
+    v06    HO     20   0.0   1.0   1.0
+    el     el     3
+end-primitive-basis-section
+
+INTEGRATOR-SECTION
+CMF/var    =   0.5,    1.0d-05
+BS/spf     =     7,    1.0d-05,    2.5d-04
+SIL/A      =     5,    1.0d-05
+end-integrator-section
+
+INIT_WF-SECTION
+build
+   init_state=3
+-----------------------------------------------------------
+#  mode   type  center  moment.  freq.    mass
+-----------------------------------------------------------
+    v01    HO     0.0    0.0      1.0     1.0
+    v02    HO     0.0    0.0      1.0     1.0
+    v03    HO     0.0    0.0      1.0     1.0
+    v04    HO     0.0    0.0      1.0     1.0
+    v05    HO     0.0    0.0      1.0     1.0
+    v06    HO     0.0    0.0      1.0     1.0
+-----------------------------------------------------------
+end-build
+operate=Ez
+end-init_wf-section
+
+end-input

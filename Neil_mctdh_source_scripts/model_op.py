@@ -22,10 +22,10 @@ from numpy import complex128 as C128
 import parse
 
 # local imports
-from ..log_conf import log
-from . import helper
-from .helper import StringNotFoundError
-from .vibronic_model_keys import VibronicModelKeys as VMK
+from log_conf import log
+import helper
+from helper import StringNotFoundError
+from vibronic_model_keys import VibronicModelKeys as VMK
 
 headers = [
     'Frequencies',

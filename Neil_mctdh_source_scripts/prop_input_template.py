@@ -225,10 +225,10 @@ int_wf_end = "end-init_wf-section"
 initial_state_spec = "   init_state={:d}"
 
 # this applies the dipole moment operator onto the wavefunction at every step
-operate_spec = "operate=Ex"
+operate_spec = "operate={:s}"
 
 # see https://www.pci.uni-heidelberg.de/tc/usr/mctdh/doc/mctdh/input_docu.html#wfbuild
-def _generate_basic_wavefunction(basic_HO_wavepacket, nof_electronic_states):
+def _generate_basic_wavefunction(basic_HO_wavepacket, nof_electronic_states, operate_string):
     """Generate basic wavefunction with the same harmonic oscillators for each mode"""
     return "\n".join([
         int_wf_begin,
@@ -236,11 +236,11 @@ def _generate_basic_wavefunction(basic_HO_wavepacket, nof_electronic_states):
         initial_state_spec.format(nof_electronic_states),
         basic_HO_wavepacket,
         build_end,
-        operate_spec,
+        operate_spec.format(operate_string),
         int_wf_end,
     ])
 
-def generate_basic_harmonic_oscillator_wavefunction_section(N, A):
+def generate_basic_harmonic_oscillator_wavefunction_section(N, A, operate_string):
     """Generate basic wavefunction with the same harmonic oscillators for each mode"""
 
     basic_HO_wavepacket = "\n".join([
@@ -253,4 +253,40 @@ def generate_basic_harmonic_oscillator_wavefunction_section(N, A):
         "-----------------------------------------------------------",
     ])
 
-    return _generate_basic_wavefunction(basic_HO_wavepacket, A)
+    return _generate_basic_wavefunction(basic_HO_wavepacket, A, operate_string)
+
+basic_HO_wavepacket = "\n".join([
+    "-----------------------------------------------------------",
+    "#  mode   type  center  moment.  freq.    mass",
+    "-----------------------------------------------------------",
+    "    v01    HO     0.0    0.0      1.0     1.0",
+    "    v02    HO     0.0    0.0      1.0     1.0",
+    "    v03    HO     0.0    0.0      1.0     1.0",
+    "-----------------------------------------------------------",
+])
+
+# see https://www.pci.uni-heidelberg.de/tc/usr/mctdh/doc/mctdh/input_docu.html#wfbuild
+initial_wavefunction_section = "\n".join([
+    int_wf_begin,
+    build_begin,
+    initial_state_spec.format(2),
+    basic_HO_wavepacket,
+    build_end,
+    int_wf_end,
+])
+
+"""  IMPORTANT!!!!!!
+this is extremely necessary and the block relaxation program will not run without it
+autoblock generates the initial wavefunction and makes sure the vectors are not linearly dependent.
+"""
+autoblock_spec = "autoblock"
+
+block_initial_wavefunction_section = "\n".join([
+    int_wf_begin,
+    build_begin,
+    initial_state_spec.format(2),
+    basic_HO_wavepacket,
+    build_end,
+    autoblock_spec,
+    int_wf_end,
+])

@@ -18,8 +18,9 @@ def submit_jobs():
 
         # manually select amount of memory for high PBF runs
         gbs = {
-            'op_water3Q_4st': {20: '1', 100: '10', 200: '10'},
-            'op_nh36Q_5st': {20: '1', 100: '10', 200: '10'},
+            #'op_water3Q_4st': {20: '1', 100: '10', 200: '10'},
+            #'op_nh36Q_5st': {20: '1', 100: '10', 200: '10'},
+            'op_ph36Q_3st': {20: '1', 100: '10', 200: '10'},
         }[project_name].get(nof_pbfs, '3')
 
 
