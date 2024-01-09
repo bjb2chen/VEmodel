@@ -635,7 +635,7 @@ def mctdh(filnam, modes_included, **kwargs):
         with open("mctdh.op", "a") as mctdh_file:
             mctdh_file.write(f"#Parameters for mode {imode}\n")
             mctdh_file.write("#Vibron:\n")
-            mctdh_file.write(f"w_m{imode} = {vibron_ev:.16f} ev\n\n")
+            mctdh_file.write(f"w_m{imode} = {vibron_ev:.16f}, ev\n\n")
             mctdh_file.write("#Linear and quadratic diagonal and off-diagonal vibronic coupling constants:\n")
     
             grace_code_plus = subprocess.call(["grep", "grace", f"{filnam}_mode{imode}_+{qsize}.out"])
