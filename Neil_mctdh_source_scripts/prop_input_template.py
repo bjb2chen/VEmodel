@@ -62,7 +62,7 @@ def _generate_basic_spf_basis(spf_definitions, multi=False):
 def generate_basic_single_set_spf_basis_section(n_BF, N):
     """Generate basic single set with same # of spf for all states and modes"""
     spf_definitions  = [
-        f"      w_m{n:>d}      =  {n_BF:d}" for n in N.values()
+        f"      m{n:>d}      =  {n_BF:d}" for n in N.values()
     ]
     return _generate_basic_spf_basis(spf_definitions)
 
@@ -70,7 +70,7 @@ def generate_basic_multi_set_spf_basis_section(n_BF, N, A):
     """Generate basic multi set with same # of spf for all states and modes"""
     spf_definitions  = []
     for n in N.values():
-        string = f"      w_m{n:>d}      =  {n_BF:d}"
+        string = f"      m{n:>d}      =  {n_BF:d}"
         for a in range(A-1):
             string += f", {n_BF:d}"
         spf_definitions.append(string)
@@ -124,7 +124,7 @@ def _generate_basic_harmonic_oscillator_pbfs(pbfs_definitions, nof_electronic_st
 def generate_basic_harmonic_oscillator_primative_basis_section(n_BF, N, A):
     """Generate PBF's with same # of H.O. basis functions for all modes"""
     pbf_definitions  = [
-        f"    w_m{n:>d}    HO     {n_BF:d}   {ho_spec:s}" for n in N.values()
+        f"    m{n:>d}    HO     {n_BF:d}   {ho_spec:s}" for n in N.values()
     ]
     return _generate_basic_harmonic_oscillator_pbfs(pbf_definitions, A)
 
@@ -248,7 +248,7 @@ def generate_basic_harmonic_oscillator_wavefunction_section(N, A, operate_string
         "#  mode   type  center  moment.  freq.    mass",
         "-----------------------------------------------------------",
         *[
-            f"    w_m{n:>d}    HO     0.0    0.0      1.0     1.0" for n in N.values()
+            f"    m{n:>d}    HO     0.0    0.0      1.0     1.0" for n in N.values()
         ],
         "-----------------------------------------------------------",
     ])
