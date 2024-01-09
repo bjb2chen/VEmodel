@@ -1,6 +1,7 @@
 import socket
 import os
 from os.path import abspath, join
+from dist_allmodes_pm import filter_modes
 
 # 30 pbf ~ 1GB
 # 100 pbf ~ 2GB
@@ -26,11 +27,15 @@ expression_list = [pbfs, tfinal, ]
 # project_name, A, N = "vcm", 7, 12
 
 # project_name, A, N = "op_water3Q_4st", 4, 3
-# A = states, N = modes
-project_name, A, N = "op_ph36Q_3st", 3, 6
+# A = states, N = modesf
+natoms = 4
+ndim = natoms * 3
+modes_excluded = [1, 4, 5, 6, 7, 8, 9, 10, 11]
+modes_included = filter_modes(modes_excluded, ndim)
+project_name, A, N = "op_ph33Q_3st", 3, modes_included
 
 # \home\bjb2chen\740_project\mctdh_source_scripts\project_parameters.py
-user_root = abspath("/bjb2chen/gamess/vibronics/ph3/original/op_ph36Q_3st")
+user_root = abspath("/bjb2chen/gamess/vibronics/ph3/nov26")
 home_root = abspath(f"/home/{user_root}/{project_name}/")
 work_root = abspath(f"/work/{user_root}/mctdh/{project_name}/")
 

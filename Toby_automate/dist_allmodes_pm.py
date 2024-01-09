@@ -857,7 +857,7 @@ def mctdh(filnam, modes_included, **kwargs):
         mctdh_file.write("-----------------------------------------\n")
         for imode_include in range(1, nmodes + 1):
             mode_count = imode_include + 1
-            mctdh_file.write(f"w_{modes_included[imode_include]}   |{mode_count} KE\n")
+            mctdh_file.write(f"w_m{modes_included[imode_include]}   |{mode_count} KE\n")
     
         # Write HARMONIC OSCILLATOR POTENTIALS FOR NORMAL MODES
         mctdh_file.write("-----------------------------------------\n")
@@ -865,7 +865,7 @@ def mctdh(filnam, modes_included, **kwargs):
         mctdh_file.write("-----------------------------------------\n")
         for imode_include in range(1, nmodes + 1):
             mode_count = imode_include + 1
-            mctdh_file.write(f"0.5*w_{modes_included[imode_include]}   |{mode_count}  q^2\n")
+            mctdh_file.write(f"0.5*w_m{modes_included[imode_include]}   |{mode_count}  q^2\n")
     
         # Write ELECTRONIC COUPLING AT REFERENCE STRUCTURE
         mctdh_file.write("-----------------------------------------\n")
