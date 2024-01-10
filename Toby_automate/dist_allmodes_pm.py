@@ -59,10 +59,10 @@ def process_mode_freq(natoms, ndim, ngroup, nleft):
     nrmmod = {}  # normal modes
     freqcm = {}  # frequencies in cm
 
-    with open("mode.dat", "r") as mode_file:
+    with open("mode.dat", 'r', errors='replace') as mode_file:
         lines_mode = mode_file.readlines()
 
-    with open("freq.dat", "r") as freq_file:
+    with open("freq.dat", 'r', errors='replace') as freq_file:
         lines_freq = freq_file.readlines()
 
     for igroup in range(1, ngroup + 1):
@@ -172,7 +172,7 @@ def read_reference_structure(file_path):
     chrglst = {}
     refcoord = {}
 
-    with open(file_path, "r") as struct_file:
+    with open(file_path, 'r', errors='replace') as struct_file:
         lines = struct_file.readlines()
 
         for iatom, line in enumerate(lines):
@@ -250,7 +250,7 @@ def refG_calc(refgeo, filnam):
         shutil.copy("temp.inp", f"{filnam}_refG.inp")
 
         with open(f"{filnam}_refG.inp", "a") as inp_file:
-            with open(refgeo, "r") as ref_structure:
+            with open(refgeo, 'r', errors='replace') as ref_structure:
                 inp_file.write(ref_structure.read())
 
         with open(f"{filnam}_refG.inp", "a") as inp_file:
@@ -534,7 +534,7 @@ def mctdh(filnam, modes_included, **kwargs):
             mctdh_file.write("#Diagonal and Off-diagonal diabatic Hamiltonian elements at reference structure\n")
     
             for ist in range(1, nstate + 1):
-                with open(f"{filnam}_refG.out", "r") as refG_out:
+                with open(f"{filnam}_refG.out", 'r', errors='replace') as refG_out:
                     lines = refG_out.readlines()
     
                     # Extract diabatic energy for state ist
@@ -672,7 +672,7 @@ def mctdh(filnam, modes_included, **kwargs):
                     for ist in range(1, nstate + 1):
     
                         # Extract Ediab_au_pp
-                        with open(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out', "r") as grep_pp:
+                        with open(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out', 'r', errors='replace') as grep_pp:
                             lines = grep_pp.readlines()
     
                             for line in reversed(lines):
@@ -683,7 +683,7 @@ def mctdh(filnam, modes_included, **kwargs):
                                     break
     
                         # Extract Ediab_au_pm
-                        with open(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out', "r") as grep_pm:
+                        with open(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out', 'r', errors='replace') as grep_pm:
                             lines = grep_pm.readlines()
                             
                             for line in reversed(lines):
@@ -694,7 +694,7 @@ def mctdh(filnam, modes_included, **kwargs):
                                     break
     
                         # Extract Ediab_au_mp
-                        with open(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out', "r") as grep_mp:
+                        with open(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out', 'r', errors='replace') as grep_mp:
                             lines = grep_mp.readlines()
                             
                             for line in reversed(lines):
@@ -705,7 +705,7 @@ def mctdh(filnam, modes_included, **kwargs):
                                     break
     
                         # Extract Ediab_au_mm
-                        with open(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out', "r") as grep_mm:
+                        with open(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out', 'r', errors='replace') as grep_mm:
                             lines = grep_mm.readlines()
                             
                             for line in reversed(lines):
@@ -725,7 +725,7 @@ def mctdh(filnam, modes_included, **kwargs):
                         for jst in range(1, jlast + 1):
         
                             # Extract Coup_ev_pp
-                            with open(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out', "r") as grep_coup_pp:
+                            with open(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out', 'r', errors='replace') as grep_coup_pp:
                                 lines = grep_coup_pp.readlines()
         
                                 for line in reversed(lines):
@@ -736,7 +736,7 @@ def mctdh(filnam, modes_included, **kwargs):
                                         break
         
                             # Extract Coup_ev_pm
-                            with open(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out', "r") as grep_coup_pm:
+                            with open(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out', 'r', errors='replace') as grep_coup_pm:
                                 lines = grep_coup_pm.readlines()
                                 
                                 for line in reversed(lines):
@@ -747,7 +747,7 @@ def mctdh(filnam, modes_included, **kwargs):
                                         break
         
                             # Extract Coup_ev_mp
-                            with open(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out', "r") as grep_coup_mp:
+                            with open(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out', 'r', errors='replace') as grep_coup_mp:
                                 lines = grep_coup_mp.readlines()
                                 
                                 for line in reversed(lines):
@@ -758,7 +758,7 @@ def mctdh(filnam, modes_included, **kwargs):
                                         break
         
                             # Extract Coup_ev_mm
-                            with open(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out', "r") as grep_coup_mm:
+                            with open(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out', 'r', errors='replace') as grep_coup_mm:
                                 lines = grep_coup_mm.readlines()
                                 
                                 for line in reversed(lines):
