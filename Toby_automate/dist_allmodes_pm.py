@@ -488,7 +488,7 @@ def extract_same_state_transition_dipoles(selected_lines):
                     x = float(TDIPOLEline[11:21].strip())
                     y = float(TDIPOLEline[22:31].strip())
                     z = float(TDIPOLEline[32:42].strip())
-                    same_state_transition_dipoles[state1] = (x, y, z)
+                    same_state_transition_dipoles[state1] = (f"{x:.6f}", f"{y:.6f}", f"{z:6f}")
         except Exception as e:
             print(f"ERror processing line: {TDIPOLEline} - {e}")
 
