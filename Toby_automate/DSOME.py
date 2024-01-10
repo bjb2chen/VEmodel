@@ -80,7 +80,7 @@ def mctdh(filnam, modes_included, **kwargs):
     str2 = "title"
 
     # nstate=`grep '# of states in CI      = ' "$filnam"_refG.out|tail -1|cut -d'=' -f2`
-    with open(f'{filnam}', 'r') as refGout_file:
+    with open(f'{filnam}', 'r', errors='replace') as refGout_file:
         for line in refGout_file:
             if '# of states in CI      = ' in line:
                 nstate = int(line.split('=')[1]) # this will hopefully grab the last line

@@ -8,7 +8,7 @@ import json
 
 # Function to get the number of atoms from thFe hessout file
 def get_number_of_atoms(hessout):
-    with open(hessout, 'r') as hess_file:
+    with open(hessout, 'r', errors='replace') as hess_file:
         for line in hess_file:
             if ' TOTAL NUMBER OF ATOMS' in line:
                 natoms = int(line.split('=')[1])
@@ -19,7 +19,7 @@ def extract_lines_between_patterns(filename, start_pattern, end_pattern):
     selected_lines = []
     collecting = False
 
-    with open(filename, 'r') as file:
+    with open(filename, 'r', errors='replace') as file:
         for line in file:
             if start_pattern in line:
                 collecting = True
@@ -267,27 +267,6 @@ def refG_calc(refgeo, filnam):
 
     return
 
-def convert_qsize_to_realsize(mode_idx, qsize, frequency, constants):
-    """ Convert the reduced dimensionless qsize to the actual rsize in sqrt(amu)*Angs unit """
-    omega = frequency[mode_idx]  # frequency of a specific mode
-    real_size = qsize
-    real_size /= pow(constants['atomic_mass_units_to_<me>'], 0.5)
-    real_size *= constants['angstrom_to_bohr-radius']
-    real_size *= pow(omega * constants['wavemumbers_to_eh'], 0.5)
-
-    # if debug_print: print(mode_idx, omega, real_size, type(real_size))
-    return real_size
-
-def convert_qsize_to_realsize(imode, qsize, amu2me, ang2br, wn2eh, debug_print=True, **kwargs):
-    """ Convert the reduced dimensionless qsize to the actual rsize in sqrt(amu)*Angs unit """
-    constant_dictionarys = kwargs['constants_dictionary']
-    amu2me, ang2br, wn2eh = [constant_dictionarys.get(x) for x in ['amu2me', 'ang2br', 'wn2eh']]
-
-    omega = kwargs['freqcm'][imode]
-    rsize = qsize / (pow(amu2me, 0.5) * ang2br * pow(omega * wn2eh, 0.5))
-    if debug_print: print(imode, omega, rsize, type(rsize))
-    return rsize
-
 def diabatization(filnam, modes_included, **kwargs):
 
     distcoord_plus = {}
@@ -299,13 +278,13 @@ def diabatization(filnam, modes_included, **kwargs):
     distcoord_mp = {}
     distcoord_mm = {}
 
-    freqcm = kwargs.get('freqcm', freqcm)
-    ndim = kwargs.get('ndim', ndim)
-    refcoord = kwargs.get('refcoord', refcoord)
-    nrmmod = kwargs.get('nrmmod', nrmmod)
-    natoms = kwargs.get('natoms', natoms)
-    atmlst = kwargs.get('atmlst', atmlst)
-    chrglst = kwargs.get('chrglst', chrglst)
+    freqcm = kwargs.get('freqcm')
+    ndim = kwargs.get('ndim')
+    refcoord = kwargs.get('refcoord')
+    nrmmod = kwargs.get('nrmmod')
+    natoms = kwargs.get('natoms')
+    atmlst = kwargs.get('atmlst')
+    chrglst = kwargs.get('chrglst')
     qsize = kwargs.get('qsize', 0.05)
     ha2ev = kwargs.get('ha2ev', 27.2113961318)
     wn2ev = kwargs.get('wn2ev', 0.000123981)
@@ -374,7 +353,7 @@ def diabatization(filnam, modes_included, **kwargs):
             for suffix in ['', 'x2']:
                 shutil.copy('temp.inp', f'{filnam}_mode{imode}_{displacement}{qsize}{suffix}.inp')
                 with open(f'{filnam}_mode{imode}_{displacement}{qsize}{suffix}.inp', 'a') as inp_file:
-                    with open(f'dist_structure_{p_or_m}{suffix}', 'r') as dist_file:
+                    with open(f'dist_structure_{p_or_m}{suffix}', 'r', errors='replace') as dist_file:
                         inp_file.write(dist_file.read())
                         inp_file.write(' $END')
 
@@ -453,7 +432,7 @@ def diabatization(filnam, modes_included, **kwargs):
 
                     shutil.copy('temp.inp', f'{filnam}_mode{imode}_{displacement1}{qsize}_mode{jmode}_{displacement2}{qsize}.inp')
                     with open(f'{filnam}_mode{imode}_{displacement1}{qsize}_mode{jmode}_{displacement2}{qsize}.inp', 'a') as inp_file:
-                        with open(f'dist_structure_{suffix1}', 'r') as dist_file:
+                        with open(f'dist_structure_{suffix1}', 'r', errors='replace') as dist_file:
                             inp_file.write(dist_file.read())
                         inp_file.write(' $END ')
  
@@ -471,76 +450,18 @@ def diabatization(filnam, modes_included, **kwargs):
                     else:
                         print(f"{output_filename} is already done.")
 
-def _single_mode_displacement(ndim, real_size, coord_dict, debug_print=True, **kwargs):
-    """ You should explain what is happening in more detail """
-
-    ref_q = coord_dict['reference_co_ordinate']
-    ref_q = coord_dict['reference_co_ordinate']
-
-    coord_dict['plus'] = []
-    # Loop over components (and do what?)
-    for i_comp in range(1, ndim + 1):
-
-        # list fashion (can lead to issues?)
-        coord_dict['plus'].append(ref_q[i_comp] + real_size * normal_mode_array[i_comp, i_mode])
-
-        # dictionary fashion (like how you had previously)
-        coord_dict['plus'][i_comp] = ref_q[i_comp] + real_size * normal_mode_array[i_comp, i_mode]
-
-
-        displacement = real_size * normal_mode_array[i_comp, i_mode]
-
-        coord_dict['q1_p'] = ref_q[i_comp] - displacement
-        coord_dict['q1_m'] = ref_q[i_comp] - displacement
-        coord_dict['q1_pp'] = ref_q[i_comp] + 2.0 * displacement
-        coord_dict['q1_mm'] = ref_q[i_comp] - 2.0 * displacement
-
-        # double check as always (alternative loop)
-        for name, constant in (['q1_p', 'q1_m', ..], [1.0, 1.0, 2.0, 2.0]):
-            coord_dict2[name] = ref_q[i_comp] + constant * displacement
-
-
-        distcoord_plus_x2[i_comp] = ref_q[i_comp] + 2.0 * displacement
-        distcoord_minus_x2[i_comp] = ref_q[i_comp] - 2.0 * displacement
-
-        if debug_print:
-            print(
-                imode, i_comp,
-                refcoord[i_comp], normal_mode_array[i_comp, i_mode],
-                coord_disp_plus, coord_disp_minus,
-                distcoord_plus[i_comp], distcoord_minus[i_comp]
-            )
-    return
-
-def _double_mode_displacement(ndim, debug_print=True, **kwargs):
-    """ You should explain what is happening in more detail """
-
-    # Loop over components (and do what?)
-
-    for icomp in range(1, ndim + 1):
-        coord_disp_q1p_q2p = distcoord_plus[icomp] + rsizep * nrmmod[icomp, jmode]
-        coord_disp_q1p_q2m = distcoord_plus[icomp] - rsizep * nrmmod[icomp, jmode]
-        coord_disp_q1m_q2p = distcoord_minus[icomp] + rsizep * nrmmod[icomp, jmode]
-        coord_disp_q1m_q2m = distcoord_minus[icomp] - rsizep * nrmmod[icomp, jmode]
-
-        distcoord_pp[icomp] = coord_disp_pp
-        distcoord_pm[icomp] = coord_disp_pm
-        distcoord_mp[icomp] = coord_disp_mp
-        distcoord_mm[icomp] = coord_disp_mm
-    return
-
 #Now we move on to extract vibronic coupling constants using finite difference
 #and write the data in an mctdh operator file
 
 def extract_diabatic_energy(file_path, pattern):
-    with open(file_path, 'r') as file:
+    with open(file_path, 'r', errors='replace') as file:
         for line in reversed(file.readlines()):
             match = re.search(pattern, line)
             if match:
                 return float(line[44:62].strip().replace(" ", ""))
 
 def extract_coupling_energy(file_path, pattern):
-    with open(file_path, 'r') as file:
+    with open(file_path, 'r', errors='replace') as file:
         for line in reversed(file.readlines()):
             match = re.search(pattern, line)
             if match:
@@ -553,9 +474,29 @@ def find_nstate(file_path, pattern='# of states in CI      = ', encoding="utf-8"
                 return int(line.split('=')[1].strip())
     return None  # Return None if the pattern is not found
 
+def extract_same_state_transition_dipoles(selected_lines):
+    same_state_transition_dipoles = {}
+
+    for TDIPOLEline in selected_lines:
+        try:
+            if TDIPOLEline[0:5].strip().isnumeric():
+                state1 = int(TDIPOLEline[0:5].strip())
+                #print(state1)
+                state2 = int(TDIPOLEline[5:10].strip())
+    
+                if state1 == state2:
+                    x = float(TDIPOLEline[11:21].strip())
+                    y = float(TDIPOLEline[22:31].strip())
+                    z = float(TDIPOLEline[32:42].strip())
+                    same_state_transition_dipoles[state1] = (x, y, z)
+        except Exception as e:
+            print(f"ERror processing line: {TDIPOLEline} - {e}")
+
+    return same_state_transition_dipoles
+
 def mctdh(filnam, modes_included, **kwargs):
     nmodes = len(modes_included)
-    freqcm = kwargs.get('freqcm', freqcm)
+    freqcm = kwargs.get('freqcm')
     qsize = kwargs.get('qsize', 0.05)
     ha2ev = kwargs.get('ha2ev', 27.2113961318)
     wn2ev = kwargs.get('wn2ev', 0.000123981)
@@ -960,7 +901,7 @@ def main():
     print(ngroup, nleft)
 
     #modes_excluded = [1, 2, 3, 4, 5, 6]
-    modes_excluded = [2, 4, 5, 6, 7, 8, 9, 10, 11]
+    modes_excluded = [1, 4, 5, 6, 7, 8, 9, 10, 11]
     #modes_excluded = [1, 2, 4, 7, 12]
 
     selected_lines = extract_lines_between_patterns(hessout, 
@@ -993,6 +934,14 @@ def main():
                            nrmmod=nrmmod, natoms=natoms, atmlst=atmlst, chrglst=chrglst, \
                            qsize=qsize, ha2ev=ha2ev, wn2ev=wn2ev, wn2eh=wn2eh, ang2br=ang2br, amu2me=amu2me)
     make_mctdh = mctdh(filnam, modes_included, freqcm=freqcm, qsize=qsize, ha2ev=ha2ev, wn2ev=wn2ev, wn2eh=wn2eh, ang2br=ang2br, amu2me=amu2me)
+    tdipole_block = extract_lines_between_patterns(f"{filnam}_refG.out",
+    "TRANSITION DIPOLES BETWEEN DIABATS",
+    "TRANSITION DIPOLES BETWEEN DIRECT MAX. DIABATS"
+    )
+    
+    same_state_dipoles = extract_same_state_transition_dipoles(tdipole_block)
+    pprint.pprint(tdipole_block)
+    pprint.pprint(same_state_dipoles)
 
     # pprint.pprint(nrmmod)
     # print('---------nrm mod done-----------')
