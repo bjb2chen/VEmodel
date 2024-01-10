@@ -242,8 +242,7 @@ def my_subgam(filnam, **kwargs):
 #This calculation shall be a repetition of a calcualtion in preparing temp.inp
 def refG_calc(refgeo, filnam):
     # Check if the calculation has already been run
-    grace_exists = subprocess.call(["grep", "grace", f"{filnam}_refG.out"]) == 0
-    #grace_exists = subprocess.run(["grep", "grace", f"{filnam}_refG.out"], shell=True).returncode == 0
+    grace_exists = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_refG.out"]) == 0
     if not grace_exists:
         print("Run calculation at the undistorted reference structure")
 
@@ -358,7 +357,7 @@ def diabatization(filnam, modes_included, **kwargs):
                         inp_file.write(' $END')
 
                 # Check if the calculation is done already
-                grace1 = subprocess.run(["grep", "grace", f'{filnam}_mode{imode}_{displacement}{qsize}{suffix}.out'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                grace1 = subprocess.run(["grep", "DONE WITH MP2 ENERGY", f'{filnam}_mode{imode}_{displacement}{qsize}{suffix}.out'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
                 #if not os.path.exists(f'{filnam}_mode{imode}_{displacement}{qsize}{suffix}.out'):
                 if grace1.returncode != 0:
                     print(f"Running calculations for {filnam}_mode{imode}_{displacement}{qsize}{suffix}")
@@ -438,7 +437,7 @@ def diabatization(filnam, modes_included, **kwargs):
  
                     # Check if the calculation is done already
                     output_filename = f'{filnam}_mode{imode}_{displacement1}{qsize}_mode{jmode}_{displacement2}{qsize}.out'
-                    grace2 = subprocess.run(["grep", "grace", output_filename])
+                    grace2 = subprocess.run(["grep", "DONE WITH MP2 ENERGY", output_filename])
                     if grace2.returncode != 0:
                     #if not os.path.exists(output_filename):
                         print(f"Running calculations for {output_filename}!")
@@ -601,10 +600,10 @@ def mctdh(filnam, modes_included, **kwargs):
             mctdh_file.write(f"w_m{imode} = {vibron_ev:.16f}, ev\n\n")
             mctdh_file.write("#Linear and quadratic diagonal and off-diagonal vibronic coupling constants:\n")
     
-            grace_code_plus = subprocess.call(["grep", "grace", f"{filnam}_mode{imode}_+{qsize}.out"])
-            grace_code_minus = subprocess.call(["grep", "grace", f"{filnam}_mode{imode}_-{qsize}.out"])
-            grace_code_plusx2 = subprocess.call(["grep", "grace", f"{filnam}_mode{imode}_+{qsize}x2.out"])
-            grace_code_minusx2 = subprocess.call(["grep", "grace", f"{filnam}_mode{imode}_-{qsize}x2.out"])
+            grace_code_plus = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_+{qsize}.out"])
+            grace_code_minus = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_-{qsize}.out"])
+            grace_code_plusx2 = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_+{qsize}x2.out"])
+            grace_code_minusx2 = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_-{qsize}x2.out"])
     
             if all(code == 0 for code in [grace_code_plus, grace_code_minus, grace_code_plusx2, grace_code_minusx2]):
                 print("\n good to extract\n")
@@ -683,10 +682,10 @@ def mctdh(filnam, modes_included, **kwargs):
             for lmode in range(1, lmode_last + 1):
                 jmode = modes_included[lmode]
 
-                grace_code_pp = subprocess.call(["grep", "grace", f"{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out"])
-                grace_code_pm = subprocess.call(["grep", "grace", f"{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out"])
-                grace_code_mp = subprocess.call(["grep", "grace", f"{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out"])
-                grace_code_mm = subprocess.call(["grep", "grace", f"{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out"])
+                grace_code_pp = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out"])
+                grace_code_pm = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out"])
+                grace_code_mp = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out"])
+                grace_code_mm = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out"])
 
                 if all(code == 0 for code in [grace_code_pp, grace_code_pm, grace_code_mp, grace_code_mm]):
                     print(f"\n Good to extract bilinear for modes {imode} {jmode} \n")
@@ -811,7 +810,7 @@ def mctdh(filnam, modes_included, **kwargs):
         for ist in range(2, nstate + 1):
             for idx in range(0, 3):
                 operate_lst = ["x", "y", "z"]
-                mctdh_file.write(f"E{operate_lst[idx]}_s1_s{ist} = {dipoles[ist][idx]}  , ev")
+                mctdh_file.write(f"E{operate_lst[idx]}_1_{ist} = {dipoles[ist][idx]}")
                 mctdh_file.write("\n")
             mctdh_file.write("\n")
 
@@ -926,7 +925,7 @@ def mctdh(filnam, modes_included, **kwargs):
             mctdh_file.write("-----------------------------------------\n")
 
             for ist in range(2, nstate + 1):
-                mctdh_file.write(f"E{operate_lst[idx]}_s1_s{ist}         |1 S1&{ist}")
+                mctdh_file.write(f"E{operate_lst[idx]}_1_{ist}         |1 S1&{ist}")
                 mctdh_file.write("\n")
             mctdh_file.write("\n")
             mctdh_file.write("\nend-hamiltonian-section\n\n")
@@ -1002,6 +1001,12 @@ def main():
     pprint.pprint(dipoles)
 
     make_mctdh = mctdh(filnam, modes_included, freqcm=freqcm, qsize=qsize, ha2ev=ha2ev, wn2ev=wn2ev, wn2eh=wn2eh, ang2br=ang2br, amu2me=amu2me, dipoles=dipoles)
+
+    proj_name = "op_SbH35Q_4st"
+    shutil.copy("mctdh.op", f"{proj_name}.op")
+    shutil.copy("mctdh.op", f"{proj_name}_Ex.op")
+    shutil.copy("mctdh.op", f"{proj_name}_Ey.op")
+    shutil.copy("mctdh.op", f"{proj_name}_Ez.op")
 
     # pprint.pprint(nrmmod)
     # print('---------nrm mod done-----------')
