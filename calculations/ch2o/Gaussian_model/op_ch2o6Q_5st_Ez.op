@@ -1,0 +1,230 @@
+OP_DEFINE-SECTION
+title
+cytosine
+end-title
+end-op_define-section
+
+PARAMETER-SECTION
+
+# frequencies
+    w01  =        0.15072895  ,   ev
+    w02  =        0.15829445  ,   ev
+    w03  =        0.19112607  ,   ev
+    w04  =        0.22978439  ,   ev
+    w05  =        0.36196427  ,   ev
+    w06  =        0.36970267  ,   ev
+# vertical energies
+
+
+    delta1  =        0.00000000  ,   ev
+    delta2  =        4.26160000  ,   ev
+    delta3  =        5.23920000  ,   ev
+    delta4  =        5.25410000  ,   ev
+    delta5  =        5.56340000  ,   ev
+
+
+# linear intrastate parameters
+    KD11_01  =       -0.34585641  ,   ev
+    KD11_02  =       -0.01113752  ,   ev
+    KD11_06  =        0.00434350  ,   ev
+
+    KD22_01  =       -0.03768774  ,   ev
+    KD22_02  =       -0.05322214  ,   ev
+    KD22_06  =        0.02137412  ,   ev
+
+    KD33_01  =       -0.23279320  ,   ev
+    KD33_02  =       -0.00895583  ,   ev
+    KD33_06  =        0.00352428  ,   ev
+
+    KD44_01  =       -0.27472150  ,   ev
+    KD44_02  =       -0.58478622  ,   ev
+    KD44_06  =        0.23688784  ,   ev
+
+    KD55_01  =       -0.54406838  ,   ev
+    KD55_02  =       -0.15987184  ,   ev
+    KD55_06  =        0.06462437  ,   ev
+
+
+
+# linear interstate parameters
+    KD12_03  =       -0.04674887  ,   ev
+    KD12_04  =        0.19171499  ,   ev
+    KD12_05  =        0.05876443  ,   ev
+
+    KD13_03  =       -0.16944085  ,   ev
+    KD13_04  =        0.07175417  ,   ev
+    KD13_05  =       -0.22012178  ,   ev
+
+    KD14_01  =        0.00000614  ,   ev
+    KD14_02  =        0.15259812  ,   ev
+    KD14_06  =        0.21803993  ,   ev
+
+    KD15_01  =       -0.00000294  ,   ev
+    KD15_02  =       -0.13318231  ,   ev
+    KD15_06  =       -0.11765969  ,   ev
+
+    KD23_01  =        0.00000055  ,   ev
+    KD23_02  =       -0.06050091  ,   ev
+    KD23_06  =       -0.07135018  ,   ev
+
+    KD24_03  =        0.00066227  ,   ev
+    KD24_04  =       -0.00028283  ,   ev
+    KD24_05  =        0.00086228  ,   ev
+
+    KD25_03  =       -0.00004575  ,   ev
+    KD25_04  =        0.00001656  ,   ev
+    KD25_05  =       -0.00005590  ,   ev
+
+    KD34_03  =        0.06775677  ,   ev
+    KD34_04  =       -0.01291633  ,   ev
+    KD34_05  =       -0.03021361  ,   ev
+
+    KD35_03  =       -0.05402326  ,   ev
+    KD35_04  =       -0.00579057  ,   ev
+    KD35_05  =        0.02074161  ,   ev
+
+    KD45_01  =        0.23328415  ,   ev
+    KD45_02  =        0.23730525  ,   ev
+    KD45_06  =       -0.09622765  ,   ev
+
+
+#     Electronic transition moments
+# ----------------------------------
+
+# tmom in direction Ez
+Ez_s00_s01               =      -0.0000    , ev
+Ez_s00_s02               =       0.0000    , ev
+Ez_s00_s03               =       0.0000    , ev
+Ez_s00_s04               =       0.0000    , ev
+Ez_s00_s05               =       0.2038    , ev
+
+
+#     Magnetic transition moments 
+# ----------------------------------
+
+# tmom in direction Mz
+Mz_s00_s01               =       -1.2365    , ev
+Mz_s00_s02               =       -0.0000    , ev
+Mz_s00_s03               =       -0.0000    , ev
+Mz_s00_s04               =       -0.0000    , ev
+Mz_s00_s05               =       -0.0000    , ev
+
+end-parameter-section
+
+
+HAMILTONIAN-SECTION
+modes |  el
+modes |  v01
+modes |  v02
+modes |  v03
+modes |  v04
+modes |  v05
+modes |  v06
+
+1.0*w01         |2   KE
+1.0*w02         |3   KE
+1.0*w03         |4   KE
+1.0*w04         |5   KE
+1.0*w05         |6   KE
+1.0*w06         |7   KE
+
+0.5*w01         |2   q^2
+0.5*w02         |3   q^2
+0.5*w03         |4   q^2
+0.5*w04         |5   q^2
+0.5*w05         |6   q^2
+0.5*w06         |7   q^2
+
+delta1          |1 S1&1
+delta2          |1 S2&2
+delta3          |1 S3&3
+delta4          |1 S4&4
+delta5          |1 S5&5
+
+KD11_01         |1 S1&1  |2  q
+KD11_02         |1 S1&1  |3  q
+KD11_06         |1 S1&1  |7  q
+
+KD22_01         |1 S2&2  |2  q
+KD22_02         |1 S2&2  |3  q
+KD22_06         |1 S2&2  |7  q
+
+KD33_01         |1 S3&3  |2  q
+KD33_02         |1 S3&3  |3  q
+KD33_06         |1 S3&3  |7  q
+
+KD44_01         |1 S4&4  |2  q
+KD44_02         |1 S4&4  |3  q
+KD44_06         |1 S4&4  |7  q
+
+KD55_01         |1 S5&5  |2  q
+KD55_02         |1 S5&5  |3  q
+KD55_06         |1 S5&5  |7  q
+
+
+KD12_03         |1 S1&2  |4  q
+KD12_04         |1 S1&2  |5  q
+KD12_05         |1 S1&2  |6  q
+
+KD13_03         |1 S1&3  |4  q
+KD13_04         |1 S1&3  |5  q
+KD13_05         |1 S1&3  |6  q
+
+KD14_01         |1 S1&4  |2  q
+KD14_02         |1 S1&4  |3  q
+KD14_06         |1 S1&4  |7  q
+
+KD15_01         |1 S1&5  |2  q
+KD15_02         |1 S1&5  |3  q
+KD15_06         |1 S1&5  |7  q
+
+KD23_01         |1 S2&3  |2  q
+KD23_02         |1 S2&3  |3  q
+KD23_06         |1 S2&3  |7  q
+
+KD24_03         |1 S2&4  |4  q
+KD24_04         |1 S2&4  |5  q
+KD24_05         |1 S2&4  |6  q
+
+KD25_03         |1 S2&5  |4  q
+KD25_04         |1 S2&5  |5  q
+KD25_05         |1 S2&5  |6  q
+
+KD34_03         |1 S3&4  |4  q
+KD34_04         |1 S3&4  |5  q
+KD34_05         |1 S3&4  |6  q
+
+KD35_03         |1 S3&5  |4  q
+KD35_04         |1 S3&5  |5  q
+KD35_05         |1 S3&5  |6  q
+
+KD45_01         |1 S4&5  |2  q
+KD45_02         |1 S4&5  |3  q
+KD45_06         |1 S4&5  |7  q
+
+
+end-hamiltonian-section
+
+HAMILTONIAN-SECTION_Ez
+modes | el | v01 | v02 | v03 | v04 | v05 | v06 |
+
+Ez_s00_s01                   |1 S1&2      
+Ez_s00_s02                   |1 S1&3
+Ez_s00_s03                   |1 S1&4 
+Ez_s00_s04                   |1 S1&5
+Ez_s00_s05                   |1 S1&6
+
+end-hamiltonian-section             
+
+HAMILTONIAN-SECTION_Mz
+modes | el | v01 | v02 | v03 | v04 | v05 | v06 |
+
+Mz_s00_s01                   |1 S1&2      
+Mz_s00_s02                   |1 S1&3
+Mz_s00_s03                   |1 S1&4 
+Mz_s00_s04                   |1 S1&5
+Mz_s00_s05                   |1 S1&6
+
+end-hamiltonian-section
+
+end-operator

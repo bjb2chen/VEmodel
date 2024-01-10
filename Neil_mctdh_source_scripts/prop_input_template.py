@@ -62,7 +62,7 @@ def _generate_basic_spf_basis(spf_definitions, multi=False):
 def generate_basic_single_set_spf_basis_section(n_BF, N):
     """Generate basic single set with same # of spf for all states and modes"""
     spf_definitions  = [
-        f"      m{n:>d}      =  {n_BF:d}" for n in N.values()
+        f"      m{n:<3d}      =  {n_BF:d}" for n in N.values()
     ]
     return _generate_basic_spf_basis(spf_definitions)
 
@@ -70,7 +70,7 @@ def generate_basic_multi_set_spf_basis_section(n_BF, N, A):
     """Generate basic multi set with same # of spf for all states and modes"""
     spf_definitions  = []
     for n in N.values():
-        string = f"      m{n:>d}      =  {n_BF:d}"
+        string = f"      m{n:<3d}      =  {n_BF:d}"
         for a in range(A-1):
             string += f", {n_BF:d}"
         spf_definitions.append(string)
@@ -80,18 +80,18 @@ def generate_basic_multi_set_spf_basis_section(n_BF, N, A):
 spf_basis_section = "\n".join([
     spf_begin,
     "multi-set",
-    "      v01      =  {other_spf:d}, {max_spf:d}, {other_spf:d}",
-    "      v02      =  {other_spf:d}, {max_spf:d}, {other_spf:d}",
-    "      v03      =  {other_spf:d}, {max_spf:d}, {other_spf:d}",
+    "      m1       =  {other_spf:d}, {max_spf:d}, {other_spf:d}",
+    "      m2       =  {other_spf:d}, {max_spf:d}, {other_spf:d}",
+    "      m3       =  {other_spf:d}, {max_spf:d}, {other_spf:d}",
     spf_end,
 ])
 
 single_set_spf_basis_section = "\n".join([
     spf_begin,
     "single-set",
-    "      v01      =  {n_BF:d}",
-    "      v02      =  {n_BF:d}",
-    "      v03      =  {n_BF:d}",
+    "      m1       =  {n_BF:d}",
+    "      m2       =  {n_BF:d}",
+    "      m3       =  {n_BF:d}",
     spf_end,
 ])
 
@@ -103,7 +103,7 @@ single_set_spf_basis_section = "\n".join([
 
 pbs_begin = "PRIMITIVE-BASIS-SECTION"
 pbs_end = "end-primitive-basis-section"
-electronic_basis = "    el     el     {:d}"
+electronic_basis = "    el      el     {:d}"
 
 # this is the basis specification where the first element represents...
 # the second element is the frequency and the third element is the mass
@@ -124,7 +124,7 @@ def _generate_basic_harmonic_oscillator_pbfs(pbfs_definitions, nof_electronic_st
 def generate_basic_harmonic_oscillator_primative_basis_section(n_BF, N, A):
     """Generate PBF's with same # of H.O. basis functions for all modes"""
     pbf_definitions  = [
-        f"    m{n:>d}    HO     {n_BF:d}   {ho_spec:s}" for n in N.values()
+        f"    m{n:<3d}    HO     {n_BF:d}   {ho_spec:s}" for n in N.values()
     ]
     return _generate_basic_harmonic_oscillator_pbfs(pbf_definitions, A)
 
@@ -236,7 +236,7 @@ def _generate_basic_wavefunction(basic_HO_wavepacket, nof_electronic_states, ope
         initial_state_spec.format(nof_electronic_states),
         basic_HO_wavepacket,
         build_end,
-        operate_spec.format(operate_string),
+        # operate_spec.format(operate_string),
         int_wf_end,
     ])
 
@@ -248,7 +248,7 @@ def generate_basic_harmonic_oscillator_wavefunction_section(N, A, operate_string
         "#  mode   type  center  moment.  freq.    mass",
         "-----------------------------------------------------------",
         *[
-            f"    m{n:>d}    HO     0.0    0.0      1.0     1.0" for n in N.values()
+            f"    m{n:<3d}    HO     0.0    0.0      1.0     1.0" for n in N.values()
         ],
         "-----------------------------------------------------------",
     ])
@@ -259,9 +259,9 @@ basic_HO_wavepacket = "\n".join([
     "-----------------------------------------------------------",
     "#  mode   type  center  moment.  freq.    mass",
     "-----------------------------------------------------------",
-    "    v01    HO     0.0    0.0      1.0     1.0",
-    "    v02    HO     0.0    0.0      1.0     1.0",
-    "    v03    HO     0.0    0.0      1.0     1.0",
+    "    m1     HO     0.0    0.0      1.0     1.0",
+    "    m2     HO     0.0    0.0      1.0     1.0",
+    "    m3     HO     0.0    0.0      1.0     1.0",
     "-----------------------------------------------------------",
 ])
 
