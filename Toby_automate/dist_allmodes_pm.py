@@ -494,6 +494,26 @@ def extract_same_state_transition_dipoles(selected_lines):
 
     return same_state_transition_dipoles
 
+def extract_ground_to_excited_state_transition_dipoles(selected_lines):
+    ground_to_excited_state_transition_dipoles = {}
+
+    for TDIPOLEline in selected_lines:
+        try:
+            if TDIPOLEline[0:5].strip().isnumeric():
+                state1 = int(TDIPOLEline[0:5].strip())
+                #print(state1)
+                state2 = int(TDIPOLEline[5:10].strip())
+    
+                if (state2 == 1) and (state1 != 1):
+                    x = float(TDIPOLEline[11:21].strip())
+                    y = float(TDIPOLEline[22:31].strip())
+                    z = float(TDIPOLEline[32:42].strip())
+                    ground_to_excited_state_transition_dipoles[state1] = (f"{x:.6f}", f"{y:.6f}", f"{z:6f}")
+        except Exception as e:
+            print(f"ERror processing line: {TDIPOLEline} - {e}")
+
+    return ground_to_excited_state_transition_dipoles
+
 def mctdh(filnam, modes_included, **kwargs):
     nmodes = len(modes_included)
     freqcm = kwargs.get('freqcm')
@@ -503,6 +523,7 @@ def mctdh(filnam, modes_included, **kwargs):
     wn2eh = kwargs.get('wn2eh', 0.00000455633)
     ang2br = kwargs.get('ang2br', 1.889725989)
     amu2me = kwargs.get('amu2me', 1822.88839)
+    dipoles = kwargs.get('dipoles')
 
     try:
         subprocess.run(['rm', '-f', 'mctdh.op'])
@@ -565,6 +586,7 @@ def mctdh(filnam, modes_included, **kwargs):
                 mctdh_file.write("\n")
         
             mctdh_file.write("\n")
+
     else:
         print(f"Skip extracting Hamiltonians from the non-existing {filnam}_refG.out")
 
@@ -780,6 +802,19 @@ def mctdh(filnam, modes_included, **kwargs):
 
     # Open mctdh.op file for writing
     with open('mctdh.op', 'a') as mctdh_file:
+
+        # Write the TDIPOLE block
+        mctdh_file.write("-----------------------------------------\n")
+        mctdh_file.write("# ELECTRONIC TRANSITION DIPOLES\n")
+        mctdh_file.write("-----------------------------------------\n")
+
+        for ist in range(2, nstate + 1):
+            for idx in range(0, 3):
+                operate_lst = ["x", "y", "z"]
+                mctdh_file.write(f"E{operate_lst[idx]}_s1_s{ist} = {dipoles[ist][idx]}  , ev")
+                mctdh_file.write("\n")
+            mctdh_file.write("\n")
+
         mctdh_file.write("end-parameter-section\n")
         # Write the header
         mctdh_file.write("-----------------------------------------\n")
@@ -875,7 +910,29 @@ def mctdh(filnam, modes_included, **kwargs):
     
         # Close the file
         mctdh_file.write("-----------------------------------------\n")
-        mctdh_file.write("\nend-hamiltonian-section\n\nend-operator\n")
+        mctdh_file.write("\nend-hamiltonian-section\n\n")
+
+        # Write TRANSITION DIPOLE HAMILTONIAN-SECTION_E*
+        for idx in range(0, 3):
+            operate_lst = ["x", "y", "z"]
+            mctdh_file.write(f"HAMILTONIAN-SECTION_E{operate_lst[idx]}\n")
+            mctdh_file.write("\n")
+
+            # Write modes and mode labels
+            mctdh_file.write(" modes | el")
+            for imode_include in range(1, nmodes + 1):
+                mctdh_file.write(f" | m{modes_included[imode_include]}")
+            mctdh_file.write("\n")
+            mctdh_file.write("-----------------------------------------\n")
+
+            for ist in range(2, nstate + 1):
+                mctdh_file.write(f"E{operate_lst[idx]}_s1_s{ist}         |1 S1&{ist}")
+                mctdh_file.write("\n")
+            mctdh_file.write("\n")
+            mctdh_file.write("\nend-hamiltonian-section\n\n")
+
+        # Close the file
+        mctdh_file.write("end-operator\n")
     
     return
 
@@ -885,7 +942,7 @@ def main():
         sys.exit(1)
 
     hessout = sys.argv[1]
-    filnam = "nh3cat_ccd_gmcpt_7o7e_C3vinC1_3st_diab"
+    filnam = "SbH3cat_cct_gmcpt_C1_4st_diab"
     refgeo = "ref_structure"
     py_refgeo = "py_ref_structure"
 
@@ -901,7 +958,7 @@ def main():
     print(ngroup, nleft)
 
     #modes_excluded = [1, 2, 3, 4, 5, 6]
-    modes_excluded = [1, 4, 5, 6, 7, 8, 9, 10, 11]
+    modes_excluded = [1, 2, 3, 4, 5, 6, 7]
     #modes_excluded = [1, 2, 4, 7, 12]
 
     selected_lines = extract_lines_between_patterns(hessout, 
@@ -933,15 +990,18 @@ def main():
     diabatize = diabatization(filnam, modes_included, freqcm=freqcm, ndim=ndim, refcoord=refcoord,\
                            nrmmod=nrmmod, natoms=natoms, atmlst=atmlst, chrglst=chrglst, \
                            qsize=qsize, ha2ev=ha2ev, wn2ev=wn2ev, wn2eh=wn2eh, ang2br=ang2br, amu2me=amu2me)
-    make_mctdh = mctdh(filnam, modes_included, freqcm=freqcm, qsize=qsize, ha2ev=ha2ev, wn2ev=wn2ev, wn2eh=wn2eh, ang2br=ang2br, amu2me=amu2me)
+
     tdipole_block = extract_lines_between_patterns(f"{filnam}_refG.out",
     "TRANSITION DIPOLES BETWEEN DIABATS",
     "TRANSITION DIPOLES BETWEEN DIRECT MAX. DIABATS"
     )
     
-    same_state_dipoles = extract_same_state_transition_dipoles(tdipole_block)
+    #dipoles = extract_same_state_transition_dipoles(tdipole_block)
+    dipoles = extract_ground_to_excited_state_transition_dipoles(tdipole_block)
     pprint.pprint(tdipole_block)
-    pprint.pprint(same_state_dipoles)
+    pprint.pprint(dipoles)
+
+    make_mctdh = mctdh(filnam, modes_included, freqcm=freqcm, qsize=qsize, ha2ev=ha2ev, wn2ev=wn2ev, wn2eh=wn2eh, ang2br=ang2br, amu2me=amu2me, dipoles=dipoles)
 
     # pprint.pprint(nrmmod)
     # print('---------nrm mod done-----------')
