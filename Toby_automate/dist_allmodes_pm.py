@@ -995,11 +995,12 @@ def main():
 
     make_mctdh = mctdh(filnam, modes_included, freqcm=freqcm, qsize=qsize, ha2ev=ha2ev, wn2ev=wn2ev, wn2eh=wn2eh, ang2br=ang2br, amu2me=amu2me, dipoles=dipoles)
 
-    proj_name = "op_SbH35Q_4st"
-    shutil.copy("mctdh.op", f"{proj_name}.op")
-    shutil.copy("mctdh.op", f"{proj_name}_Ex.op")
-    shutil.copy("mctdh.op", f"{proj_name}_Ey.op")
-    shutil.copy("mctdh.op", f"{proj_name}_Ez.op")
+    shutil.copy("mctdh.op", f"{project_name}.op")
+    os.makedirs(home_root, exist_ok=True)
+    for operate_string in ["Ex", "Ey", "Ez"]:
+        src_path_op = join(home_root, f"{project_name}_{operate_string}.op")
+        shutil.copy("mctdh.op", src_path_op)
+        print(f"Created directory {home_root} and populated it with {project_name}_{operate_string}.op!")
 
     # pprint.pprint(nrmmod)
     # print('---------nrm mod done-----------')
