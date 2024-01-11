@@ -63,12 +63,14 @@ def initalize_directories():
     for param_list in it.product(*expression_list):
         directory = join(work_root, dir_string.format(project_name, *param_list))
         os.makedirs(directory, exist_ok=True)
+        os.makedirs(home_root, exist_ok=True)
 
         create_input_file(directory, project_name, *param_list)
 
         for operate_string in ["Ex", "Ey", "Ez"]:
             src_path_op = join(home_root, f"{project_name}_{operate_string}.op")
             dst_path_op = join(directory, f"{project_name}_{operate_string}.op")
+            copyfile("mctdh.op", src_path_op)
             copyfile(src_path_op, dst_path_op)
 
             # sub directories

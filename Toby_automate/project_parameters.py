@@ -25,17 +25,18 @@ expression_list = [pbfs, tfinal, ]
 # project_name, A, N = "furan", 9, 21
 # project_name, A, N = "formamide", 7, 11
 # project_name, A, N = "vcm", 7, 12
-
 # project_name, A, N = "op_water3Q_4st", 4, 3
-# A = states, N = modesf
+
+
 natoms = 4
 ndim = natoms * 3
 modes_excluded = [1, 2, 3, 4, 5, 6, 7]
 modes_included = filter_modes(modes_excluded, ndim)
-project_name, A, N = "op_SbH35Q_4st", 4, modes_included
+filnam = "SbH3cat_cct_gmcpt_C1_4st_diab"
+project_name, A, N = "op_SbH35Q_4st", 4, modes_included       # A = states, N = modes
 
-# \home\bjb2chen\740_project\mctdh_source_scripts\project_parameters.py
-user_root = abspath("/bjb2chen/gamess/vibronics/SbH3")
+# Project Paths
+user_root = abspath("/bjb2chen/gamess/vibronics/SbH3")        # format is /user/.../* 
 home_root = abspath(f"/home/{user_root}/{project_name}/")
 work_root = abspath(f"/work/{user_root}/mctdh/{project_name}/")
 
