@@ -35,11 +35,11 @@ def submit_jobs():
                 f"sbatch --mem={gbs}GB "
                 f"{run_on_high_mem} "
                 f"--job-name={job_name} "
-                f"--chdir={submit_dir} "
+                f"--chdir={submit_dir}/{operate_string} "
                 f"{submit_dir}/{execute_script} {input_file_name}"
             )
             
-            # print(command)
+            #print(command)
             # sys.exit(0)
 
             os.system(command)

@@ -71,6 +71,21 @@ def initalize_directories():
             dst_path_op = join(directory, f"{project_name}_{operate_string}.op")
             copyfile(src_path_op, dst_path_op)
 
+            # sub directories
+            xyz_subdirectory = join(directory, f"{operate_string}")
+            os.makedirs(xyz_subdirectory, exist_ok=True)
+            xyz_sub_path = join(xyz_subdirectory, f"{project_name}_{operate_string}.op")
+            copyfile(src_path_op, xyz_sub_path)
+
+            inp_file_name = f"{project_name}_{operate_string}.inp"
+            xyz_inp_path = join(directory, inp_file_name)
+            xyz_dst_path = join(xyz_subdirectory, inp_file_name)
+            copyfile(xyz_inp_path, xyz_dst_path)
+
+            xyz_sub_execution_script = join(xyz_subdirectory, execution_script)
+            copyfile(src_path_execution_script, xyz_sub_execution_script)
+
+
         print(f"{directory = }")
 
         dst_path_execution_script = join(directory, execution_script)

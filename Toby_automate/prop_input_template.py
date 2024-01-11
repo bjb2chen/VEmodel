@@ -236,7 +236,7 @@ def _generate_basic_wavefunction(basic_HO_wavepacket, nof_electronic_states, ope
         initial_state_spec.format(nof_electronic_states),
         basic_HO_wavepacket,
         build_end,
-        # operate_spec.format(operate_string),
+        operate_spec.format(operate_string),
         int_wf_end,
     ])
 
