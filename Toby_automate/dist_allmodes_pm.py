@@ -5,6 +5,7 @@ import os
 import shutil
 import re
 import json
+from project_parameters import *
 
 # Function to get the number of atoms from thFe hessout file
 def get_number_of_atoms(hessout):
@@ -32,7 +33,11 @@ def extract_lines_between_patterns(filename, start_pattern, end_pattern):
     return selected_lines
 
 # Function to read frequency values from selected lines
-def read_freq_values(selected_lines):
+def read_freq_values(hessout):
+    selected_lines = extract_lines_between_patterns(hessout, 
+        "FREQUENCIES IN CM",
+        "REFERENCE ON SAYVETZ CONDITIONS"
+        )
     freq_value_set = []
 
     for freqline in selected_lines:
@@ -42,7 +47,11 @@ def read_freq_values(selected_lines):
     return freq_value_set
 
 # Function to extract filtered set of lines
-def read_mode_values(selected_lines):
+def read_mode_values(hessout):
+    selected_lines = extract_lines_between_patterns(hessout, 
+        "FREQUENCIES IN CM",
+        "REFERENCE ON SAYVETZ CONDITIONS"
+        )
     mode_value_set = []
 
     for idx, modeline in enumerate(selected_lines):
@@ -140,7 +149,7 @@ def process_mode_freq(natoms, ndim, ngroup, nleft):
 
 def compose_ref_structure(hessout, natoms):
     coord_lines = extract_lines_between_patterns(hessout, 'EQUILIBRIUM GEOMETRY LOCATED', 'INTERNUCLEAR DISTANCES')
-    ref_file = 'py_ref_structure'
+    ref_file = 'ref_structure'
 
     if len(coord_lines) > 2:
         try:
@@ -149,7 +158,7 @@ def compose_ref_structure(hessout, natoms):
             print(f"Error deleting {ref_file}: {str(e)}")
 
         for atom_line in coord_lines[-natoms-1:-1]:
-            with open(f'{ref_file}', "a") as python_ref_file:
+            with open(ref_file, "a") as python_ref_file:
                 python_ref_file.write(atom_line)
 
         print(f'Sucessfully extracted equilibrium geometry from {hessout} and prepared ref_structure.')
@@ -466,8 +475,8 @@ def extract_coupling_energy(file_path, pattern):
             if match:
                 return float(line[62:].strip().replace(" ", ""))
 
-def find_nstate(file_path, pattern='# of states in CI      = ', encoding="utf-8"):
-    with open(file_path, 'r', encoding=encoding, errors='replace') as file:
+def find_nstate(file_path, pattern='# of states in CI      = '):
+    with open(file_path, 'r', errors='replace') as file:
         for line in file:
             if pattern in line:
                 return int(line.split('=')[1].strip())
@@ -942,30 +951,19 @@ def main():
 
     hessout = sys.argv[1]
     filnam = "SbH3cat_cct_gmcpt_C1_4st_diab"
-    refgeo = "ref_structure"
-    py_refgeo = "py_ref_structure"
+    ref_file = "ref_structure"
 
     natoms = get_number_of_atoms(hessout)
     ndim = natoms * 3
     #ndim = 15 # note: can only test like this if you have proper hessout structure
     ngroup = ndim // 5
     nleft = ndim % 5
-    # qsize = input("Enter desired qsize, default is 0.05: ")
-    qsize = 0.05
     print("Dimension of all xyz coordinates:", ndim)
     print("# of atoms:", natoms)
     print(ngroup, nleft)
 
-    #modes_excluded = [1, 2, 3, 4, 5, 6]
-    modes_excluded = [1, 2, 3, 4, 5, 6, 7]
-    #modes_excluded = [1, 2, 4, 7, 12]
-
-    selected_lines = extract_lines_between_patterns(hessout, 
-        "FREQUENCIES IN CM",
-        "REFERENCE ON SAYVETZ CONDITIONS"
-        )
-    freq_value_set = read_freq_values(selected_lines)
-    filtered_set = read_mode_values(selected_lines)
+    freq_value_set = read_freq_values(hessout)
+    filtered_set = read_mode_values(hessout)
     
     with open('mode.dat', 'w') as output_file:
         output_file.writelines(filtered_set)
@@ -974,18 +972,13 @@ def main():
         output_file.writelines(freq_value_set)
 
     nrmmod, freqcm = process_mode_freq(natoms, ndim, ngroup, nleft)
-    ref_file = compose_ref_structure(hessout, natoms)
-    atmlst, chrglst, refcoord = read_reference_structure(py_refgeo)
-    modes_included = filter_modes(modes_excluded, ndim)
+    refgeo = compose_ref_structure(hessout, natoms)
+    atmlst, chrglst, refcoord = read_reference_structure(ref_file)
+    
+    #modes_excluded is taken and configured from project_parameters
+    #modes_included is taken and configured from project_parameters
 
-    #Set conversion constants
-    ha2ev = 27.2113961318
-    wn2ev = 0.000123981
-    wn2eh = 0.00000455633
-    ang2br = 1.889725989
-    amu2me = 1822.88839 
-
-    repetition = refG_calc(py_refgeo, filnam)
+    repetition = refG_calc(ref_file, filnam)
     diabatize = diabatization(filnam, modes_included, freqcm=freqcm, ndim=ndim, refcoord=refcoord,\
                            nrmmod=nrmmod, natoms=natoms, atmlst=atmlst, chrglst=chrglst, \
                            qsize=qsize, ha2ev=ha2ev, wn2ev=wn2ev, wn2eh=wn2eh, ang2br=ang2br, amu2me=amu2me)
