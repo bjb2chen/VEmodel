@@ -5,7 +5,7 @@
 file=$1
 
 # Prompt the user to choose between "OPTIMIZED RHF" and "Semi-canonical MOs"
-read -p $'Do you want:\n (1) OPTIMIZED RHF \n (2) OPTIMIZED ROHF \n (3) Semi-canonical MOs \n (4) MCSCF Natural Orbitals \n (5) OPTIMIZED MCSCF \n (6) DMO group \n (7) REFDET GROUP? \nYour choice: ' num
+read -p $'Do you want:\n (1) OPTIMIZED RHF \n (2) OPTIMIZED ROHF \n (3) Semi-canonical MOs \n (4) MCSCF Natural Orbitals \n (5) OPTIMIZED MCSCF \n (6) DMO group \n (7) REFDET GROUP \n (8) EQUILIBRIUM GEOMETRY \n Your choice: ' num
 
 # Perform the corresponding operation based on the user's choice
 
@@ -16,7 +16,7 @@ if [ "$num" == "1" ]; then
     rm -f vec.dat
   fi
   sed -n "/OPTIMIZED RHF/,/END/ p" $file > vec.dat
-  echo "You have selected 1 - OPTIMIZED RHF"
+  echo "You have selected 1 - OPTIMIZED RHF, please ensure the file given to this script is GMS.dat"
   echo "OPTIMIZED RHF orbitals prepared in vec.dat file"
 
 # Handle OPTIMIZED ROHF
@@ -26,7 +26,7 @@ elif [ "$num" == "2" ]; then
     rm -f vec.dat
   fi
   sed -n "/OPTIMIZED ROHF/,/END/ p" $file > vec.dat
-  echo "You have selected 2 - OPTIMIZED ROHF"
+  echo "You have selected 2 - OPTIMIZED ROHF, please ensure the file given to this script is GMS.dat"
   echo "OPTIMIZED ROHF orbitals prepared in vec.dat file"
 
 # Handle Semi-canonical MOs 
@@ -36,7 +36,7 @@ elif [ "$num" == "3" ]; then
     rm -f active_space_orbs
   fi
   sed -n "/Semi-canonical MOs/,/END/ p" $file > active_space_orbs
-  echo "You have selected 3 - Semi-canonical MOs"
+  echo "You have selected 3 - Semi-canonical MOs, please ensure the file given to this script is GMS.dat"
   echo "Semi-canonical MOs prepared in active_space_orbs file"
 
 # Handle MCSCF Natural Orbitals
@@ -46,7 +46,7 @@ elif [ "$num" == "4" ]; then
     rm -f nat_orbs_mcscf
   fi
   sed -n "/NATURAL ORBITALS OF MCSCF/,/END/ p" $file > nat_orbs_mcscf
-  echo "You have selected 4 - MCSCF Natural Orbitals"
+  echo "You have selected 4 - MCSCF Natural Orbitals, please ensure the file given to this script is GMS.dat"
   echo "Semi-canonical MOs prepared in nat_orbs_mcscf file"
 
 # Handle OPTIMIZED MCSCF
@@ -61,7 +61,7 @@ elif [ "$num" == "5" ]; then
 
 # Handle DMO group  
 elif [ "$num" == "6" ]; then
-  echo "You have selected 6 - DMO group"
+  echo "You have selected 6 - DMO group, please ensure the file given to this script is GMS.dat"
   read -p $'Please input (x) number of DMOs and (y) the initial DMO in format: x y \nYour choice:' ndmo inidmo
 
   sed -n "/Semi-canonical/,/END/ p" $file > ztemp
@@ -106,7 +106,7 @@ elif [ "$num" == "6" ]; then
 
 # Handle REFDET GROUP  
 elif [ "$num" == "7" ]; then
-  echo "You have selected 7 - REFDET group"
+  echo "You have selected 7 - REFDET group, please ensure the file given to this script is GMS_DMOSTEP.out"
   nstate=`grep '# of states in CI      = ' $file|tail -1|cut -d'=' -f2`
 
   echo $nstate "states"
@@ -174,6 +174,25 @@ elif [ "$num" == "7" ]; then
   cat phase.out >> refdet.out
   echo ' $END ' >> refdet.out
   echo "REFDET group prepared in refdet.out file"
+
+# Handle EQUILIBRIUM GEOMETRY
+elif [ "$num" == "8" ]; then
+  echo "You have selected 8 - EQUILIBRIUM GEOMETRY, please ensure the file given to this script is GMS_gh.out"
+  # Remove existing ref_structure
+  if [ -f ref_structure ]; then
+    rm -f ref_structure
+  fi
+  # Prompt user for the number of atoms
+  echo "Enter the number of atoms:"
+  read natoms
+  
+  # Extracting the table section
+  table=$(sed -n "/EQUILIBRIUM GEOMETRY/,/INTERNUCLEAR DISTANCES/p" "$file")
+  
+  # Extracting the last 'natoms' lines from the table (excluding the last line of the section)
+  echo "$table" | tail -n "$((natoms + 2))" | head -n -2  > "ref_structure"
+  echo "EQUILIBRIUM GEOMETRY coordinates prepared in ref_structure"
+
 else
   echo "Invalid selection."
 fi
