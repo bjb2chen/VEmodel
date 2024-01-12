@@ -167,7 +167,7 @@ def compose_ref_structure(hessout, natoms):
 
     return coord_lines
 
-def read_reference_structure(file_path):
+def read_reference_structure(file_path, debug=False):
     ##### SAMPLE REF STRUCT #######
     #read in reference structure
     #The ref_structure has to be prepared by human-being and adopts the following format
@@ -189,10 +189,14 @@ def read_reference_structure(file_path):
             atmnam = parts[0]
             chrg = parts[1]
             coords = parts[2:]
+            # atmnam, chrg, coords = parts[0], parts[1], parts[2:]
+            # atmnam, chrg, *coords = *parts
 
+            # next_atom_index = iatom + 1
             atmlst[iatom + 1] = atmnam
             chrglst[iatom + 1] = chrg
 
+            # if debug: print(atmlst[iatom + 1], chrglst[iatom + 1])
             print(atmlst[iatom + 1], chrglst[iatom + 1])
 
             for ixyz, coord in enumerate(coords):
@@ -219,31 +223,36 @@ def filter_modes(excluded_set, ndim):
 
 def my_subgam(filnam, **kwargs):
     ncpus = kwargs.get('ncpus', 2)
-    ngb = kwargs.get('ngb', 2)
     nhour = kwargs.get('nhour', 1)
+    ngb = kwargs.get('ngb', 2)
+
     # Remove the ".inp" extension from the filename
     input_no_ext, extension = os.path.splitext(filnam)
     print(f"running calculations for {input_no_ext}")
     wd = os.getcwd()
 
-    with open(f"{input_no_ext}.slurm", "w") as slurm_file:
-        slurm_file.write("#!/bin/bash\n")
-        slurm_file.write("#SBATCH --nodes=1\n")
-        slurm_file.write(f"#SBATCH --ntasks={ncpus}\n")
-        slurm_file.write(f"#SBATCH --mem-per-cpu={ngb}G\n")
-        slurm_file.write(f"#SBATCH --time={nhour}:00:00\n")
-        slurm_file.write("\n")
-        slurm_file.write("cd $SLURM_SUBMIT_DIR\n")
-        slurm_file.write("\n")
-        slurm_file.write("export SLURM_CPUS_PER_TASK\n")
-        slurm_file.write('mkdir -p /home/$USER/.gamess_ascii_files/$SLURM_JOBID\n')
-        slurm_file.write("\n")
-        slurm_file.write(f"/home/$USER/LOCAL/runG_diab {input_no_ext}.inp {ncpus} \n")
+    file_contents = "".join([
+        "#!/bin/bash\n",
+        "#SBATCH --nodes=1\n",
+        f"#SBATCH --ntasks={ncpus}\n",
+        f"#SBATCH --mem-per-cpu={ngb}G\n",
+        f"#SBATCH --time={nhour}:00:00\n",
+        "\n",
+        "cd $SLURM_SUBMIT_DIR\n",
+        "\n",
+        "export SLURM_CPUS_PER_TASK\n",
+        'mkdir -p /home/$USER/.gamess_ascii_files/$SLURM_JOBID\n',
+        f"/home/$USER/LOCAL/runG_diab {input_no_ext}.inp {ncpus} \n",
+    ])
 
-    command = (
-        "sbatch"
-        f" {input_no_ext}.slurm"
-    )
+    with open(f"{input_no_ext}.slurm", "w") as slurm_file:
+        slurm_file.write(file_contents)
+
+
+    # command = (
+    #     "sbatch"
+    #     f" {input_no_ext}.slurm"
+    # )
 
     return f"{input_no_ext}.slurm"
 
@@ -286,6 +295,24 @@ def diabatization(filnam, modes_included, **kwargs):
     distcoord_mp = {}
     distcoord_mm = {}
 
+    # distcoord = {
+    #     key: {}
+    #     for key in [
+    #         'plus', 'minus', 'plus_x2', 'minus_x2',
+    #         'pp', 'pm', 'mp', 'mm',
+    #     ]
+    # }
+
+    # for k in ['a', 'b', 'ndim', ]:
+    #     dict1[k] = dict2[k]
+
+
+    # var_list = [freqcm, ndim, refcoord, nrmond, ...]
+    # key_list = [freqcm, ndim, refcoord, nrmond, ...]
+    # default_value_list = [None, None, None, .... 0.05]
+    # for i in range(len(var_list)):
+    #     var_list[i] = kwargs.get(key_list[i], default_value_list[i])
+
     freqcm = kwargs.get('freqcm')
     ndim = kwargs.get('ndim')
     refcoord = kwargs.get('refcoord')
@@ -293,6 +320,7 @@ def diabatization(filnam, modes_included, **kwargs):
     natoms = kwargs.get('natoms')
     atmlst = kwargs.get('atmlst')
     chrglst = kwargs.get('chrglst')
+
     qsize = kwargs.get('qsize', 0.05)
     ha2ev = kwargs.get('ha2ev', 27.2113961318)
     wn2ev = kwargs.get('wn2ev', 0.000123981)
@@ -312,23 +340,33 @@ def diabatization(filnam, modes_included, **kwargs):
 
         # Loop over components
         for icomp in range(1, ndim + 1):
+
             coord_disp_plus = refcoord[icomp] + rsize * nrmmod[icomp, imode]
             coord_disp_minus = refcoord[icomp] - rsize * nrmmod[icomp, imode]
             distcoord_plus[icomp] = coord_disp_plus
+            distcoord_plus[icomp] = coord_disp_plus
             distcoord_minus[icomp] = coord_disp_minus
+
             coord_disp_plusx2 = refcoord[icomp] + 2.0 * rsize * nrmmod[icomp, imode]
             coord_disp_minusx2 = refcoord[icomp] - 2.0 * rsize * nrmmod[icomp, imode]
             distcoord_plus_x2[icomp] = coord_disp_plusx2
             distcoord_minus_x2[icomp] = coord_disp_minusx2
-            print(imode, icomp, refcoord[icomp], nrmmod[icomp, imode], coord_disp_plus, coord_disp_minus,
-            distcoord_plus[icomp], distcoord_minus[icomp])
+
+            print(
+                imode, icomp, refcoord[icomp], nrmmod[icomp, imode], coord_disp_plus, 
+                coord_disp_minus, distcoord_plus[icomp], distcoord_minus[icomp]
+            )
 
         # Delete existing dist_structure files
+        # flist = [f'dist_structure_{suff}' for suffix in ['plus', 'minus', 'plusx2', 'minusx2']]
+        # for dist_file in flist:
         for dist_file in ['dist_structure_plus', 'dist_structure_minus', 'dist_structure_plusx2', 'dist_structure_minusx2']:
             try:
                 subprocess.run(['rm', '-f', dist_file])
             except Exception as e:
                 print(f"Error deleting {dist_file}: {str(e)}")
+
+        # a,b,c,d, = "", "", "", ""
 
         # Print the distorted structure
         for iatom in range(1, natoms + 1):
@@ -336,10 +374,13 @@ def diabatization(filnam, modes_included, **kwargs):
                     open('dist_structure_minus', 'a') as f_minus, \
                     open('dist_structure_plusx2', 'a') as f_plusx2, \
                     open('dist_structure_minusx2', 'a') as f_minusx2:
-                f_plus.write(f"{atmlst[iatom]} {chrglst[iatom]} ")
-                f_minus.write(f"{atmlst[iatom]} {chrglst[iatom]} ")
-                f_plusx2.write(f"{atmlst[iatom]} {chrglst[iatom]} ")
-                f_minusx2.write(f"{atmlst[iatom]} {chrglst[iatom]} ")
+
+                stringaaa = f"{atmlst[iatom]} {chrglst[iatom]} "
+                f_plus.write(stringaaa)
+                f_minus.write(stringaaa)
+                f_plusx2.write(stringaaa)
+                f_minusx2.write(stringaaa)
+
                 for ixyz in range(1, 4):
                     icomp = (iatom - 1) * 3 + ixyz
                     f_plus.write(f"{distcoord_plus[icomp]} ")
@@ -350,6 +391,7 @@ def diabatization(filnam, modes_included, **kwargs):
                 f_minus.write('\n')
                 f_plusx2.write('\n')
                 f_minusx2.write('\n')
+
  
         # Create input files for diabatization calculations
         for displacement in ['+', '-']:
@@ -427,36 +469,41 @@ def diabatization(filnam, modes_included, **kwargs):
                     f_mm.write('\n')
  
             # Create input files for diabatization calculations
-            for displacement1 in ['+', '-']:
-                for displacement2 in ['+', '-']:
-                    if displacement1 == '+' and displacement2 == '+':
-                        suffix1 = 'pp'
-                    elif displacement1 == '+' and displacement2 == '-':
-                        suffix1 = 'pm'
-                    elif displacement1 == '-' and displacement2 == '+':
-                        suffix1 = 'mp'
-                    elif displacement1 == '-' and displacement2 == '-':
-                        suffix1 = 'mm'
+            suffix_map = {
+                ('+', '+'): 'pp',
+                ('-', '-'): 'mm',
+                ('+', '-'): 'pm',
+                ('-', '+'): 'mp',
+            }
 
-                    shutil.copy('temp.inp', f'{filnam}_mode{imode}_{displacement1}{qsize}_mode{jmode}_{displacement2}{qsize}.inp')
-                    with open(f'{filnam}_mode{imode}_{displacement1}{qsize}_mode{jmode}_{displacement2}{qsize}.inp', 'a') as inp_file:
-                        with open(f'dist_structure_{suffix1}', 'r', errors='replace') as dist_file:
-                            inp_file.write(dist_file.read())
-                        inp_file.write(' $END ')
- 
-                    # Check if the calculation is done already
-                    output_filename = f'{filnam}_mode{imode}_{displacement1}{qsize}_mode{jmode}_{displacement2}{qsize}.out'
-                    grace2 = subprocess.run(["grep", "DONE WITH MP2 ENERGY", output_filename])
-                    if grace2.returncode != 0:
-                    #if not os.path.exists(output_filename):
-                        print(f"Running calculations for {output_filename}!")
-                        try:
-                            #subprocess.run(['./subgam.diab', f'{filnam}_mode{imode}_{displacement1}{qsize}_mode{jmode}_{displacement2}{qsize}.inp', '4', '0', '1'])
-                            os.system("sbatch" + " " + my_subgam(f'{filnam}_mode{imode}_{displacement1}{qsize}_mode{jmode}_{displacement2}{qsize}.inp', ncpus=2, ngb=1, nhour=1))
-                        except Exception as e:
-                            print(f"Error running diabatization calculation: {str(e)}")
-                    else:
-                        print(f"{output_filename} is already done.")
+            for d_one, d_two in it.product(['+', '-'], ['+', '-']):
+                suffix = suffix_map[(d_one, d_two)]
+
+
+                output_filename = "".join([
+                    f'{filnam}',
+                    f'_mode{imode}_{d_one}{qsize}',
+                    f'_mode{jmode}_{d_two}{qsize}',
+                ])
+                shutil.copy('temp.inp', output_filename + '.inp')
+                with open(output_filename, 'a') as inp_file:
+                    with open(f'dist_structure_{suffix1}', 'r', errors='replace') as dist_file:
+                        inp_file.write(dist_file.read())
+                    inp_file.write(' $END ')
+
+                # Check if the calculation is done already
+                output_filename = f'{filnam}_mode{imode}_{d_one}{qsize}_mode{jmode}_{d_two}{qsize}.out'
+                grace2 = subprocess.run(["grep", "DONE WITH MP2 ENERGY", output_filename])
+                if grace2.returncode != 0:
+                #if not os.path.exists(output_filename):
+                    print(f"Running calculations for {output_filename}!")
+                    try:
+                        #subprocess.run(['./subgam.diab', f'{filnam}_mode{imode}_{d_one}{qsize}_mode{jmode}_{d_two}{qsize}.inp', '4', '0', '1'])
+                        os.system("sbatch" + " " + my_subgam(f'{filnam}_mode{imode}_{d_one}{qsize}_mode{jmode}_{d_two}{qsize}.inp', ncpus=2, ngb=1, nhour=1))
+                    except Exception as e:
+                        print(f"Error running diabatization calculation: {str(e)}")
+                else:
+                    print(f"{output_filename} is already done.")
 
 #Now we move on to extract vibronic coupling constants using finite difference
 #and write the data in an mctdh operator file
@@ -828,14 +875,14 @@ def mctdh(filnam, modes_included, **kwargs):
         mctdh_file.write("-----------------------------------------\n")
         mctdh_file.write("HAMILTONIAN-SECTION\n")
         mctdh_file.write("-----------------------------------------\n")
-    
+
         # Write modes and mode labels
         mctdh_file.write(" modes | el")
         for imode_include in range(1, nmodes + 1):
             mctdh_file.write(f" | m{modes_included[imode_include]}")
         mctdh_file.write("\n")
         mctdh_file.write("-----------------------------------------\n")
-    
+
         # Write KINETIC OPERATOR FOR NORMAL MODES
         mctdh_file.write("# KINETIC OPERATOR FOR NORMAL MODES\n")
         mctdh_file.write("-----------------------------------------\n")
@@ -978,9 +1025,16 @@ def main():
     #modes_included is taken and configured from project_parameters
 
     repetition = refG_calc(ref_file, filnam)
-    diabatize = diabatization(filnam, modes_included, freqcm=freqcm, ndim=ndim, refcoord=refcoord,\
-                           nrmmod=nrmmod, natoms=natoms, atmlst=atmlst, chrglst=chrglst, \
-                           qsize=qsize, ha2ev=ha2ev, wn2ev=wn2ev, wn2eh=wn2eh, ang2br=ang2br, amu2me=amu2me)
+    # input_kwargs = {
+    #     'ndim': ndim,
+    #     'refcoord': refcoord,
+    # }
+    # diabatize = diabatization(filname, modes_included, **input_kwargs)
+    diabatize = diabatization(
+        filnam, modes_included, freqcm=freqcm, ndim=ndim, refcoord=refcoord,
+        nrmmod=nrmmod, natoms=natoms, atmlst=atmlst, chrglst=chrglst, 
+        qsize=qsize, ha2ev=ha2ev, wn2ev=wn2ev, wn2eh=wn2eh, ang2br=ang2br, amu2me=amu2me,
+    )
 
     tdipole_block = extract_lines_between_patterns(f"{filnam}_refG.out",
     "TRANSITION DIPOLES BETWEEN DIABATS",
@@ -1001,6 +1055,7 @@ def main():
     #     shutil.copy("mctdh.op", src_path_op)
     #     print(f"Created directory {home_root} and populated it with {project_name}_{operate_string}.op!")
 
+    # if (extra_debug := False):
     # pprint.pprint(nrmmod)
     # print('---------nrm mod done-----------')
     # pprint.pprint(freqcm)
