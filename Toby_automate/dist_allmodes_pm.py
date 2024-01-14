@@ -5,6 +5,7 @@ import os
 import shutil
 import re
 import json
+import itertools as it
 from project_parameters import *
 
 # Function to get the number of atoms from thFe hessout file
@@ -186,8 +187,9 @@ def read_reference_structure(file_path, debug=False):
 
         for iatom, line in enumerate(lines):
             parts = line.split()
-            atmnam = parts[0], chrg = parts[1], coords = parts[2:]
-            # atmnam, chrg, *coords = *parts
+            atmnam = parts[0]
+            chrg = parts[1]
+            coords = parts[2:]
 
             next_atom_index = iatom + 1
             atmlst[next_atom_index] = atmnam
@@ -355,7 +357,7 @@ def diabatization(filnam, modes_included, **kwargs):
             )
 
         # Delete existing dist_structure files
-        # flist = [f'dist_structure_{suff}' for suffix in ['plus', 'minus', 'plusx2', 'minusx2']]
+        # flist = [f'dist_structure_{suffix}' for suffix in ['plus', 'minus', 'plusx2', 'minusx2']]
         # for dist_file in flist:
         for dist_file in ['dist_structure_plus', 'dist_structure_minus', 'dist_structure_plusx2', 'dist_structure_minusx2']:
             try:
@@ -476,7 +478,6 @@ def diabatization(filnam, modes_included, **kwargs):
             for d_one, d_two in it.product(['+', '-'], ['+', '-']):
                 suffix = suffix_map[(d_one, d_two)]
 
-
                 output_filename = "".join([
                     f'{filnam}',
                     f'_mode{imode}_{d_one}{qsize}',
@@ -484,7 +485,7 @@ def diabatization(filnam, modes_included, **kwargs):
                 ])
                 shutil.copy('temp.inp', output_filename + '.inp')
                 with open(output_filename, 'a') as inp_file:
-                    with open(f'dist_structure_{suffix1}', 'r', errors='replace') as dist_file:
+                    with open(f'dist_structure_{suffix}', 'r', errors='replace') as dist_file:
                         inp_file.write(dist_file.read())
                     inp_file.write(' $END ')
 
@@ -1046,11 +1047,6 @@ def main():
     make_mctdh = mctdh(filnam, modes_included, freqcm=freqcm, qsize=qsize, ha2ev=ha2ev, wn2ev=wn2ev, wn2eh=wn2eh, ang2br=ang2br, amu2me=amu2me, dipoles=dipoles)
 
     shutil.copy("mctdh.op", f"{project_name}.op")
-    # os.makedirs(home_root, exist_ok=True)
-    # for operate_string in ["Ex", "Ey", "Ez"]:
-    #     src_path_op = join(home_root, f"{project_name}_{operate_string}.op")
-    #     shutil.copy("mctdh.op", src_path_op)
-    #     print(f"Created directory {home_root} and populated it with {project_name}_{operate_string}.op!")
 
     # if (extra_debug := False):
     # pprint.pprint(nrmmod)
