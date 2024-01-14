@@ -186,18 +186,15 @@ def read_reference_structure(file_path, debug=False):
 
         for iatom, line in enumerate(lines):
             parts = line.split()
-            atmnam = parts[0]
-            chrg = parts[1]
-            coords = parts[2:]
-            # atmnam, chrg, coords = parts[0], parts[1], parts[2:]
+            atmnam = parts[0], chrg = parts[1], coords = parts[2:]
             # atmnam, chrg, *coords = *parts
 
-            # next_atom_index = iatom + 1
-            atmlst[iatom + 1] = atmnam
-            chrglst[iatom + 1] = chrg
+            next_atom_index = iatom + 1
+            atmlst[next_atom_index] = atmnam
+            chrglst[next_atom_index] = chrg
 
-            # if debug: print(atmlst[iatom + 1], chrglst[iatom + 1])
-            print(atmlst[iatom + 1], chrglst[iatom + 1])
+            # if debug: print(atmlst[next_atom_index], chrglst[next_atom_index])
+            print(atmlst[next_atom_index], chrglst[next_atom_index])
 
             for ixyz, coord in enumerate(coords):
                 icomp = (iatom * 3) + ixyz + 1
