@@ -1,0 +1,30 @@
+ !######################################################################################
+ !                   D_3h RHF GEOMETRY OPTIMIZATION AND HESSIAN TEMPLATE
+ ! -------------------------------------------------------------------------------------
+ ! Remember to replace the symmetry-correct coordinates, should only be two atoms
+ ! The hydrogen or fluorine should have only one non-zero x,y,z coordinate
+ ! 
+ ! Basis set?                                                    gbasis=ccd for 2nd row, 
+ !                                                                          cct 3rd/4th,
+ !                                                                    SPKrTZC beyond 4th
+ !  
+ ! Heavy transition metal atom?                         add $contrl relwfn=LUT-IOTC $end
+ !              
+ ! 
+ !######################################################################################
+ $system kdiag=3 mwords=250 memddi=8000 parall=.t. $end
+ $contrl runtyp=optimize ispher=1 $end
+ $scf    npunch=2 conv=1.0d-06 dirscf=.t.      $end
+ $contrl scftyp=rhf  mult=1 maxit=200 icharg=0 mplevl=2 $end
+ $basis  gbasis=ccd $end
+ $statpt hssend=.t. nstep=200 $end
+ $force  method=seminum $end
+ $trans  dirtrf=.t. $end
+ $data
+ NH3 MP2 Geometry Opt and Hessian
+DNH 3
+
+N     7.0     0.00000000     0.00000000     0.00000000
+H     1.0     1.07000005     0.00000000     0.00000000
+ $end
+    
