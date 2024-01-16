@@ -1,0 +1,58 @@
+ !#############################################################################
+ !                   D_3h RHF GEOMETRY OPTIMIZATION AND HESSIAN TEMPLATE
+ ! ---------------------------------------------------------------------------
+ ! Replace the symmetry-correct coordinates, should only be two atoms.  
+ ! The hydrogen or fluorine should have only one non-zero x,y,z coordinate.
+ ! 
+ ! Basis set?   gbasis=ccd for 2nd row, 
+ !                         cct 3rd/4th,
+ !                   SPKrTZP for heavy,
+ !                   SPKrTZC beyond 4th
+ ! 
+ !#############################################################################
+ $system kdiag=3 mwords=250 memddi=8000 parall=.t. $end
+ $contrl runtyp=optimize ispher=1 $end
+ $contrl icut=9 itol=20 inttyp=rysquad qmttol=1.0d-05 nosym=0 $end
+ $contrl scftyp=rohf  mult=5 maxit=200 icharg=0 mplevl=2 $end
+ $scf    npunch=2 conv=1.0d-06 dirscf=.t. $end
+ $force  method=seminum $end
+ $trans  dirtrf=.t. $end
+ $statpt hssend=.t. $end
+ $basis  gbasis=SPKrTZP $end
+ !#############################################################################
+ !
+ !                       TURN ON THIS SECTION IF HEAVY ATOM
+ !
+ !#############################################################################
+ !
+ $contrl relwfn=LUT-IOTC $end
+ $scf  diis=.t. soscf=.f. ethrsh=10.0 $end
+ !
+ !#############################################################################
+ !
+ !       TURN ON THIS SECTION IF GMCPT, CHANGE runtyp=energy, scftyp=mcscf
+ !
+ !#############################################################################
+ -guess  guess=moread norb=158 purify=.t. norder=1 $end
+ !       iorder(25)=27,25,26 $end
+ -mcscf  cistep=gmcci fullnr=.t. finci=mos
+         acurcy=1.d-6 maxit=100 $end
+ -mrmp   mrpt=gmcpt rdvecs=.f. $end
+ -gmcpt  nmofzc=27 nmodoc=0 nmoact=5 nelact=5 stsym(1)=A nsolut=100
+         reftyp=ormas nspace=1 mstart(1)=28 mine(1)=5 maxe(1)=5
+         kstate(1)=1
+         wstate(1)=1
+         iwgt=0 thrwgt=-1.0 krot=.f. kszdoe=.f. knospn=.f.
+         thrde=-1.0 edshft=0.02 $end
+ !#############################################################################
+ !
+ !             TURN OFF THIS SECTION IF temp.inp, change nosym=1, add C1
+ !
+ !#############################################################################
+ $data
+ FeH4- 10 states calculation at opt geometry.
+ DNH 3
+
+ Co     27.0   0.0  0.0  0.0
+ F       9.0   1.715  0.0  0.0
+ $end
