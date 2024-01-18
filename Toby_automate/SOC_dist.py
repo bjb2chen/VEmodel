@@ -760,29 +760,33 @@ def mctdh(filnam, modes_included, **kwargs):
                             # Extract DSOME_cm_minusx2
                             DSOME_cm_minusx2 = extract_DSOME(f'{filnam}_mode{imode}_-{qsize}x2.out')
                             DSOME_cm_minusx2_real, DSOME_cm_minusx2_imag = DSOME_cm_minusx2[0], DSOME_cm_minusx2[1]
-                            
+
                             # Extract DSOME_cm_0
                             DSOME_cm_0 = extract_DSOME(f'{filnam}_refG.out')
                             DSOME_cm_0_real, DSOME_cm_0_imag = DSOME_cm_0[0], DSOME_cm_0[1]
 
+
+                            # Set jst ist tuple as index
+                            idx = (jst, ist)
+
                             # Compute linear SOC
-                            linear_SOC_cm_real = (DSOME_cm_plus_real - DSOME_cm_minus_real) / (2 * qsize)
-                            linear_SOC_cm_imag = (DSOME_cm_plus_imag - DSOME_cm_minus_imag) / (2 * qsize)
+                            linear_SOC_cm_real[idx] = (DSOME_cm_plus_real[idx] - DSOME_cm_minus_real[idx]) / (2 * qsize)
+                            linear_SOC_cm_imag[idx] = (DSOME_cm_plus_imag[idx] - DSOME_cm_minus_imag[idx]) / (2 * qsize)
         
                             # Compute quadratic SOC
-                            quadratic_SOC_cm_real = (DSOME_cm_plusx2_real + DSOME_cm_minusx2_real - 2.0 * DSOME_cm_0_real) / (4.0 * qsize * qsize)
-                            quadratic_SOC_cm_imag = (DSOME_cm_plusx2_imag + DSOME_cm_minusx2_imag - 2.0 * DSOME_cm_0_imag) / (4.0 * qsize * qsize)
+                            quadratic_SOC_cm_real[idx] = (DSOME_cm_plusx2_real[idx] + DSOME_cm_minusx2_real[idx] - 2.0 * DSOME_cm_0_real[idx]) / (4.0 * qsize * qsize)
+                            quadratic_SOC_cm_imag[idx] = (DSOME_cm_plusx2_imag[idx] + DSOME_cm_minusx2_imag[idx] - 2.0 * DSOME_cm_0_imag[idx]) / (4.0 * qsize * qsize)
 
                             # Print and store results
                             print(f"{jst} {ist} {linear_SOC_cm_real}\n")
-                            mctdh_file.write(f"l{jst}{ist}_m{imode} = {linear_SOC_cm_real:.16f}, cm-1\n")
+                            mctdh_file.write(f"l{jst}{ist}_m{imode}r = {linear_SOC_cm_real[idx]:.16f}, cm-1\n")
                             print(f"{jst} {ist} {linear_SOC_cm_imag}\n")
-                            mctdh_file.write(f"l{jst}{ist}_m{imode} = {linear_SOC_cm_imag:.16f}, cm-1\n")
-                            print(f"{jst} {ist} {quadratic_SOC_cm_real}\n")
-                            mctdh_file.write(f"q{jst}{ist}_m{imode} = {quadratic_SOC_cm_real:.16f}, cm-1\n")
-                            print(f"{jst} {ist} {quadratic_SOC_cm_imag}\n")
-                            mctdh_file.write(f"q{jst}{ist}_m{imode} = {quadratic_SOC_cm_imag:.16f}, cm-1\n")
+                            mctdh_file.write(f"l{jst}{ist}_m{imode}i = {linear_SOC_cm_imag[idx]:.16f}, cm-1\n")
 
+                            print(f"{jst} {ist} {quadratic_SOC_cm_real}\n")
+                            mctdh_file.write(f"q{jst}{ist}_m{imode}r = {quadratic_SOC_cm_real[idx]:.16f}, cm-1\n")
+                            print(f"{jst} {ist} {quadratic_SOC_cm_imag}\n")
+                            mctdh_file.write(f"q{jst}{ist}_m{imode}i = {quadratic_SOC_cm_imag[idx]:.16f}, cm-1\n")
 
                     mctdh_file.write("\n")
     
