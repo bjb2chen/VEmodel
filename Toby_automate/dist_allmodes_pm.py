@@ -547,6 +547,73 @@ def extract_ground_to_excited_state_transition_dipoles(selected_lines):
 
     return ground_to_excited_state_transition_dipoles
 
+def extract_DSOME(filnam):
+
+    nstate = find_nstate(f'{filnam}_refG.out')
+
+    start_pattern = "HSO MATRIX IN DIABATIC REPRESENTATION (DIRECT MAXIMIZATION)"
+    end_pattern = 'SOC EIG. VALUES and VECTORS IN DIABATS (DIRECT MAX.)'
+
+    try: 
+        sed_command = f"sed -n '/{start_pattern}/,/{end_pattern}/p' {filnam}_refG.out"
+        result = subprocess.run(sed_command, shell=True, text=True, capture_output=True)
+    
+        if result.stdout.splitlines(): # True if not empty list
+            print('Using sed to extract')
+            selected_lines = result.stdout.splitlines()
+
+        else:
+            selected_lines = extract_lines_between_patterns(f'{filnam}_refG.out',
+                f'{start_pattern}',
+                f'{end_pattern}',
+                )
+    except Exception as e:
+        print('Cannot use sed to extract')
+
+    #pprint.pprint(selected_lines)
+
+    DSOME_set = {}
+    full_extracted_set = {}
+    summed_set_real = {}
+    summed_set_imag = {}
+    append_J = {}
+
+    for DSOMEline in selected_lines:
+        if "STATE #" in DSOMEline:
+            try:
+                ist = DSOMEline[9:12].strip().replace(" ", "")
+                jst = DSOMEline[14:16].strip().replace(" ", "") 
+                kst = ist + ' & ' + jst + ',' + DSOMEline[31:33]
+                real = DSOMEline[48:61].strip().replace(" ", "")
+                imaginary = DSOMEline[63:75].strip().replace(" ", "")
+                
+                if '*' in real:
+                    real = 0
+                if '*' in imaginary:
+                    imaginary = 0
+
+                DSOME_set[kst] = complex(float(real), float(imaginary))
+
+            except Exception as e:
+                print(f"Error processing line: {DSOMEline} - {e}")
+
+    for left_state_idx in range(1, int(nstate)):
+        for right_state_idx in range(left_state_idx+1, int(nstate)+1):
+            for level_idx in range(1, 3):
+
+                full_extracted_set[left_state_idx, right_state_idx, level_idx] = DSOME_set[f'{left_state_idx} & {right_state_idx}, {level_idx}']
+
+            summed_set_real[left_state_idx, right_state_idx] = full_extracted_set[left_state_idx, right_state_idx, 1].real + \
+                                                               full_extracted_set[left_state_idx, right_state_idx, 2].real
+
+            summed_set_imag[left_state_idx, right_state_idx] = full_extracted_set[left_state_idx, right_state_idx, 1].imag + \
+                                                               full_extracted_set[left_state_idx, right_state_idx, 2].imag
+
+            append_J[left_state_idx, right_state_idx] = complex(0,summed_set_imag[left_state_idx, right_state_idx])
+    
+    #return full_extracted_set, summed_set_real, summed_set_imag, append_J
+    return summed_set_real, summed_set_imag
+
 def mctdh(filnam, modes_included, **kwargs):
     nmodes = len(modes_included)
     freqcm = kwargs.get('freqcm')
