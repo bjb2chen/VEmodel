@@ -576,7 +576,7 @@ def mctdh(filnam, modes_included, **kwargs):
                     # Extract diabatic energy for state ist
                     Ediab = None
                     for line in reversed(lines):
-                        state_pattern = re.compile(f"STATE #..* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY=")
+                        state_pattern = re.compile(f"STATE #.* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY=")
                         #if ("STATE #" in line) and ("S GMC-PT-LEVEL DIABATIC ENERGY=" in line):
                         match = state_pattern.search(line)
                         if match:
@@ -589,7 +589,7 @@ def mctdh(filnam, modes_included, **kwargs):
                     for jst in range(1, ist):
                         Coup_ev = None
                         for line in reversed(lines):
-                            state_pattern = re.compile(f"STATE #..* {jst} &..* {ist}.S GMC-PT-LEVEL COUPLING")
+                            state_pattern = re.compile(f"STATE #.* {jst} &.* {ist}.S GMC-PT-LEVEL COUPLING")
                             #if ("STATE #" in line) and ("S GMC-PT-LEVEL COUPLING" in line):
                             match = state_pattern.search(line)
                             if match:
@@ -625,7 +625,7 @@ def mctdh(filnam, modes_included, **kwargs):
                 print("\n good to extract\n")
                 # Extract the diagonal and off-diagonal vibronic coupling
                 for ist in range(1, nstate + 1):
-                    pattern = f'STATE #..* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY='
+                    pattern = f'STATE #.* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY='
                     # Extract Ediab_au_plus
                     Ediab_au_plus = extract_diabatic_energy(f'{filnam}_mode{imode}_+{qsize}.out', pattern)
                     # Extract Ediab_au_plusx2
@@ -659,7 +659,7 @@ def mctdh(filnam, modes_included, **kwargs):
                     # # Loop over jst
                     jlast = ist - 1
                     for jst in range(1, jlast + 1):
-                        pattern = f'STATE #..* {jst} &..* {ist}.S GMC-PT-LEVEL COUPLING'
+                        pattern = f'STATE #.* {jst} &.* {ist}.S GMC-PT-LEVEL COUPLING'
                         # Extract Coup_ev_plus
                         Coup_ev_plus = extract_coupling_energy(f'{filnam}_mode{imode}_+{qsize}.out', pattern)
                         # Extract Coup_ev_plusx2
@@ -707,7 +707,7 @@ def mctdh(filnam, modes_included, **kwargs):
                     print(f"\n Good to extract bilinear for modes {imode} {jmode} \n")
 
                     for ist in range(1, nstate + 1):
-                        pattern = f'STATE #..* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY='
+                        pattern = f'STATE #.* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY='
 
                         # Extract Ediab_au_pp
                         Ediab_au_pp = extract_diabatic_energy(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out', pattern)
@@ -729,7 +729,7 @@ def mctdh(filnam, modes_included, **kwargs):
                         # # Loop over jst
                         jlast = ist - 1
                         for jst in range(1, jlast + 1):
-                            pattern = f'STATE #..* {jst} &..* {ist}.S GMC-PT-LEVEL COUPLING'
+                            pattern = f'STATE #.* {jst} &.* {ist}.S GMC-PT-LEVEL COUPLING'
 
                             # Extract Coup_ev_pp
                             Coup_ev_pp = extract_coupling_energy(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out', pattern)
