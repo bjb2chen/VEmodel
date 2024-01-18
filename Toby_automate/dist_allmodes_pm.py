@@ -707,50 +707,19 @@ def mctdh(filnam, modes_included, **kwargs):
                     print(f"\n Good to extract bilinear for modes {imode} {jmode} \n")
 
                     for ist in range(1, nstate + 1):
-    
+                        pattern = f'STATE #..* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY='
+
                         # Extract Ediab_au_pp
-                        with open(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out', 'r', errors='replace') as grep_pp:
-                            lines = grep_pp.readlines()
-    
-                            for line in reversed(lines):
-                                state_pattern = re.compile(f'STATE #..* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY=')
-                                match = state_pattern.search(line)
-                                if match:
-                                    Ediab_au_pp = float(line[44:62].strip().replace(" ", ""))
-                                    break
-    
+                        Ediab_au_pp = extract_diabatic_energy(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out', pattern)
+                        
                         # Extract Ediab_au_pm
-                        with open(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out', 'r', errors='replace') as grep_pm:
-                            lines = grep_pm.readlines()
-                            
-                            for line in reversed(lines):
-                                state_pattern = re.compile(f'STATE #..* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY=')
-                                match = state_pattern.search(line)
-                                if match:
-                                    Ediab_au_pm = float(line[44:62].strip().replace(" ", ""))
-                                    break
-    
+                        Ediab_au_pm = extract_diabatic_energy(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out', pattern)
+                        
                         # Extract Ediab_au_mp
-                        with open(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out', 'r', errors='replace') as grep_mp:
-                            lines = grep_mp.readlines()
-                            
-                            for line in reversed(lines):
-                                state_pattern = re.compile(f'STATE #..* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY=')
-                                match = state_pattern.search(line)
-                                if match:
-                                    Ediab_au_mp = float(line[44:62].strip().replace(" ", ""))
-                                    break
-    
+                        Ediab_au_mp = extract_diabatic_energy(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out', pattern)
+                        
                         # Extract Ediab_au_mm
-                        with open(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out', 'r', errors='replace') as grep_mm:
-                            lines = grep_mm.readlines()
-                            
-                            for line in reversed(lines):
-                                state_pattern = re.compile(f'STATE #..* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY=')
-                                match = state_pattern.search(line)
-                                if match:
-                                    Ediab_au_mm = float(line[44:62].strip().replace(" ", ""))
-                                    break
+                        Ediab_au_mm = extract_diabatic_energy(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out', pattern)
     
                         bilinear_diag_ev = ( Ediab_au_pp + Ediab_au_mm - Ediab_au_pm - Ediab_au_mp ) * ha2ev / (4.0 * qsize * qsize )
                     
@@ -760,50 +729,19 @@ def mctdh(filnam, modes_included, **kwargs):
                         # # Loop over jst
                         jlast = ist - 1
                         for jst in range(1, jlast + 1):
-        
+                            pattern = f'STATE #..* {jst} &..* {ist}.S GMC-PT-LEVEL COUPLING'
+
                             # Extract Coup_ev_pp
-                            with open(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out', 'r', errors='replace') as grep_coup_pp:
-                                lines = grep_coup_pp.readlines()
-        
-                                for line in reversed(lines):
-                                    state_pattern = re.compile(f'STATE #..* {jst} &..* {ist}.S GMC-PT-LEVEL COUPLING')
-                                    match = state_pattern.search(line)
-                                    if match:
-                                        Coup_ev_pp = float(line[62:].strip().replace(" ", ""))
-                                        break
-        
+                            Coup_ev_pp = extract_coupling_energy(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out', pattern)
+
                             # Extract Coup_ev_pm
-                            with open(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out', 'r', errors='replace') as grep_coup_pm:
-                                lines = grep_coup_pm.readlines()
-                                
-                                for line in reversed(lines):
-                                    state_pattern = re.compile(f'STATE #..* {jst} &..* {ist}.S GMC-PT-LEVEL COUPLING')
-                                    match = state_pattern.search(line)
-                                    if match:
-                                        Coup_ev_pm = float(line[62:].strip().replace(" ", ""))
-                                        break
-        
+                            Coup_ev_pm = extract_coupling_energy(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out', pattern)
+                            
                             # Extract Coup_ev_mp
-                            with open(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out', 'r', errors='replace') as grep_coup_mp:
-                                lines = grep_coup_mp.readlines()
-                                
-                                for line in reversed(lines):
-                                    state_pattern = re.compile(f'STATE #..* {jst} &..* {ist}.S GMC-PT-LEVEL COUPLING')
-                                    match = state_pattern.search(line)
-                                    if match:
-                                        Coup_ev_mp = float(line[62:].strip().replace(" ", ""))
-                                        break
-        
+                            Coup_ev_mp = extract_coupling_energy(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out', pattern)
+                            
                             # Extract Coup_ev_mm
-                            with open(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out', 'r', errors='replace') as grep_coup_mm:
-                                lines = grep_coup_mm.readlines()
-                                
-                                for line in reversed(lines):
-                                    state_pattern = re.compile(f'STATE #..* {jst} &..* {ist}.S GMC-PT-LEVEL COUPLING')
-                                    match = state_pattern.search(line)
-                                    if match:
-                                        Coup_ev_mm = float(line[62:].strip().replace(" ", ""))
-                                        break
+                            Coup_ev_mm = extract_coupling_energy(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out', pattern)
         
                             bilinear_offdiag_ev = ( Coup_ev_pp + Coup_ev_mm - Coup_ev_pm - Coup_ev_mp ) / (4.0 * qsize * qsize )
                             
