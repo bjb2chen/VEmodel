@@ -43,15 +43,15 @@ def extract_DSOME(filnam, nstate):
                 ist = DSOMEline[9:12].strip().replace(" ", "")
                 jst = DSOMEline[14:16].strip().replace(" ", "") 
                 kst = ist + ' & ' + jst + ',' + DSOMEline[31:33]
-                try: 
-                    real = float(DSOMEline[48:61].strip().replace(" ", ""))
-                    imaginary = float(DSOMEline[63:75].strip().replace(" ", ""))
-                    DSOME_set[kst] = complex(real, imaginary)
-                except Exception as e:
-                    print(f"Error processing line: {DSOMEline} - {e}, setting real and imaginary to zero for {DSOMEline}")
+                real = DSOMEline[48:61].strip().replace(" ", "")
+                imaginary = DSOMEline[63:75].strip().replace(" ", "")
+                
+                if '*' in real:
                     real = 0
+                if '*' in imaginary:
                     imaginary = 0
-                    DSOME_set[kst] = complex(0, 0)
+
+                DSOME_set[kst] = complex(float(real), float(imaginary))
 
             except Exception as e:
                 print(f"Error processing line: {DSOMEline} - {e}")
@@ -59,11 +59,15 @@ def extract_DSOME(filnam, nstate):
     for left_state_idx in range(1, int(nstate)):
         for right_state_idx in range(left_state_idx+1, int(nstate)+1):
             for level_idx in range(1, 3):
+
                 full_extracted_set[left_state_idx, right_state_idx, level_idx] = DSOME_set[f'{left_state_idx} & {right_state_idx}, {level_idx}']
+
             summed_set_real[left_state_idx, right_state_idx] = full_extracted_set[left_state_idx, right_state_idx, 1].real + \
                                                                full_extracted_set[left_state_idx, right_state_idx, 2].real
+
             summed_set_imag[left_state_idx, right_state_idx] = full_extracted_set[left_state_idx, right_state_idx, 1].imag + \
                                                                full_extracted_set[left_state_idx, right_state_idx, 2].imag
+
             append_J[left_state_idx, right_state_idx] = complex(0,summed_set_imag[left_state_idx, right_state_idx])
     
     return full_extracted_set, summed_set_real, summed_set_imag, append_J
@@ -265,11 +269,12 @@ def find_nstate(file_path, pattern='# of states in CI      = ', encoding="utf-8"
     return None  # Return None if the pattern is not found
 
 def main():
-    if len(sys.argv) != 2:
-        print("Usage: python3 DSOME.py <SOC_refG_file>")
-        sys.exit(1)
+    # if len(sys.argv) != 3:
+    #     print("Usage: python3 DSOME.py <SOC_refG_file>")
+    #     sys.exit(1)
 
     filnam = sys.argv[1]
+    second_file = sys.argv[2]
     nstate = find_nstate(filnam)
     if nstate is None:
         print("Unable to determine the number of states. Check the file format.")
@@ -292,22 +297,32 @@ def main():
     #DSOME_block = extract_DSOME(selected_lines, 'DIABATIC SPIN-ORBIT MATRIX ELEMENTS')
     #pprint.pprint(DSOME_block)
     extracted = extract_DSOME(filnam, nstate)
+    second_extract = extract_DSOME(second_file, nstate)
     #pprint.pprint(extracted)
     full_extracted_set, summed_set_real, summed_set_imag, append_J = extracted[0], extracted[1], extracted[2], extracted[3]
+    second_full, second_sum_real, second_sum_imag, second_appendJ = second_extract[0], second_extract[1], second_extract[2], second_extract[3]
     pprint.pprint(full_extracted_set)
     pprint.pprint(summed_set_real)
     pprint.pprint(append_J)
+    print('full_extracted_set')
+    pprint.pprint(full_extracted_set[(14, 15, 2)] + second_full[(14, 15, 2)])
+    print('summed_set_real')
+    pprint.pprint(summed_set_real[(14, 15)] + second_sum_real[(14, 15)])
+    print('summed_set_imag')
+    pprint.pprint(summed_set_imag[(14, 15)] + second_sum_imag[(14, 15)])
+    print('appendJ')
+    pprint.pprint(append_J[(14, 15)] + second_appendJ[(14, 15)])
 
-    tdipole_selected = extract_lines_between_patterns(filnam,
-        "TRANSITION DIPOLES BETWEEN DIABATS",
-        "TRANSITION DIPOLES BETWEEN DIRECT MAX. DIABATS"
-        )
-    pprint.pprint(tdipole_selected)
-    #tdipoles = extract_same_state_transition_dipoles()
+    # tdipole_selected = extract_lines_between_patterns(filnam,
+    #     "TRANSITION DIPOLES BETWEEN DIABATS",
+    #     "TRANSITION DIPOLES BETWEEN DIRECT MAX. DIABATS"
+    #     )
+    # pprint.pprint(tdipole_selected)
+    # #tdipoles = extract_same_state_transition_dipoles()
 
 
-    modes_included = {1: 7, 2: 8, 3: 9, 4: 10, 5: 11, 6: 12}
-    make_mctdh = mctdh(filnam, modes_included, qsize=qsize, ha2ev=ha2ev, wn2ev=wn2ev, wn2eh=wn2eh, ang2br=ang2br, amu2me=amu2me, nstate=nstate, summed_set_real=summed_set_real, summed_set_imag=summed_set_imag)
+    # modes_included = {1: 7, 2: 8, 3: 9, 4: 10, 5: 11, 6: 12}
+    # make_mctdh = mctdh(filnam, modes_included, qsize=qsize, ha2ev=ha2ev, wn2ev=wn2ev, wn2eh=wn2eh, ang2br=ang2br, amu2me=amu2me, nstate=nstate, summed_set_real=summed_set_real, summed_set_imag=summed_set_imag)
 
 if __name__ == "__main__":
     main()
