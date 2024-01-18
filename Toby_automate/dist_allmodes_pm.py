@@ -373,7 +373,7 @@ def diabatization(filnam, modes_included, **kwargs):
 
                 # Check if the calculation is done already
                 grace0 = subprocess.run(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_refG.out"])
-                grace1 = subprocess.run(["grep", "grace", f'{filnam}_mode{imode}_{displacement}{qsize}{suffix}.out'])
+                grace1 = subprocess.run(["grep", "DONE WITH MP2 ENERGY", f'{filnam}_mode{imode}_{displacement}{qsize}{suffix}.out'])
                 # This means that refG completed successfully diabmode*.out not completed
                 if (grace0.returncode == 0) and (grace1.returncode != 0):
                     print(f"Running calculations for {filnam}_mode{imode}_{displacement}{qsize}{suffix}")
@@ -453,7 +453,7 @@ def diabatization(filnam, modes_included, **kwargs):
  
                     # Check if the calculation is done already
                     output_filename = f'{filnam}_mode{imode}_{displacement1}{qsize}_mode{jmode}_{displacement2}{qsize}.out'
-                    grace2 = subprocess.run(["grep", "grace", output_filename])
+                    grace2 = subprocess.run(["grep", "DONE WITH MP2 ENERGY", output_filename])
                     if (grace0.returncode == 0) and (grace2.returncode != 0):
                     #if not os.path.exists(output_filename):
                         print(f"Running calculations for {output_filename}!")
@@ -616,10 +616,10 @@ def mctdh(filnam, modes_included, **kwargs):
             mctdh_file.write(f"w_m{imode} = {vibron_ev:.16f}, ev\n\n")
             mctdh_file.write("#Linear and quadratic diagonal and off-diagonal vibronic coupling constants:\n")
     
-            grace_code_plus = subprocess.call(["grep", "grace", f"{filnam}_mode{imode}_+{qsize}.out"])
-            grace_code_minus = subprocess.call(["grep", "grace", f"{filnam}_mode{imode}_-{qsize}.out"])
-            grace_code_plusx2 = subprocess.call(["grep", "grace", f"{filnam}_mode{imode}_+{qsize}x2.out"])
-            grace_code_minusx2 = subprocess.call(["grep", "grace", f"{filnam}_mode{imode}_-{qsize}x2.out"])
+            grace_code_plus = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_+{qsize}.out"])
+            grace_code_minus = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_-{qsize}.out"])
+            grace_code_plusx2 = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_+{qsize}x2.out"])
+            grace_code_minusx2 = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_-{qsize}x2.out"])
     
             if all(code == 0 for code in [grace_code_plus, grace_code_minus, grace_code_plusx2, grace_code_minusx2]):
                 print("\n good to extract\n")
@@ -698,10 +698,10 @@ def mctdh(filnam, modes_included, **kwargs):
             for lmode in range(1, lmode_last + 1):
                 jmode = modes_included[lmode]
 
-                grace_code_pp = subprocess.call(["grep", "grace", f"{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out"])
-                grace_code_pm = subprocess.call(["grep", "grace", f"{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out"])
-                grace_code_mp = subprocess.call(["grep", "grace", f"{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out"])
-                grace_code_mm = subprocess.call(["grep", "grace", f"{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out"])
+                grace_code_pp = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out"])
+                grace_code_pm = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out"])
+                grace_code_mp = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out"])
+                grace_code_mm = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out"])
 
                 if all(code == 0 for code in [grace_code_pp, grace_code_pm, grace_code_mp, grace_code_mm]):
                     print(f"\n Good to extract bilinear for modes {imode} {jmode} \n")
