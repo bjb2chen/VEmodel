@@ -137,11 +137,6 @@ def process_mode_freq(natoms, ndim, ngroup, nleft):
                         freqcm[imode] = float(freq)
                         print("frequency:", imode, freqcm[imode])
 
-    # # Check if imode is in modes_excluded and exclude if necessary
-    # for imode in modes_excluded:
-    #     if imode in freqcm:
-    #         del freqcm[imode]
-
     #Print all frequencies
     for imode in range(1, ndim + 1):
         print("frequency:", imode, str(freqcm[imode]), "CM-1")
@@ -378,7 +373,6 @@ def diabatization(filnam, modes_included, **kwargs):
                 if (grace0.returncode == 0) and (grace1.returncode != 0):
                     print(f"Running calculations for {filnam}_mode{imode}_{displacement}{qsize}{suffix}")
                     try:
-                        #subprocess.run(['./subgam.diab', f'{filnam}_mode{imode}_{displacement}{qsize}{suffix}.inp', '4', '0', '1'])
                         os.system("sbatch" + " " + my_subgam(f'{filnam}_mode{imode}_{displacement}{qsize}{suffix}.inp', ncpus=2, ngb=1, nhour=1))
                     except Exception as e:
                         print(f"Error running diabatization calculation: {str(e)}")
@@ -455,10 +449,8 @@ def diabatization(filnam, modes_included, **kwargs):
                     output_filename = f'{filnam}_mode{imode}_{displacement1}{qsize}_mode{jmode}_{displacement2}{qsize}.out'
                     grace2 = subprocess.run(["grep", "DONE WITH MP2 ENERGY", output_filename])
                     if (grace0.returncode == 0) and (grace2.returncode != 0):
-                    #if not os.path.exists(output_filename):
                         print(f"Running calculations for {output_filename}!")
                         try:
-                            #subprocess.run(['./subgam.diab', f'{filnam}_mode{imode}_{displacement1}{qsize}_mode{jmode}_{displacement2}{qsize}.inp', '4', '0', '1'])
                             os.system("sbatch" + " " + my_subgam(f'{filnam}_mode{imode}_{displacement1}{qsize}_mode{jmode}_{displacement2}{qsize}.inp', ncpus=2, ngb=1, nhour=1))
                         except Exception as e:
                             print(f"Error running diabatization calculation: {str(e)}")
@@ -468,19 +460,65 @@ def diabatization(filnam, modes_included, **kwargs):
 #Now we move on to extract vibronic coupling constants using finite difference
 #and write the data in an mctdh operator file
 
+def refG_extract(file_path, pattern):
+    try:
+        # Use subprocess.run with the direct command
+        command = f'grep "{pattern}" "{file_path}" | tail -1 | cut -c62-'
+        result = subprocess.run(command, shell=True, text=True, capture_output=True)
+
+        # If there is output, convert it to float
+        try:
+            output = float(result.stdout.strip().replace(" ", ""))
+            return output
+        except Exception as e:
+            with open(file_path, 'r', errors='replace') as file:
+                for line in reversed(file.readlines()):
+                    match = re.search(pattern, line)
+                    if match:
+                        return float(line[62:].strip().replace(" ", ""))
+    except subprocess.CalledProcessError:
+        # Return None if there is an error
+        return None
+
 def extract_diabatic_energy(file_path, pattern):
-    with open(file_path, 'r', errors='replace') as file:
-        for line in reversed(file.readlines()):
-            match = re.search(pattern, line)
-            if match:
-                return float(line[44:62].strip().replace(" ", ""))
+    try:
+        # Use subprocess.run with the direct command
+        command = f'grep "{pattern}" "{file_path}" | tail -1 | cut -c44-61'
+        result = subprocess.run(command, shell=True, text=True, capture_output=True)
+
+        # If there is output, convert it to float
+        try:
+            output = float(result.stdout.strip().replace(" ", ""))
+            return output
+        except Exception as e:
+                with open(file_path, 'r', errors='replace') as file:
+                    for line in reversed(file.readlines()):
+                        match = re.search(pattern, line)
+                        if match:
+                            return float(line[44:62].strip().replace(" ", ""))
+    except subprocess.CalledProcessError:
+        # Return None if there is an error
+        return None
 
 def extract_coupling_energy(file_path, pattern):
-    with open(file_path, 'r', errors='replace') as file:
-        for line in reversed(file.readlines()):
-            match = re.search(pattern, line)
-            if match:
-                return float(line[62:].strip().replace(" ", ""))
+    try:
+        # Use subprocess.run with the direct command
+        command = f'grep "{pattern}" "{file_path}" | tail -1 | cut -c62-'
+        result = subprocess.run(command, shell=True, text=True, capture_output=True)
+
+        # If there is output, convert it to float
+        try:
+            output = float(result.stdout.strip().replace(" ", ""))
+            return output
+        except Exception as e:
+            with open(file_path, 'r', errors='replace') as file:
+                for line in reversed(file.readlines()):
+                    match = re.search(pattern, line)
+                    if match:
+                        return float(line[62:].strip().replace(" ", ""))
+    except subprocess.CalledProcessError:
+        # Return None if there is an error
+        return None
 
 def find_nstate(file_path, pattern='# of states in CI      = '):
     with open(file_path, 'r', errors='replace') as file:
@@ -488,26 +526,6 @@ def find_nstate(file_path, pattern='# of states in CI      = '):
             if pattern in line:
                 return int(line.split('=')[1].strip())
     return None  # Return None if the pattern is not found
-
-def extract_same_state_transition_dipoles(selected_lines):
-    same_state_transition_dipoles = {}
-
-    for TDIPOLEline in selected_lines:
-        try:
-            if TDIPOLEline[0:5].strip().isnumeric():
-                state1 = int(TDIPOLEline[0:5].strip())
-                #print(state1)
-                state2 = int(TDIPOLEline[5:10].strip())
-    
-                if state1 == state2:
-                    x = float(TDIPOLEline[11:21].strip())
-                    y = float(TDIPOLEline[22:31].strip())
-                    z = float(TDIPOLEline[32:42].strip())
-                    same_state_transition_dipoles[state1] = (f"{x:.6f}", f"{y:.6f}", f"{z:6f}")
-        except Exception as e:
-            print(f"ERror processing line: {TDIPOLEline} - {e}")
-
-    return same_state_transition_dipoles
 
 def extract_ground_to_excited_state_transition_dipoles(selected_lines):
     ground_to_excited_state_transition_dipoles = {}
@@ -565,38 +583,24 @@ def mctdh(filnam, modes_included, **kwargs):
             mctdh_file.write(idx+'\n')
 
     refG_exists = subprocess.call(["ls", f"{filnam}_refG.out"]) == 0
+
     if refG_exists:
+
         with open("mctdh.op", "a") as mctdh_file:
             mctdh_file.write("#Diagonal and Off-diagonal diabatic Hamiltonian elements at reference structure\n")
     
             for ist in range(1, nstate + 1):
-                with open(f"{filnam}_refG.out", 'r', errors='replace') as refG_out:
-                    lines = refG_out.readlines()
+
+                Ediab = refG_extract(f'{filnam}_refG.out', f'STATE #.* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY=')
     
-                    # Extract diabatic energy for state ist
-                    Ediab = None
-                    for line in reversed(lines):
-                        state_pattern = re.compile(f"STATE #.* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY=")
-                        #if ("STATE #" in line) and ("S GMC-PT-LEVEL DIABATIC ENERGY=" in line):
-                        match = state_pattern.search(line)
-                        if match:
-                            Ediab = line[61:].strip().replace(" ", "")
-                            break
+                mctdh_file.write(f"v{ist} = {Ediab:.9f}, ev\n")
     
-                    mctdh_file.write(f"v{ist} = {Ediab}, ev\n")
-    
-                    # Extract coupling energy between state jst and ist
-                    for jst in range(1, ist):
-                        Coup_ev = None
-                        for line in reversed(lines):
-                            state_pattern = re.compile(f"STATE #.* {jst} &.* {ist}.S GMC-PT-LEVEL COUPLING")
-                            #if ("STATE #" in line) and ("S GMC-PT-LEVEL COUPLING" in line):
-                            match = state_pattern.search(line)
-                            if match:
-                                Coup_ev = line[61:].strip().replace(" ", "")
-                                break
-    
-                        mctdh_file.write(f"v{jst}{ist} = {Coup_ev}, ev\n")
+                # Extract coupling energy between state jst and ist
+                for jst in range(1, ist):
+
+                    Coup_ev = refG_extract(f'{filnam}_refG.out', f'STATE #.* {jst} &.* {ist}.S GMC-PT-LEVEL COUPLING')
+
+                    mctdh_file.write(f"v{jst}{ist} = {Coup_ev:.9f}, ev\n")
     
                 mctdh_file.write("\n")
         
@@ -651,7 +655,7 @@ def mctdh(filnam, modes_included, **kwargs):
                     quadratic_diag_ev = quadratic_diag_ev - vibron_ev
     
                     # Print and store results
-                    print(f"{ist} {linear_diag_ev} {quadratic_diag_ev}, ev\n")
+                    print(f"State {ist} Linear Diagonal: {linear_diag_ev} Quadratic Diagonal: {quadratic_diag_ev}, ev\n")
                     # machine accuracy is typically 16 digits
                     mctdh_file.write(f"l{ist}_m{imode} = {linear_diag_ev:.16f}, ev\n")
                     mctdh_file.write(f"q{ist}_m{imode} = {quadratic_diag_ev:.16f}, ev\n")
@@ -684,8 +688,9 @@ def mctdh(filnam, modes_included, **kwargs):
                         quadratic_offdiag_ev = (Coup_ev_plusx2 + Coup_ev_minusx2 - 2.0 * Coup_ev_0) / (4.0 * qsize * qsize)
     
                         # Print and store results
-                        print(f"{jst} {ist} {linear_offdiag_ev}\n")
+                        print(f"State {jst} & {ist} Linear Off-Diagonal: {linear_offdiag_ev}\n")
                         mctdh_file.write(f"l{jst}{ist}_m{imode} = {linear_offdiag_ev:.16f}, ev\n")
+                        print(f"State {jst} & {ist} Linear Off-Diagonal: {quadratic_offdiag_ev}\n")
                         mctdh_file.write(f"q{jst}{ist}_m{imode} = {quadratic_offdiag_ev:.16f}, ev\n")
                     mctdh_file.write("\n")
     
@@ -723,7 +728,7 @@ def mctdh(filnam, modes_included, **kwargs):
     
                         bilinear_diag_ev = ( Ediab_au_pp + Ediab_au_mm - Ediab_au_pm - Ediab_au_mp ) * ha2ev / (4.0 * qsize * qsize )
                     
-                        print(f"{ist} {bilinear_diag_ev}")
+                        print(f"State {ist} Bilinear Diagonal: {bilinear_diag_ev}")
                         mctdh_file.write(f"b{ist}_m{imode}_m{jmode} = {bilinear_diag_ev:.16f}, ev\n")
     
                         # # Loop over jst
@@ -745,7 +750,7 @@ def mctdh(filnam, modes_included, **kwargs):
         
                             bilinear_offdiag_ev = ( Coup_ev_pp + Coup_ev_mm - Coup_ev_pm - Coup_ev_mp ) / (4.0 * qsize * qsize )
                             
-                            print(f"{jst} {ist} {bilinear_offdiag_ev}")
+                            print(f"State {jst} & {ist} Bilinear Off-Diagonal: {bilinear_offdiag_ev}")
                             mctdh_file.write(f"b{jst}{ist}_m{imode}_m{jmode} = {bilinear_offdiag_ev:.16f}, ev\n")
                         
                         mctdh_file.write("\n")
@@ -932,7 +937,6 @@ def main():
     "TRANSITION DIPOLES BETWEEN DIRECT MAX. DIABATS"
     )
     
-    #dipoles = extract_same_state_transition_dipoles(tdipole_block)
     dipoles = extract_ground_to_excited_state_transition_dipoles(tdipole_block)
     pprint.pprint(tdipole_block)
     pprint.pprint(dipoles)
