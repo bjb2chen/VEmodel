@@ -888,6 +888,8 @@ def mctdh(filnam, modes_included, **kwargs):
                                 # Compute full SOC
                                 full_Ham_SOC_cm_real[idx] = ( DSOME_cm_0_real[idx] + linear_SOC_cm_real[idx] + quadratic_SOC_cm_real[idx] + bilinear_SOC_cm_real[idx])
                                 full_Ham_SOC_cm_imag[idx] = ( DSOME_cm_0_imag[idx] + linear_SOC_cm_imag[idx] + quadratic_SOC_cm_imag[idx] + bilinear_SOC_cm_imag[idx])
+
+                                # Hij^(0) + lij^(1)*x_1 + lij^(2)*x_2 + 0.5qij^(1)*x_1 ^ 2 + 0.5qij^(2)*x_2 ^ 2 + bij^(1,2) * x_1 x_2
     
                                 # Print and store results
                                 #print(f"State {jst} & {ist} Linear SOC (real) {linear_SOC_cm_real[idx]} cm-1\n")
