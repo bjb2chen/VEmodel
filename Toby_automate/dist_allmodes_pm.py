@@ -458,6 +458,17 @@ def diabatization(filnam, modes_included, **kwargs):
                     else:
                         print(f"{output_filename} is already done.")
 
+    return [
+    distcoord_plus,
+    distcoord_minus,
+    distcoord_plus_x2,
+    distcoord_minus_x2,
+    distcoord_pp,
+    distcoord_pm,
+    distcoord_mp,
+    distcoord_mm,
+    ]
+
 #Now we move on to extract vibronic coupling constants using finite difference
 #and write the data in an mctdh operator file
 
@@ -613,7 +624,9 @@ def extract_DSOME(filnam, nstate):
     return [summed_set_real, summed_set_imag]
 
 def mctdh(filnam, modes_included, **kwargs):
+
     nmodes = len(modes_included)
+    ndim = kwargs.get('ndim')
     freqcm = kwargs.get('freqcm')
     qsize = kwargs.get('qsize', 0.05)
     ha2ev = kwargs.get('ha2ev', 27.2113961318)
@@ -622,6 +635,7 @@ def mctdh(filnam, modes_included, **kwargs):
     ang2br = kwargs.get('ang2br', 1.889725989)
     amu2me = kwargs.get('amu2me', 1822.88839)
     dipoles = kwargs.get('dipoles')
+    diabatize = kwargs.get('diabatize')
 
     try:
         subprocess.run(['rm', '-f', 'mctdh.op'])
@@ -681,6 +695,27 @@ def mctdh(filnam, modes_included, **kwargs):
 
     else:
         print(f"Skip extracting Hamiltonians from the non-existing {filnam}_refG.out")
+
+    distcoord_plus, distcoord_minus, distcoord_plus_x2, distcoord_minus_x2 = diabatize[0], diabatize[1], diabatize[2], diabatize[3]
+    distcoord_pp, distcoord_pm, distcoord_mp, distcoord_mm = diabatize[4], diabatize[5], diabatize[6], diabatize[7]
+
+    for icomp in range(1, ndim + 1):
+        coord_disp_plus = distcoord_plus[icomp]
+        print(f'coord_disp_plus: {coord_disp_plus}')
+        coord_disp_minus = distcoord_minus[icomp]
+        print(f'coord_disp_minus: {coord_disp_minus}')
+        coord_disp_plusx2 = distcoord_plus_x2[icomp]
+        print(f'coord_disp_plusx2: {coord_disp_plusx2}')
+        coord_disp_minusx2 = distcoord_minus_x2[icomp]
+        print(f'coord_disp_minusx2: {coord_disp_minusx2}')
+        coord_disp_pp = distcoord_pp[icomp]
+        print(f'coord_disp_pp: {coord_disp_pp}')
+        coord_disp_pm = distcoord_pm[icomp]
+        print(f'coord_disp_pm: {coord_disp_pm}')
+        coord_disp_mp = distcoord_mp[icomp]
+        print(f'coord_disp_mp: {coord_disp_mp}')
+        coord_disp_mm = distcoord_mm[icomp]
+        print(f'coord_disp_mm: {coord_disp_mm}')
 
     # Loop through modes
     for kmode in range(1, nmodes + 1):
@@ -872,7 +907,6 @@ def mctdh(filnam, modes_included, **kwargs):
     
                                 # Set jst ist tuple as index
                                 idx = (jst, ist)
-                                #print('SUCCESS:', DSOME_cm_plus_real[idx])
     
                                 # Compute linear SOC
                                 linear_SOC_cm_real[idx] = (DSOME_cm_plus_real[idx] - DSOME_cm_minus_real[idx]) / (2 * qsize)
@@ -1159,7 +1193,7 @@ def main():
     pprint.pprint(tdipole_block)
     pprint.pprint(dipoles)
 
-    make_mctdh = mctdh(filnam, modes_included, freqcm=freqcm, qsize=qsize, ha2ev=ha2ev, wn2ev=wn2ev, wn2eh=wn2eh, ang2br=ang2br, amu2me=amu2me, dipoles=dipoles)
+    make_mctdh = mctdh(filnam, modes_included, ndim=ndim, freqcm=freqcm, qsize=qsize, ha2ev=ha2ev, wn2ev=wn2ev, wn2eh=wn2eh, ang2br=ang2br, amu2me=amu2me, dipoles=dipoles, diabatize=diabatize)
 
     print('The run was a success!')
 
