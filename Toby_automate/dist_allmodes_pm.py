@@ -321,8 +321,9 @@ def diabatization(filnam, modes_included, **kwargs):
             coord_disp_minusx2 = refcoord[icomp] - 2.0 * rsize * nrmmod[icomp, imode]
             distcoord_plus_x2[icomp] = coord_disp_plusx2
             distcoord_minus_x2[icomp] = coord_disp_minusx2
-            print(imode, icomp, refcoord[icomp], nrmmod[icomp, imode], coord_disp_plus, coord_disp_minus,
-            distcoord_plus[icomp], distcoord_minus[icomp])
+            print(f'ith mode: {imode}\n', f'ith component: {icomp}\n', f'refcoord[icomp]: {refcoord[icomp]}\n',
+             f'nrmmod[icomp, imode]: {nrmmod[icomp, imode]}\n', f'coord_disp_plus {coord_disp_plus}\n', f'coord_disp_minus: {coord_disp_minus}\n',
+             f'distcoord_plus[icomp] {distcoord_plus[icomp]}\n', f'distcoord_minus[icomp] {distcoord_minus[icomp]}\n')
 
         # Delete existing dist_structure files
         for dist_file in ['dist_structure_plus', 'dist_structure_minus', 'dist_structure_plusx2', 'dist_structure_minusx2']:
@@ -890,6 +891,9 @@ def mctdh(filnam, modes_included, **kwargs):
                                 full_Ham_SOC_cm_imag[idx] = ( DSOME_cm_0_imag[idx] + linear_SOC_cm_imag[idx] + quadratic_SOC_cm_imag[idx] + bilinear_SOC_cm_imag[idx])
 
                                 # Hij^(0) + lij^(1)*x_1 + lij^(2)*x_2 + 0.5qij^(1)*x_1 ^ 2 + 0.5qij^(2)*x_2 ^ 2 + bij^(1,2) * x_1 x_2
+                                # Does this mean I have to extract the atom coordinates from every file too?
+                                # print(imode, icomp, refcoord[icomp], nrmmod[icomp, imode], coord_disp_plus, coord_disp_minus, distcoord_plus[icomp], distcoord_minus[icomp])
+                                # Probably is distcoord_plus and distcoord_minus for x1,x2 respectively
     
                                 # Print and store results
                                 #print(f"State {jst} & {ist} Linear SOC (real) {linear_SOC_cm_real[idx]} cm-1\n")
