@@ -911,6 +911,7 @@ def mctdh(filnam, modes_included, **kwargs):
                                 # Compute linear SOC
                                 linear_SOC_cm_real[idx] = (DSOME_cm_plus_real[idx] - DSOME_cm_minus_real[idx]) / (2 * qsize)
                                 linear_SOC_cm_imag[idx] = (DSOME_cm_plus_imag[idx] - DSOME_cm_minus_imag[idx]) / (2 * qsize)
+                                #linear_SOC_cm_real[idx] *= coord_disp_plus[mode]
             
                                 # Compute quadratic SOC
                                 quadratic_SOC_cm_real[idx] = (DSOME_cm_plusx2_real[idx] + DSOME_cm_minusx2_real[idx] - 2.0 * DSOME_cm_0_real[idx]) / (4.0 * qsize * qsize)
