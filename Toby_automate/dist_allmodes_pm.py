@@ -1023,7 +1023,7 @@ def mctdh(filnam, modes_included, **kwargs):
             kmode_count = kmode + 1
             for ist in range(1, nstate + 1):
                 mctdh_file.write(f"l{ist}_m{imode} |1 S{ist}&{ist} |{kmode_count} q\n")
-                mctdh_file.write(f"q{ist}_m{imode} |1 S{ist}&{ist} |{kmode_count} q^2\n")
+                mctdh_file.write(f"0.5*q{ist}_m{imode} |1 S{ist}&{ist} |{kmode_count} q^2\n")
     
         # Write LINEAR AND QUADRATIC OFF-DIAGONAL VIBRONIC COUPLINGS
         mctdh_file.write("-----------------------------------------\n")
@@ -1036,7 +1036,7 @@ def mctdh(filnam, modes_included, **kwargs):
                 jlast = ist - 1
                 for jst in range(1, jlast + 1):
                     mctdh_file.write(f"l{jst}{ist}_m{imode} |1 S{jst}&{ist} |{kmode_count} q\n")
-                    mctdh_file.write(f"q{jst}{ist}_m{imode} |1 S{jst}&{ist} |{kmode_count} q^2\n")
+                    mctdh_file.write(f"0.5*q{jst}{ist}_m{imode} |1 S{jst}&{ist} |{kmode_count} q^2\n")
     
         # Write BILINEAR DIAGONAL VIBRONIC COUPLINGS
         mctdh_file.write("-----------------------------------------\n")
