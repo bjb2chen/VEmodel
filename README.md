@@ -1,14 +1,15 @@
 # vmodels
 
-### Repository for vibronic models construction. Developed in collaboration between Nooijen/Zeng group.
+### Repository for vibronic models construction.
 
-### Protocol procedure. Instructions on how to run the code:
-#### - You first need to ensure you have GAMESS with Toby's diabatization (gmcpt.src) module installed.
-#### - Configure rungms, runG_diab, and subgam.diab scripts to the appropriate $USER.
-#### - Create GAMESS scratch directories if necessary (.gamess_ascii_files and gamess_scr)
+Video recording on how to run the diabatization code (assuming you have GAMESS with gmcpt module already): 
 
-Video recording on how to run the diabatization code (assuming you have GAMESS with gmcpt module already): [https://youtu.be/nLIn-N0oB-0](https://youtu.be/zeKTlq3VHho)
+D3H NH3 diabatization - [https://youtu.be/Aoo1mgy2H4A]
+
+D3H NH3 diabatization - [https://www.youtube.com/watch?v=zeKTlq3VHho&ab_channel=BennyChen]
+
+D3H CoF3 diabatization - [https://www.youtube.com/watch?v=7tNUAFYKCQE&ab_channel=BennyChen]
 
 [Project Poster Reference](https://github.com/bjb2chen/vmodels/files/10171706/SCP2022_bjc_20685630_White.pdf)
 
-![CoF4](https://github.com/bjb2chen/vmodels/assets/51763900/eb5d7752-d0d4-4151-9af5-d399e079bf3a)[width = 200px]
+![CoF4](https://github.com/bjb2chen/vmodels/assets/51763900/eb5d7752-d0d4-4151-9af5-d399e079bf3a)
