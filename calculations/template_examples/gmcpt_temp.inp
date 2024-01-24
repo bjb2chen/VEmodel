@@ -25,8 +25,10 @@
  !
  !#############################################################################
  !
- $contrl relwfn=LUT-IOTC $end
- $scf  diis=.t. soscf=.f. ethrsh=10.0 $end
+ -contrl relwfn=LUT-IOTC $end
+ -scf  diis=.t. soscf=.f. ethrsh=10.0 $end
+ -guess iorder(25)=27,25,26 $end
+ -gmcpt nsolut=100 $end
  !
  !#############################################################################
  !
@@ -34,7 +36,6 @@
  !
  !#############################################################################
  -guess  guess=moread norb=158 purify=.t. norder=1 $end
- !       iorder(25)=27,25,26 $end
  -mcscf  cistep=gmcci fullnr=.t. finci=mos
          acurcy=1.d-6 maxit=100 $end
  -mrmp   mrpt=gmcpt rdvecs=.f. $end
@@ -44,14 +45,14 @@
          wstate(1)=1
          iwgt=0 thrwgt=-1.0 krot=.f. kszdoe=.f. knospn=.f.
          thrde=-1.0 edshft=0.02 $end
- ! might need to add nsolut=100 in $gmcpt if metal
+ !if SOC: transt $end, add knospn=.t. 
  !#############################################################################
  !
  !             TURN OFF THIS SECTION IF temp.inp, change nosym=1, add C1
  !
  !#############################################################################
  $data
- FeH4- 10 states calculation at opt geometry.
+ TITLE HERE
  DNH 3
 
  Co     27.0   0.0  0.0  0.0

@@ -548,7 +548,7 @@ def extract_ground_to_excited_state_transition_dipoles(selected_lines):
                 state1 = int(TDIPOLEline[0:5].strip())
                 #print(state1)
                 state2 = int(TDIPOLEline[5:10].strip())
-    
+
                 if (state2 == 1) and (state1 != 1):
                     x = float(TDIPOLEline[11:21].strip())
                     y = float(TDIPOLEline[22:31].strip())
@@ -564,20 +564,21 @@ def extract_DSOME(filnam, nstate):
     start_pattern = "HSO MATRIX IN DIABATIC REPRESENTATION (DIRECT MAXIMIZATION)"
     end_pattern = 'SOC EIG. VALUES and VECTORS IN DIABATS (DIRECT MAX.)'
 
-    try: 
-        sed_command = f"sed -n '/{start_pattern}/,/{end_pattern}/p' {filnam}"
-        result = subprocess.run(sed_command, shell=True, text=True, capture_output=True)
-    
-        if result.stdout.splitlines(): # True if not empty list
-            selected_lines = result.stdout.splitlines()
+    sed_command = f"sed -n '/{start_pattern}/,/{end_pattern}/p' {filnam}"
+    result = subprocess.run(sed_command, shell=True, text=True, capture_output=True)
 
-        else:
-            selected_lines = extract_lines_between_patterns(f'{filnam}_refG.out',
-                f'{start_pattern}',
-                f'{end_pattern}',
-                )
-    except Exception as e:
+    if result.stdout.splitlines(): # True if not empty list
+        selected_lines = result.stdout.splitlines()
+    else:
         print('Cannot use sed to extract')
+        selected_lines = extract_lines_between_patterns(f'{filnam}',
+            f'{start_pattern}',
+            f'{end_pattern}',
+            )
+        print(f'Using selected lines from {filnam}, opened via python')
+    # except Exception as e:
+    #     print('Cannot use sed to extract')
+    #     print(f'Using selected lines from {filnam}, opened via python')
 
     #pprint.pprint(selected_lines)
 
@@ -749,12 +750,6 @@ def mctdh(filnam, modes_included, **kwargs):
                     # Extract Ediab_au_0
                     Ediab_au_0 = extract_diabatic_energy(f'{filnam}_refG.out', pattern)
 
-                    # print("Ediab_au_plus: ", Ediab_au_plus)
-                    # print("Ediab_au_plusx2: ", Ediab_au_plusx2)
-                    # print("Ediab_au_minus: ", Ediab_au_minus)
-                    # print("Ediab_au_minusx2: ", Ediab_au_minusx2)
-                    # print("Ediab_au_0: ", Ediab_au_0)
-    
                     linear_diag_ev = (Ediab_au_plus - Ediab_au_minus) * ha2ev / (2 * qsize)
                     quadratic_diag_ev = (Ediab_au_plusx2 + Ediab_au_minusx2 - 2.0 * Ediab_au_0) * ha2ev / (4.0 * qsize * qsize)
     
@@ -782,12 +777,6 @@ def mctdh(filnam, modes_included, **kwargs):
                         Coup_ev_minusx2 = extract_coupling_energy(f'{filnam}_mode{imode}_-{qsize}x2.out', pattern)
                         # Extract Coup_ev_0
                         Coup_ev_0= extract_coupling_energy(f'{filnam}_refG.out', pattern)
-
-                        # print("Coup_ev_plus: ", Coup_ev_plus)
-                        # print("Coup_ev_plusx2: ", Coup_ev_plusx2)
-                        # print("Coup_ev_minus: ", Coup_ev_minus)
-                        # print("Coup_ev_minusx2: ", Coup_ev_minusx2)
-                        # print("Coup_ev_0: ", Coup_ev_0)
     
                         # Compute linear off-diagonal coupling
                         linear_offdiag_ev = (Coup_ev_plus - Coup_ev_minus) / (2 * qsize)
@@ -863,97 +852,96 @@ def mctdh(filnam, modes_included, **kwargs):
 
                             if SOC_flag:
 
-                                # intialize dictionaries to contain
-                                linear_SOC_cm_real = {}
-                                linear_SOC_cm_imag = {}
-                                quadratic_SOC_cm_real = {}
-                                quadratic_SOC_cm_imag = {}
-                                bilinear_SOC_cm_real = {}
-                                bilinear_SOC_cm_imag = {}
-                                full_Ham_SOC_cm_real = {}
-                                full_Ham_SOC_cm_imag = {}
+                                try:
 
-                                # Extract DSOME_cm_plus
-                                DSOME_cm_plus = extract_DSOME(f'{filnam}_mode{imode}_+{qsize}.out', nstate)
-                                DSOME_cm_plus_real, DSOME_cm_plus_imag = DSOME_cm_plus[0], DSOME_cm_plus[1]
+                                    # intialize dictionaries to contain
+                                    linear_SOC_cm_real = {}
+                                    linear_SOC_cm_imag = {}
+                                    quadratic_SOC_cm_real = {}
+                                    quadratic_SOC_cm_imag = {}
+                                    bilinear_SOC_cm_real = {}
+                                    bilinear_SOC_cm_imag = {}
+                                    full_Ham_SOC_cm_real = {}
+                                    full_Ham_SOC_cm_imag = {}
     
-                                # Extract DSOME_cm_plusx2
-                                DSOME_cm_plusx2 = extract_DSOME(f'{filnam}_mode{imode}_+{qsize}x2.out', nstate)
-                                DSOME_cm_plusx2_real, DSOME_cm_plusx2_imag = DSOME_cm_plusx2[0], DSOME_cm_plusx2[1]
+                                    # Extract DSOME_cm_plus
+                                    DSOME_cm_plus = extract_DSOME(f'{filnam}_mode{imode}_+{qsize}.out', nstate)
+                                    DSOME_cm_plus_real, DSOME_cm_plus_imag = DSOME_cm_plus[0], DSOME_cm_plus[1]
+        
+                                    # Extract DSOME_cm_plusx2
+                                    DSOME_cm_plusx2 = extract_DSOME(f'{filnam}_mode{imode}_+{qsize}x2.out', nstate)
+                                    DSOME_cm_plusx2_real, DSOME_cm_plusx2_imag = DSOME_cm_plusx2[0], DSOME_cm_plusx2[1]
+        
+                                    # Extract DSOME_cm_minus
+                                    DSOME_cm_minus = extract_DSOME(f'{filnam}_mode{imode}_-{qsize}.out', nstate)
+                                    DSOME_cm_minus_real, DSOME_cm_minus_imag = DSOME_cm_minus[0], DSOME_cm_minus[1]
+        
+                                    # Extract DSOME_cm_minusx2
+                                    DSOME_cm_minusx2 = extract_DSOME(f'{filnam}_mode{imode}_-{qsize}x2.out', nstate)
+                                    DSOME_cm_minusx2_real, DSOME_cm_minusx2_imag = DSOME_cm_minusx2[0], DSOME_cm_minusx2[1]
     
-                                # Extract DSOME_cm_minus
-                                DSOME_cm_minus = extract_DSOME(f'{filnam}_mode{imode}_-{qsize}.out', nstate)
-                                DSOME_cm_minus_real, DSOME_cm_minus_imag = DSOME_cm_minus[0], DSOME_cm_minus[1]
+                                    # Extract DSOME_cm_pp
+                                    DSOME_cm_pp = extract_DSOME(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out', nstate)
+                                    DSOME_cm_pp_real, DSOME_cm_pp_imag = DSOME_cm_pp[0], DSOME_cm_pp[1] 
+        
+                                    # Extract DSOME_cm_pm
+                                    DSOME_cm_pm = extract_DSOME(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out', nstate)
+                                    DSOME_cm_pm_real, DSOME_cm_pm_imag = DSOME_cm_pm[0], DSOME_cm_pm[1] 
+                                    
+                                    # Extract DSOME_cm_mp
+                                    DSOME_cm_mp = extract_DSOME(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out', nstate)
+                                    DSOME_cm_mp_real, DSOME_cm_mp_imag = DSOME_cm_mp[0], DSOME_cm_mp[1] 
+                                    
+                                    # Extract DSOME_cm_mm
+                                    DSOME_cm_mm = extract_DSOME(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out', nstate)
+                                    DSOME_cm_mm_real, DSOME_cm_mm_imag = DSOME_cm_mm[0], DSOME_cm_mm[1] 
+        
+                                    # Set jst ist tuple as index
+                                    idx = (jst, ist)
+        
+                                    # Compute linear SOC
+                                    linear_SOC_cm_real[idx] = (DSOME_cm_plus_real[idx] - DSOME_cm_minus_real[idx]) / (2 * qsize)
+                                    linear_SOC_cm_imag[idx] = (DSOME_cm_plus_imag[idx] - DSOME_cm_minus_imag[idx]) / (2 * qsize)
+                                    #linear_SOC_cm_real[idx] *= coord_disp_plus[mode]
+                
+                                    # Compute quadratic SOC
+                                    quadratic_SOC_cm_real[idx] = (DSOME_cm_plusx2_real[idx] + DSOME_cm_minusx2_real[idx] - 2.0 * DSOME_cm_0_real[idx]) / (4.0 * qsize * qsize)
+                                    quadratic_SOC_cm_imag[idx] = (DSOME_cm_plusx2_imag[idx] + DSOME_cm_minusx2_imag[idx] - 2.0 * DSOME_cm_0_imag[idx]) / (4.0 * qsize * qsize)
     
-                                # Extract DSOME_cm_minusx2
-                                DSOME_cm_minusx2 = extract_DSOME(f'{filnam}_mode{imode}_-{qsize}x2.out', nstate)
-                                DSOME_cm_minusx2_real, DSOME_cm_minusx2_imag = DSOME_cm_minusx2[0], DSOME_cm_minusx2[1]
-
-                                # Extract DSOME_cm_pp
-                                DSOME_cm_pp = extract_DSOME(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out', nstate)
-                                DSOME_cm_pp_real, DSOME_cm_pp_imag = DSOME_cm_pp[0], DSOME_cm_pp[1] 
+                                    # Compute bilinear SOC
+                                    bilinear_SOC_cm_real[idx] = ( DSOME_cm_pp_real[idx] + DSOME_cm_mm_real[idx] - DSOME_cm_pm_real[idx] - DSOME_cm_mp_real[idx] ) / (4.0 * qsize * qsize )
+                                    bilinear_SOC_cm_imag[idx] = ( DSOME_cm_pp_imag[idx] + DSOME_cm_mm_imag[idx] - DSOME_cm_pm_imag[idx] - DSOME_cm_mp_imag[idx] ) / (4.0 * qsize * qsize )
     
-                                # Extract DSOME_cm_pm
-                                DSOME_cm_pm = extract_DSOME(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out', nstate)
-                                DSOME_cm_pm_real, DSOME_cm_pm_imag = DSOME_cm_pm[0], DSOME_cm_pm[1] 
-                                
-                                # Extract DSOME_cm_mp
-                                DSOME_cm_mp = extract_DSOME(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out', nstate)
-                                DSOME_cm_mp_real, DSOME_cm_mp_imag = DSOME_cm_mp[0], DSOME_cm_mp[1] 
-                                
-                                # Extract DSOME_cm_mm
-                                DSOME_cm_mm = extract_DSOME(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out', nstate)
-                                DSOME_cm_mm_real, DSOME_cm_mm_imag = DSOME_cm_mm[0], DSOME_cm_mm[1] 
+                                    # Compute full SOC
+                                    full_Ham_SOC_cm_real[idx] = ( DSOME_cm_0_real[idx] + linear_SOC_cm_real[idx] + quadratic_SOC_cm_real[idx] + bilinear_SOC_cm_real[idx])
+                                    full_Ham_SOC_cm_imag[idx] = ( DSOME_cm_0_imag[idx] + linear_SOC_cm_imag[idx] + quadratic_SOC_cm_imag[idx] + bilinear_SOC_cm_imag[idx])
     
-                                # Set jst ist tuple as index
-                                idx = (jst, ist)
+                                    # Hij^(0) + lij^(1)*x_1 + lij^(2)*x_2 + 0.5qij^(1)*x_1 ^ 2 + 0.5qij^(2)*x_2 ^ 2 + bij^(1,2) * x_1 x_2
+                                    # Does this mean I have to extract the atom coordinates from every file too?
+                                    # print(imode, icomp, refcoord[icomp], nrmmod[icomp, imode], coord_disp_plus, coord_disp_minus, distcoord_plus[icomp], distcoord_minus[icomp])
+                                    # Probably is distcoord_plus and distcoord_minus for x1,x2 respectively
+        
+                                    # Print and store results
+                                    mctdh_file.write(f"l{jst}{ist}_m{imode}r = {linear_SOC_cm_real[idx]:.16f}, cm-1\n")
+                                    mctdh_file.write(f"l{jst}{ist}_m{imode}i = {linear_SOC_cm_imag[idx]:.16f}, cm-1\n")
+                                    mctdh_file.write("\n")
     
-                                # Compute linear SOC
-                                linear_SOC_cm_real[idx] = (DSOME_cm_plus_real[idx] - DSOME_cm_minus_real[idx]) / (2 * qsize)
-                                linear_SOC_cm_imag[idx] = (DSOME_cm_plus_imag[idx] - DSOME_cm_minus_imag[idx]) / (2 * qsize)
-                                #linear_SOC_cm_real[idx] *= coord_disp_plus[mode]
-            
-                                # Compute quadratic SOC
-                                quadratic_SOC_cm_real[idx] = (DSOME_cm_plusx2_real[idx] + DSOME_cm_minusx2_real[idx] - 2.0 * DSOME_cm_0_real[idx]) / (4.0 * qsize * qsize)
-                                quadratic_SOC_cm_imag[idx] = (DSOME_cm_plusx2_imag[idx] + DSOME_cm_minusx2_imag[idx] - 2.0 * DSOME_cm_0_imag[idx]) / (4.0 * qsize * qsize)
-
-                                # Compute bilinear SOC
-                                bilinear_SOC_cm_real[idx] = ( DSOME_cm_pp_real[idx] + DSOME_cm_mm_real[idx] - DSOME_cm_pm_real[idx] - DSOME_cm_mp_real[idx] ) / (4.0 * qsize * qsize )
-                                bilinear_SOC_cm_imag[idx] = ( DSOME_cm_pp_imag[idx] + DSOME_cm_mm_imag[idx] - DSOME_cm_pm_imag[idx] - DSOME_cm_mp_imag[idx] ) / (4.0 * qsize * qsize )
-
-                                # Compute full SOC
-                                full_Ham_SOC_cm_real[idx] = ( DSOME_cm_0_real[idx] + linear_SOC_cm_real[idx] + quadratic_SOC_cm_real[idx] + bilinear_SOC_cm_real[idx])
-                                full_Ham_SOC_cm_imag[idx] = ( DSOME_cm_0_imag[idx] + linear_SOC_cm_imag[idx] + quadratic_SOC_cm_imag[idx] + bilinear_SOC_cm_imag[idx])
-
-                                # Hij^(0) + lij^(1)*x_1 + lij^(2)*x_2 + 0.5qij^(1)*x_1 ^ 2 + 0.5qij^(2)*x_2 ^ 2 + bij^(1,2) * x_1 x_2
-                                # Does this mean I have to extract the atom coordinates from every file too?
-                                # print(imode, icomp, refcoord[icomp], nrmmod[icomp, imode], coord_disp_plus, coord_disp_minus, distcoord_plus[icomp], distcoord_minus[icomp])
-                                # Probably is distcoord_plus and distcoord_minus for x1,x2 respectively
+                                    mctdh_file.write(f"q{jst}{ist}_m{imode}r = {quadratic_SOC_cm_real[idx]:.16f}, cm-1\n")
+                                    mctdh_file.write(f"q{jst}{ist}_m{imode}i = {quadratic_SOC_cm_imag[idx]:.16f}, cm-1\n") 
+                                    mctdh_file.write("\n")
     
-                                # Print and store results
-                                #print(f"State {jst} & {ist} Linear SOC (real) {linear_SOC_cm_real[idx]} cm-1\n")
-                                mctdh_file.write(f"l{jst}{ist}_m{imode}r = {linear_SOC_cm_real[idx]:.16f}, cm-1\n")
-                                #print(f"State {jst} & {ist} Linear SOC (imag) {linear_SOC_cm_imag} cm-1\n")
-                                mctdh_file.write(f"l{jst}{ist}_m{imode}i = {linear_SOC_cm_imag[idx]:.16f}, cm-1\n")
-                                mctdh_file.write("\n")
+                                    mctdh_file.write(f"b{jst}{ist}_m{imode}_m{jmode}r = {bilinear_SOC_cm_real[idx]:.16f}, cm-1\n")
+                                    mctdh_file.write(f"b{jst}{ist}_m{imode}_m{jmode}i = {bilinear_SOC_cm_imag[idx]:.16f}, cm-1\n")
+                                    mctdh_file.write("\n")
+    
+                                    print(f"State {jst} & {ist} SOC (real) {full_Ham_SOC_cm_real[idx]} cm-1\n")
+                                    mctdh_file.write(f"SOC{jst}{ist}_m{imode}r = {full_Ham_SOC_cm_real[idx]:.16f}, cm-1\n")
+                                    print(f"State {jst} & {ist} SOC (imag) {full_Ham_SOC_cm_imag[idx]} cm-1\n")
+                                    mctdh_file.write(f"SOC{jst}{ist}_m{imode}i = {full_Ham_SOC_cm_imag[idx]:.16f}, cm-1\n")
+                                    mctdh_file.write("\n")
 
-                                #print(f"State {jst} & {ist} Quadratic SOC (real) {quadratic_SOC_cm_real[idx]} cm-1\n")
-                                mctdh_file.write(f"q{jst}{ist}_m{imode}r = {quadratic_SOC_cm_real[idx]:.16f}, cm-1\n")
-                                #print(f"State {jst} & {ist} Quadratic SOC (imag) {quadratic_SOC_cm_imag} cm-1\n")
-                                mctdh_file.write(f"q{jst}{ist}_m{imode}i = {quadratic_SOC_cm_imag[idx]:.16f}, cm-1\n") 
-                                mctdh_file.write("\n")
-
-                                #print(f"State {jst} & {ist} Bilinear SOC (real) {bilinear_SOC_cm_real[idx]} cm-1\n")
-                                mctdh_file.write(f"b{jst}{ist}_m{imode}_m{jmode}r = {bilinear_SOC_cm_real[idx]:.16f}, cm-1\n")
-                                #print(f"State {jst} & {ist} Bilinear SOC (imag) {bilinear_SOC_cm_imag[idx]} cm-1\n")
-                                mctdh_file.write(f"b{jst}{ist}_m{imode}_m{jmode}i = {bilinear_SOC_cm_imag[idx]:.16f}, cm-1\n")
-                                mctdh_file.write("\n")
-
-                                print(f"State {jst} & {ist} SOC (real) {full_Ham_SOC_cm_real[idx]} cm-1\n")
-                                mctdh_file.write(f"SOC{jst}{ist}_m{imode}r = {full_Ham_SOC_cm_real[idx]:.16f}, cm-1\n")
-                                print(f"State {jst} & {ist} SOC (imag) {full_Ham_SOC_cm_imag[idx]} cm-1\n")
-                                mctdh_file.write(f"SOC{jst}{ist}_m{imode}i = {full_Ham_SOC_cm_imag[idx]:.16f}, cm-1\n")
-                                mctdh_file.write("\n")
+                                except Exception as e:
+                                    print(f"Error in SOC: {str(e)}")
 
                         mctdh_file.write("\n")
 
@@ -1144,7 +1132,7 @@ def mctdh(filnam, modes_included, **kwargs):
 
         # Close the file
         mctdh_file.write("end-operator\n")
-    
+
     return
 
 def main():
@@ -1166,7 +1154,7 @@ def main():
 
     freq_value_set = read_freq_values(hessout)
     filtered_set = read_mode_values(hessout)
-    
+
     with open('mode.dat', 'w') as output_file:
         output_file.writelines(filtered_set)
 
@@ -1176,7 +1164,7 @@ def main():
     nrmmod, freqcm = process_mode_freq(natoms, ndim, ngroup, nleft)
     refgeo = compose_ref_structure(hessout, natoms)
     atmlst, chrglst, refcoord = read_reference_structure(ref_file)
-    
+
     #modes_excluded is taken and configured from project_parameters
     #modes_included is taken and configured from project_parameters
 
@@ -1189,7 +1177,7 @@ def main():
     "TRANSITION DIPOLES BETWEEN DIABATS",
     "TRANSITION DIPOLES BETWEEN DIRECT MAX. DIABATS"
     )
-    
+
     dipoles = extract_ground_to_excited_state_transition_dipoles(tdipole_block)
     pprint.pprint(tdipole_block)
     pprint.pprint(dipoles)
