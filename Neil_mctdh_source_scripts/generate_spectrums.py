@@ -14,7 +14,7 @@ from scipy.interpolate import interp1d
 import numpy as np
 
 # local imports
-import water3Q_input_template
+import prop_input_template
 from project_parameters import *
 from vibronic import vIO, VMK
 #
@@ -39,6 +39,7 @@ eV_dict = {
     "vcm":       (18, 9.5),
     #
     "op_nh36Q_5st":  (11, 2),
+    f"{project_name}": (19, 9)
 }
 
 y_dict = {
@@ -55,6 +56,7 @@ y_dict = {
     "vcm":       (-1.5, 34),
     #
     "op_nh36Q_5st":       (-1.5, 40),
+    f"{project_name}": (-1.5, 40)
 }
 
 left_eV, right_EV = eV_dict[project_name]
@@ -240,7 +242,7 @@ def write_spectrum_plotting_file(configuration, *args):
     """ a """
 
     # unpack arguments
-    nof_points, root_dir, mctdh_file, model_name, pbf, t = args
+    nof_points, root_dir, mctdh_file, model_name, pbf, t, operate_string = args
     # print(f'{root_dir}/{mctdh_file}.pl')
     # doctor the file name to make it look better in the plot
     plot_title = model_name.replace('_', ' ').replace('h2o2', 'h_{2}o_{2}')
@@ -249,7 +251,7 @@ def write_spectrum_plotting_file(configuration, *args):
     size = [1200, 800]
     # size = [800, 400]
 
-    output_file = f'{root_dir}/{configuration}_spectrum_{model_name:s}_{nof_points:d}_PBF{pbf:d}_{int(t):d}fs_{tau:d}tau.png'
+    output_file = f'{root_dir}/{configuration}_spectrum_{model_name:s}_{nof_points:d}_PBF{pbf:d}_{int(t):d}fs_{tau:d}tau_{operate_string}.png'
 
     plotting_command = '\n'.join([
         f"set terminal png size {size[0]},{size[1]}",
@@ -473,8 +475,8 @@ if __name__ == "__main__":
 
     configuration = "tdh" if ("/tdh/" in work_root) else "mctdh"
 
-    only_checking_output = True
-    suppress_autosped84_ouptut = True
+    only_checking_output = False
+    suppress_autosped84_ouptut = False
     generating_cc = False
 
     # temporarily plot combined MCTDH
@@ -504,180 +506,188 @@ if __name__ == "__main__":
         print(param_list)
 
         calculation_spec = dir_string.format(model_name, *param_list)
-        root_dir = join(work_root, calculation_spec)
-
-        path_mctdh_acf = join(model_name, "auto")
-        # print("path_mctdh_acf", path_mctdh_acf, "\n")
-
-        path_mctdh_spectrum = f"{configuration}_spectrum_{dir_string.format(model_name, *param_list)}"
-
-        # print("path_mctdh_spectrum", path_mctdh_spectrum, "\n")
-        # auto_path = f"./h2o_FC_{order:s}_{25:>03d}fs_{BF:>03d}BF_{spf:>02d}spf/auto"
-
-        path_to_mctdh_execution_folder = join(root_dir, model_name)
-
-        # if no folder, job was not even submitted
-        if not os.path.isdir(path_to_mctdh_execution_folder):
-            print(f"{configuration.upper()} job has not yet been submitted {model_name} Parameters: {param_list}")
-            pbf, tf = param_list
-            name = f"pbf{pbf}"
-            if name not in not_submitted_jobs:
-                not_submitted_jobs[name] = [tf, ]
-            else:
-                not_submitted_jobs[name].append(tf)
-            continue
-
-        # if slurm seems done then job might be finished
-        elif mctdh_job_is_finished(path_to_mctdh_execution_folder):
-            command = generate_mctdh_pl(
-                nof_points,
-                root_dir=root_dir,
-                output_filename=path_mctdh_spectrum,
-                input_filename=path_mctdh_acf
-            )
-
-            # if we just want to check how many jobs failed / haven't been submitted
-            if only_checking_output:
-                continue
-
-            if suppress_autosped84_ouptut:
-                os.system(command + ' 1> /dev/null')
-            else:
-                print('\n')
-                os.system(command)
-                print('\n')
-
-            print(f'Autospecd {model_name} Parameters: {param_list}')
-
-            pbf, tf = param_list
-            name = f"pbf{pbf}"
-            if name not in completed_jobs:
-                completed_jobs[name] = [tf, ]
-            else:
-                completed_jobs[name].append(tf)
-
-            # ask Neil
-            # if configuration == "mctdh":
-            #     # move very large files to new folder
-            #     old_dir = abspath(f"/work/{user_root}/{parent_project}/mctdh/{project_name}/{calculation_spec}/{model_name}/")
-            #     new_dir = abspath(f"/work/{user_root}/{parent_project}/nearline/{project_name}/{calculation_spec}/")
-
-            #     for file_name in ["psi", "dvr", "restart", "oper"]:
-            #         target = join(old_dir, file_name)
-            #         if os.path.exists(target):
-            #             os.makedirs(new_dir, exist_ok=True)
-            #             # print(f'mv -i {target} {new_dir}')
-            #             os.system(f'mv -i {target} {new_dir}')
-            #         else:
-            #             print(f"No file here: {target}")
-
-        else:
-            # check for issue in latest slurm output
-            paths = glob.glob(join(root_dir, 'slurm-*.out'))
-            latest_slurm_file = sorted(paths, reverse=True)[0]
-
-            if not os.path.isfile(latest_slurm_file):
-                print(f"Malformed slurm file {latest_slurm_file} Parameters: {param_list}")
-                continue
-
-            else:
-                with open(latest_slurm_file, 'r') as fp:
-                    data = fp.read()
-
+        for operate_string in ["Ex", "Ey", "Ez"]:
+            root_dir = join(work_root, calculation_spec, operate_string)
+            print(f'root_dir: {root_dir}')
+    
+            path_mctdh_acf = join(model_name, "auto")
+            #print("path_mctdh_acf", path_mctdh_acf, "\n")
+    
+            path_mctdh_spectrum = f"{configuration}_spectrum_{dir_string.format(model_name, *param_list)}_{operate_string}"
+    
+            #print("path_mctdh_spectrum", path_mctdh_spectrum, "\n")
+            # auto_path = f"./h2o_FC_{order:s}_{25:>03d}fs_{BF:>03d}BF_{spf:>02d}spf/auto"
+    
+            path_to_mctdh_execution_folder = join(root_dir, model_name)
+            #print(f'path_to_mctdh_execution_folder: {path_to_mctdh_execution_folder}')
+            hmm = os.path.exists(path_to_mctdh_execution_folder)
+            #print(f'path exists?: {hmm}')
+    
+            # if no folder, job was not even submitted
+            if not os.path.isdir(path_to_mctdh_execution_folder):
+                print(f"{configuration.upper()} job has not yet been submitted {model_name} Parameters: {param_list}")
                 pbf, tf = param_list
                 name = f"pbf{pbf}"
-
-                lowercase_data = data.lower()
-                error_string_list = ['memory limit', 'killed', 'error', 'CANCELLED', ]
-
-                for string in error_string_list:
-                    if string in lowercase_data:
-                        if 'memory limit' in data:
-                            print(f"FAIL: {configuration.upper()} job failed due to memory limits {model_name} Parameters: {param_list}")
-                        elif 'CANCELLED' in data:
-                            print(f"FAIL: {configuration.upper()} job was cancelled {model_name} Parameters: {param_list}")
-                        else:
-                            print(f"FAIL: {configuration.upper()} job failed for some reason {model_name} Parameters: {param_list}")
-
-                        # store job
-                        if name not in failed_jobs:
-                            failed_jobs[name] = [tf, ]
-                        else:
-                            failed_jobs[name].append(tf)
-
-                        if configuration == "mctdh":
-                            # ldir = abspath(f"/work/{user_root}/{parent_project}/mctdh/{project_name}/{calculation_spec}/{model_name}/")
-                            ldir = abspath(f"/work/{user_root}/mctdh/{project_name}/{calculation_spec}/{model_name}/")
-                            # delete the super large files
-                            for file_name in ["psi", "dvr", "restart", "oper"]:
-                                target = join(ldir, file_name)
-                                if os.path.exists(target):
-                                    print(f'rm {target}')
-                                    os.system(f'rm {target}')
-                        continue
-
+                if name not in not_submitted_jobs:
+                    not_submitted_jobs[name] = [tf, ]
                 else:
-                    print(f"{configuration.upper()} job is not finished! {model_name} Parameters: {param_list}")
-
-                    # store job
-                    if name not in running_jobs:
-                        running_jobs[name] = [tf, ]
-                    else:
-                        running_jobs[name].append(tf)
-
+                    not_submitted_jobs[name].append(tf)
                 continue
-
-        # copy auto files over
-        src_acf_path = join(path_to_mctdh_execution_folder, 'auto')
-        dst_acf_path = join(auto_dir, f"auto_{calculation_spec}")
-        shutil.copy(src_acf_path, dst_acf_path)
-
-        # ask neil
-        # turned off
-        # if generating_cc:
-        #     if os.path.isfile(join(root_dir, f"ACF_CC_{model_name:s}_tf{int(param_list[1]):>03d}.txt")):
-        #         path_cc_spectrum = f"cc_spectrum_{model_name:s}_{int(param_list[1]):>03d}fs"
-        #         path_cc_acf = modify_acf_file(
-        #             root_dir,
-        #             f"ACF_CC_{model_name:s}_tf{int(param_list[1]):>03d}.txt",
-        #             path_mctdh_acf
-        #         )
-        #         if path_cc_acf is False:
-        #             continue
-
-        #         command = generate_cc_pl(
-        #             nof_points,
-        #             root_dir=root_dir,
-        #             output_filename=path_cc_spectrum,
-        #             input_filename=path_cc_acf
-        #         )
-        #         os.system(command)
-
-        #     else:
-        #         print(f"\nCC job is not finished! {model_name}\nParameters: {param_list}\n")
-        #         continue
-
-        if True:  # plotting singular spectrums
-            plotting_file, output_file = write_spectrum_plotting_file(
-                configuration, nof_points, root_dir, path_mctdh_spectrum, model_name, *param_list
-            )
-            os.system(f"gnuplot {plotting_file}")
-            shutil.copy(output_file, spectrum_dir)
-
-        # if False:  # plotting combined spectrums
-        #     plotting_file, output_file = write_cc_mctdh_spectrum_plotting_file(
-        #         configuration, nof_points, root_dir, path_mctdh_spectrum, path_cc_spectrum, model_name, *param_list
-        #     )
-        #     os.system(f"gnuplot {plotting_file}")
-        #     shutil.copy(output_file, spectrum_dir)
-
-        # if False:  # plotting ACF
-        #     plotting_file = write_acf_plotting_file(configuration, nof_points, new_cc_acf, auto_path)
-        #     os.system(f"gnuplot {plotting_file}")
-
-        # if False:  # plotting ACF vs SOS
-        #     plotting_file = write_acf_sos_plotting_file(configuration, nof_points, new_cc_acf, auto_path, new_sos_acf)
-        #     os.system(f"gnuplot {plotting_file}")
+    
+            # if slurm seems done then job might be finished
+            elif mctdh_job_is_finished(path_to_mctdh_execution_folder):
+                command = generate_mctdh_pl(
+                    nof_points,
+                    root_dir=root_dir,
+                    output_filename=path_mctdh_spectrum,
+                    input_filename=path_mctdh_acf
+                )
+    
+                print(command)
+                # if we just want to check how many jobs failed / haven't been submitted
+                if only_checking_output:
+                    continue
+    
+                if suppress_autosped84_ouptut:
+                    os.system(command + ' 1> /dev/null')
+                else:
+                    print('\n')
+                    os.system(command)
+                    print('\n')
+    
+                print(f'Autospecd {model_name} Parameters: {param_list}')
+    
+                pbf, tf = param_list
+                name = f"pbf{pbf}"
+                if name not in completed_jobs:
+                    completed_jobs[name] = [tf, ]
+                else:
+                    completed_jobs[name].append(tf)
+    
+                # ask Neil
+                # if configuration == "mctdh":
+                #     # move very large files to new folder
+                #     old_dir = abspath(f"/work/{user_root}/{parent_project}/mctdh/{project_name}/{calculation_spec}/{model_name}/")
+                #     new_dir = abspath(f"/work/{user_root}/{parent_project}/nearline/{project_name}/{calculation_spec}/")
+    
+                #     for file_name in ["psi", "dvr", "restart", "oper"]:
+                #         target = join(old_dir, file_name)
+                #         if os.path.exists(target):
+                #             os.makedirs(new_dir, exist_ok=True)
+                #             # print(f'mv -i {target} {new_dir}')
+                #             os.system(f'mv -i {target} {new_dir}')
+                #         else:
+                #             print(f"No file here: {target}")
+    
+            else:
+                # check for issue in latest slurm output
+                paths = glob.glob(join(root_dir, 'slurm-*.out'))
+                latest_slurm_file = sorted(paths, reverse=True)[0]
+    
+                if not os.path.isfile(latest_slurm_file):
+                    print(f"Malformed slurm file {latest_slurm_file} Parameters: {param_list}")
+                    continue
+    
+                else:
+                    with open(latest_slurm_file, 'r') as fp:
+                        data = fp.read()
+    
+                    pbf, tf = param_list
+                    name = f"pbf{pbf}"
+    
+                    lowercase_data = data.lower()
+                    error_string_list = ['memory limit', 'killed', 'error', 'CANCELLED', ]
+    
+                    for string in error_string_list:
+                        if string in lowercase_data:
+                            if 'memory limit' in data:
+                                print(f"FAIL: {configuration.upper()} job failed due to memory limits {model_name} Parameters: {param_list}")
+                            elif 'CANCELLED' in data:
+                                print(f"FAIL: {configuration.upper()} job was cancelled {model_name} Parameters: {param_list}")
+                            else:
+                                print(f"FAIL: {configuration.upper()} job failed for some reason {model_name} Parameters: {param_list}")
+    
+                            # store job
+                            if name not in failed_jobs:
+                                failed_jobs[name] = [tf, ]
+                            else:
+                                failed_jobs[name].append(tf)
+    
+                            if configuration == "mctdh":
+                                # ldir = abspath(f"/work/{user_root}/{parent_project}/mctdh/{project_name}/{calculation_spec}/{model_name}/")
+                                ldir = abspath(f"/work/{user_root}/mctdh/{project_name}/{calculation_spec}/{model_name}/")
+                                # delete the super large files
+                                for file_name in ["psi", "dvr", "restart", "oper"]:
+                                    target = join(ldir, file_name)
+                                    if os.path.exists(target):
+                                        print(f'rm {target}')
+                                        os.system(f'rm {target}')
+                            continue
+    
+                    else:
+                        print(f"{configuration.upper()} job is not finished! {model_name} Parameters: {param_list}")
+    
+                        # store job
+                        if name not in running_jobs:
+                            running_jobs[name] = [tf, ]
+                        else:
+                            running_jobs[name].append(tf)
+    
+                    continue
+    
+            # copy auto files over
+            src_acf_path = join(path_to_mctdh_execution_folder, 'auto')
+            print(f'src_acf_path: {src_acf_path}')
+            dst_acf_path = join(auto_dir, f"auto_{calculation_spec}_{operate_string}")
+            print(f'dst_acf_path: {dst_acf_path}')
+            shutil.copy(src_acf_path, dst_acf_path)
+    
+            # ask neil
+            # turned off
+            # if generating_cc:
+            #     if os.path.isfile(join(root_dir, f"ACF_CC_{model_name:s}_tf{int(param_list[1]):>03d}.txt")):
+            #         path_cc_spectrum = f"cc_spectrum_{model_name:s}_{int(param_list[1]):>03d}fs"
+            #         path_cc_acf = modify_acf_file(
+            #             root_dir,
+            #             f"ACF_CC_{model_name:s}_tf{int(param_list[1]):>03d}.txt",
+            #             path_mctdh_acf
+            #         )
+            #         if path_cc_acf is False:
+            #             continue
+    
+            #         command = generate_cc_pl(
+            #             nof_points,
+            #             root_dir=root_dir,
+            #             output_filename=path_cc_spectrum,
+            #             input_filename=path_cc_acf
+            #         )
+            #         os.system(command)
+    
+            #     else:
+            #         print(f"\nCC job is not finished! {model_name}\nParameters: {param_list}\n")
+            #         continue
+    
+            if True:  # plotting singular spectrums
+                plotting_file, output_file = write_spectrum_plotting_file(
+                    configuration, nof_points, root_dir, path_mctdh_spectrum, model_name, *param_list, operate_string
+                )
+                os.system(f"gnuplot {plotting_file}")
+                shutil.copy(output_file, spectrum_dir)
+    
+            # if False:  # plotting combined spectrums
+            #     plotting_file, output_file = write_cc_mctdh_spectrum_plotting_file(
+            #         configuration, nof_points, root_dir, path_mctdh_spectrum, path_cc_spectrum, model_name, *param_list
+            #     )
+            #     os.system(f"gnuplot {plotting_file}")
+            #     shutil.copy(output_file, spectrum_dir)
+    
+            # if False:  # plotting ACF
+            #     plotting_file = write_acf_plotting_file(configuration, nof_points, new_cc_acf, auto_path)
+            #     os.system(f"gnuplot {plotting_file}")
+    
+            # if False:  # plotting ACF vs SOS
+            #     plotting_file = write_acf_sos_plotting_file(configuration, nof_points, new_cc_acf, auto_path, new_sos_acf)
+            #     os.system(f"gnuplot {plotting_file}")
 
     print(f"{'-'*35}  Successfully Completed jobs  {'-'*35}\n")
     for key in completed_jobs.keys():
