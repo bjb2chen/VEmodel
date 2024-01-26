@@ -39,7 +39,7 @@ eV_dict = {
     "vcm":       (18, 9.5),
     #
     "op_nh36Q_5st":  (11, 2),
-    f"{project_name}": (19, 9)
+    f"{project_name}": (19, 3)
 }
 
 y_dict = {
@@ -56,7 +56,7 @@ y_dict = {
     "vcm":       (-1.5, 34),
     #
     "op_nh36Q_5st":       (-1.5, 40),
-    f"{project_name}": (-1.5, 40)
+    f"{project_name}": (-1.5, 30)
 }
 
 left_eV, right_EV = eV_dict[project_name]
@@ -80,82 +80,82 @@ def calculate_harmonic_ground_state_of_op_file(path):
 
 
 # -------------------------------------------------------------------------------------------------
-def modify_acf_file(root, path_cc, path_mctdh, mctdh_t_final=None, mctdh_step=None):
+# def modify_acf_file(root, path_cc, path_mctdh, mctdh_t_final=None, mctdh_step=None):
 
-    def extract_from_auto_file(path_auto):
-        t, _ = vibronic_hamiltonian.load_auto_data(path_auto)
-        tf = round(float(t[-1] / 2), ndigits=8)
-        dt = round(float(t[1]-t[0]) / 2, ndigits=8)
-        return tf, dt
+#     def extract_from_auto_file(path_auto):
+#         t, _ = vibronic_hamiltonian.load_auto_data(path_auto)
+#         tf = round(float(t[-1] / 2), ndigits=8)
+#         dt = round(float(t[1]-t[0]) / 2, ndigits=8)
+#         return tf, dt
 
-    if mctdh_t_final is None and mctdh_step is None:
-        mctdh_t_final, mctdh_step = extract_from_auto_file(join(root, path_mctdh))
+#     if mctdh_t_final is None and mctdh_step is None:
+#         mctdh_t_final, mctdh_step = extract_from_auto_file(join(root, path_mctdh))
 
-    try:
-        time, acf = vibronic_hamiltonian.load_acf_data(join(root, path_cc))
-    except Exception as e:
-        print(f"Numerical issues with {path_cc}")
-        print(e)
-        return False
+#     try:
+#         time, acf = vibronic_hamiltonian.load_acf_data(join(root, path_cc))
+#     except Exception as e:
+#         print(f"Numerical issues with {path_cc}")
+#         print(e)
+#         return False
 
-    print(time.shape)
-    print(time[0], time[1], time[-2], time[-1])
-    print(len(time), len(acf))
+#     print(time.shape)
+#     print(time[0], time[1], time[-2], time[-1])
+#     print(len(time), len(acf))
 
-    # if the last two points are the same
-    try:
-        # create interpolation objects
-        f_real = interp1d(time, acf.real, 'cubic')
-        f_imag = interp1d(time, acf.imag, 'cubic')
-    except ValueError as e:
-        print("Most likely the rray has duplicate t values, this needs to be changed when executing")
-        raise e
-        # print(time[-2], time[-1])
-        # time[-1] = round(time[-1] + 1E-7, ndigits=8)
-        # print(time[-2], time[-1])
-        # f_real = interp1d(time, acf.real, 'cubic')
-        # f_imag = interp1d(time, acf.imag, 'cubic')
+#     # if the last two points are the same
+#     try:
+#         # create interpolation objects
+#         f_real = interp1d(time, acf.real, 'cubic')
+#         f_imag = interp1d(time, acf.imag, 'cubic')
+#     except ValueError as e:
+#         print("Most likely the rray has duplicate t values, this needs to be changed when executing")
+#         raise e
+#         # print(time[-2], time[-1])
+#         # time[-1] = round(time[-1] + 1E-7, ndigits=8)
+#         # print(time[-2], time[-1])
+#         # f_real = interp1d(time, acf.real, 'cubic')
+#         # f_imag = interp1d(time, acf.imag, 'cubic')
 
-    cc_t_init, cc_t_final = time[0], time[-1]
-    print(cc_t_init, cc_t_final, mctdh_t_final)
-    npoints = int(mctdh_t_final / mctdh_step)
-    print(f"Nof points = {npoints}")
-    # if we use endpoint=True then its very difficult to get good deltas
-    # so for now we will use endpoint=False
-    _, dt = np.linspace(cc_t_init, cc_t_final, num=npoints, endpoint=False, retstep=True)
-    time_step = round(dt, ndigits=8)
-    print(f"Time step is {time_step:12.8f}")
-    # then we make sure we generate uniformly spaced points
-    # we use (cc_t_final+time_step) because np.arange doesn't include the last point
-    # so if we want to include cc_t_final (we do) then we need to make the 'last point' one step after the point that we want to be the real 'last point'
-    new_x = np.arange(cc_t_init, cc_t_final+time_step, step=time_step, dtype=float)
+#     cc_t_init, cc_t_final = time[0], time[-1]
+#     print(cc_t_init, cc_t_final, mctdh_t_final)
+#     npoints = int(mctdh_t_final / mctdh_step)
+#     print(f"Nof points = {npoints}")
+#     # if we use endpoint=True then its very difficult to get good deltas
+#     # so for now we will use endpoint=False
+#     _, dt = np.linspace(cc_t_init, cc_t_final, num=npoints, endpoint=False, retstep=True)
+#     time_step = round(dt, ndigits=8)
+#     print(f"Time step is {time_step:12.8f}")
+#     # then we make sure we generate uniformly spaced points
+#     # we use (cc_t_final+time_step) because np.arange doesn't include the last point
+#     # so if we want to include cc_t_final (we do) then we need to make the 'last point' one step after the point that we want to be the real 'last point'
+#     new_x = np.arange(cc_t_init, cc_t_final+time_step, step=time_step, dtype=float)
 
-    print(new_x[0], new_x[-1])
+#     print(new_x[0], new_x[-1])
 
-    new_time = new_x.copy()
-    for i in range(len(new_x)):
-        new_time[i] = round(new_x[i], ndigits=8)
+#     new_time = new_x.copy()
+#     for i in range(len(new_x)):
+#         new_time[i] = round(new_x[i], ndigits=8)
 
-    new_acf = np.zeros_like(new_x, dtype=complex)
-    dt = abs(new_time[0] - new_time[1])
-    arr = abs(new_time[0:-2] - new_time[1:-1])
-    for i, a in enumerate(arr):
-        assert np.isclose(dt, a)
+#     new_acf = np.zeros_like(new_x, dtype=complex)
+#     dt = abs(new_time[0] - new_time[1])
+#     arr = abs(new_time[0:-2] - new_time[1:-1])
+#     for i, a in enumerate(arr):
+#         assert np.isclose(dt, a)
 
-    # save interpolated data to new_acf array
-    new_acf.real = f_real(new_x)
-    new_acf.imag = f_imag(new_x)
+#     # save interpolated data to new_acf array
+#     new_acf.real = f_real(new_x)
+#     new_acf.imag = f_imag(new_x)
 
-    # normalize the results (to match MCTDH)
-    normalization_factor = new_acf.real[0]
-    print(f"\nNormalization factor: {normalization_factor}\n")
-    new_acf.real /= normalization_factor
-    new_acf.imag /= normalization_factor
+#     # normalize the results (to match MCTDH)
+#     normalization_factor = new_acf.real[0]
+#     print(f"\nNormalization factor: {normalization_factor}\n")
+#     new_acf.real /= normalization_factor
+#     new_acf.imag /= normalization_factor
 
-    # strip '.txt' off path and add the suffix '_normalized.txt'
-    new_path = path_cc[0:-4:]+"_normalized.txt"
-    vibronic_hamiltonian._save_data(join(root, new_path), new_time, new_acf)
-    return new_path
+#     # strip '.txt' off path and add the suffix '_normalized.txt'
+#     new_path = path_cc[0:-4:]+"_normalized.txt"
+#     vibronic_hamiltonian._save_data(join(root, new_path), new_time, new_acf)
+#     return new_path
 
 
 # -------------------------------------------------------------------------------------------------
@@ -199,43 +199,43 @@ def generate_mctdh_pl(nof_points, root_dir, output_filename, input_filename):
 
 
 # -------------------------------------------------------------------------------------------------
-def write_cc_mctdh_spectrum_plotting_file(configuration, *args):
-    """ a """
+# def write_cc_mctdh_spectrum_plotting_file(configuration, *args):
+#     """ a """
 
-    # unpack arguments
-    nof_points, root_dir, mctdh_file, cc_file, model_name, pbf, t = args
-    # print(f'{root_dir}/{mctdh_file}.pl')
-    # print(f'{root_dir}/{cc_file}.pl')
-    # doctor the file name to make it look better in the plot
-    plot_title = model_name.replace('_', ' ').replace('h2o', 'h_{2}o')
+#     # unpack arguments
+#     nof_points, root_dir, mctdh_file, cc_file, model_name, pbf, t = args
+#     # print(f'{root_dir}/{mctdh_file}.pl')
+#     # print(f'{root_dir}/{cc_file}.pl')
+#     # doctor the file name to make it look better in the plot
+#     plot_title = model_name.replace('_', ' ').replace('h2o', 'h_{2}o')
 
-    size = [1200, 800]
-    # size = [800, 400]
+#     size = [1200, 800]
+#     # size = [800, 400]
 
-    output_file = f'{root_dir}/both_spectrum_{model_name:s}_{nof_points:d}_PBF{pbf:d}_{int(t):d}fs_{tau:d}tau.png'
+#     output_file = f'{root_dir}/both_spectrum_{model_name:s}_{nof_points:d}_PBF{pbf:d}_{int(t):d}fs_{tau:d}tau.png'
 
-    plotting_command = '\n'.join([
-        f"set terminal png size {size[0]},{size[1]}",
-        # f"set output './spectrum_{model_name:s}_{nof_points:d}_{t_final:d}fs_{tau:d}tau_{nof_BF}SOSBF_{mctdh_BF}{configuration}BF.png'",
-        f"set output '{output_file:s}'",
-        "set style data line", "set nologscale", "set xzeroaxis", "set xlabel 'Energy[eV]'",
-        f"set xr [ {left_eV}: {right_EV}]",
-        f"set yr [ {min_y}: {max_y}]",
-        f"set title '{plot_title:s} spectrum, n-cos = 1, tau: {tau:d}.0 1, {int(t):d}fs'",
-        f"plot \
-            '{root_dir}/{mctdh_file}.pl' using 1:3 lw 2 lc 'black' title '{configuration}',\
-            '{root_dir}/{cc_file}.pl' every 6 using 1:3 with linespoints lc 'purple' title 'CC',\
-        ",
-        # '{sos_file}.pl' using 1:3 lc 'black' title 'SOS',\
-    ])
+#     plotting_command = '\n'.join([
+#         f"set terminal png size {size[0]},{size[1]}",
+#         # f"set output './spectrum_{model_name:s}_{nof_points:d}_{t_final:d}fs_{tau:d}tau_{nof_BF}SOSBF_{mctdh_BF}{configuration}BF.png'",
+#         f"set output '{output_file:s}'",
+#         "set style data line", "set nologscale", "set xzeroaxis", "set xlabel 'Energy[eV]'",
+#         f"set xr [ {left_eV}: {right_EV}]",
+#         f"set yr [ {min_y}: {max_y}]",
+#         f"set title '{plot_title:s} spectrum, n-cos = 1, tau: {tau:d}.0 1, {int(t):d}fs'",
+#         f"plot \
+#             '{root_dir}/{mctdh_file}.pl' using 1:3 lw 2 lc 'black' title '{configuration}',\
+#             '{root_dir}/{cc_file}.pl' every 6 using 1:3 with linespoints lc 'purple' title 'CC',\
+#         ",
+#         # '{sos_file}.pl' using 1:3 lc 'black' title 'SOS',\
+#     ])
 
-    path_plotting_file = f"{root_dir}/spectrum_plotting.pl"
+#     path_plotting_file = f"{root_dir}/spectrum_plotting.pl"
 
-    # write the plotting commands to a file
-    with open(path_plotting_file, 'w') as fp:
-        fp.write(plotting_command)
+#     # write the plotting commands to a file
+#     with open(path_plotting_file, 'w') as fp:
+#         fp.write(plotting_command)
 
-    return path_plotting_file, output_file
+#     return path_plotting_file, output_file
 
 
 def write_spectrum_plotting_file(configuration, *args):
@@ -263,8 +263,8 @@ def write_spectrum_plotting_file(configuration, *args):
         f"set yr [ {min_y}: {max_y}]",
         f"set title '{plot_title:s} spectrum, n-cos = 1, tau: {tau:d}.0 1, {int(t):d}fs'",
         f"plot \
-            '{root_dir}/{mctdh_file}.pl' using 1:3 lw 2 lc 'black' title '{configuration} g1',\
-            '{root_dir}/{mctdh_file}.pl' using 1:4 lw 2 lc 'red' title '{configuration} g2',\
+            '{root_dir}/{mctdh_file}_{operate_string}.pl' using 1:3 lw 2 lc 'black' title '{configuration} g1',\
+            '{root_dir}/{mctdh_file}_{operate_string}.pl' using 1:4 lw 2 lc 'red' title '{configuration} g2',\
         ",
         # '{cc_file}.pl' every 6 using 1:3 with linespoints lc 'purple' title 'CC',\
         # '{sos_file}.pl' using 1:3 lc 'black' title 'SOS',\
@@ -279,166 +279,166 @@ def write_spectrum_plotting_file(configuration, *args):
     return path_plotting_file, output_file
 
 
-def write_mctdh_pbf_spectrum_plotting_file(configuration, *args):
-    """Generate gnuplot script for comparing multiple MCTDH results for different #'s of PBF's """
+# def write_mctdh_pbf_spectrum_plotting_file(configuration, *args):
+#     """Generate gnuplot script for comparing multiple MCTDH results for different #'s of PBF's """
 
-    # unpack arguments
-    nof_points, root_dir, spectrum_dir, model_name, t = args
-    # print(f'{root_dir}/{mctdh_file}.pl')
-    # doctor the file name to make it look better in the plot
-    plot_title = model_name.replace('_', ' ').replace('h2o', 'h_{2}o')
+#     # unpack arguments
+#     nof_points, root_dir, spectrum_dir, model_name, t = args
+#     # print(f'{root_dir}/{mctdh_file}.pl')
+#     # doctor the file name to make it look better in the plot
+#     plot_title = model_name.replace('_', ' ').replace('h2o', 'h_{2}o')
 
-    size = [1200, 800]
-    # size = [800, 400]
+#     size = [1200, 800]
+#     # size = [800, 400]
 
-    output_file = f'{spectrum_dir}/combined_{configuration}_spectrum_{model_name:s}_{nof_points:d}_{int(t):d}fs_{tau:d}tau.png'
-    d_30 = dir_string.format(model_name, 30, t)
-    d_100 = dir_string.format(model_name, 100, t)
-    d_300 = dir_string.format(model_name, 300, t)
-    d_500 = dir_string.format(model_name, 500, t)
-    d_1000 = dir_string.format(model_name, 1000, t)
+#     output_file = f'{spectrum_dir}/combined_{configuration}_spectrum_{model_name:s}_{nof_points:d}_{int(t):d}fs_{tau:d}tau.png'
+#     d_30 = dir_string.format(model_name, 30, t)
+#     d_100 = dir_string.format(model_name, 100, t)
+#     d_300 = dir_string.format(model_name, 300, t)
+#     d_500 = dir_string.format(model_name, 500, t)
+#     d_1000 = dir_string.format(model_name, 1000, t)
 
-    plotting_command = '\n'.join([
-        f"set terminal png size {size[0]},{size[1]}",
-        # f"set output './spectrum_{model_name:s}_{nof_points:d}_{t_final:d}fs_{tau:d}tau_{nof_BF}SOSBF_{mctdh_BF}MCTDHBF.png'",
-        f"set output '{output_file:s}'",
-        "set style data line", "set nologscale", "set xzeroaxis", "set xlabel 'Energy[eV]'",
-        # f"set xr [ 0.{left_eV}00000E+02: 0.{right_EV}0000E+02]",
-        f"set xr [ {left_eV}: {right_EV}]",
-        f"set yr [ {min_y}: 30.0]",
-        f"set title '{plot_title:s} spectrum, n-cos = 1, tau: {tau:d}.0 1, {int(t):d}fs'",
-        f"plot \
-            '{root_dir}/{d_30}/{configuration}_spectrum_{d_30}.pl' using 1:3 lw 2 lc 'red' title '30 PBF',\
-            '{root_dir}/{d_100}/{configuration}_spectrum_{d_100}.pl' using 1:3 lw 2 lc 'green' title '100 PBF',\
-            '{root_dir}/{d_300}/{configuration}_spectrum_{d_300}.pl' using 1:3 lw 2 lc 'yellow' title '300 PBF',\
-            '{root_dir}/{d_500}/{configuration}_spectrum_{d_500}.pl' using 1:3 lw 2 lc 'blue' title '500 PBF',\
-            '{root_dir}/{d_1000}/{configuration}_spectrum_{d_1000}.pl' using 1:3 lw 2 lc 'black' title '1000 PBF',\
-        ",
-        # '{cc_file}.pl' every 6 using 1:3 with linespoints lc 'purple' title 'CC',\
-        # '{sos_file}.pl' using 1:3 lc 'black' title 'SOS',\
-    ])
+#     plotting_command = '\n'.join([
+#         f"set terminal png size {size[0]},{size[1]}",
+#         # f"set output './spectrum_{model_name:s}_{nof_points:d}_{t_final:d}fs_{tau:d}tau_{nof_BF}SOSBF_{mctdh_BF}MCTDHBF.png'",
+#         f"set output '{output_file:s}'",
+#         "set style data line", "set nologscale", "set xzeroaxis", "set xlabel 'Energy[eV]'",
+#         # f"set xr [ 0.{left_eV}00000E+02: 0.{right_EV}0000E+02]",
+#         f"set xr [ {left_eV}: {right_EV}]",
+#         f"set yr [ {min_y}: 30.0]",
+#         f"set title '{plot_title:s} spectrum, n-cos = 1, tau: {tau:d}.0 1, {int(t):d}fs'",
+#         f"plot \
+#             '{root_dir}/{d_30}/{configuration}_spectrum_{d_30}.pl' using 1:3 lw 2 lc 'red' title '30 PBF',\
+#             '{root_dir}/{d_100}/{configuration}_spectrum_{d_100}.pl' using 1:3 lw 2 lc 'green' title '100 PBF',\
+#             '{root_dir}/{d_300}/{configuration}_spectrum_{d_300}.pl' using 1:3 lw 2 lc 'yellow' title '300 PBF',\
+#             '{root_dir}/{d_500}/{configuration}_spectrum_{d_500}.pl' using 1:3 lw 2 lc 'blue' title '500 PBF',\
+#             '{root_dir}/{d_1000}/{configuration}_spectrum_{d_1000}.pl' using 1:3 lw 2 lc 'black' title '1000 PBF',\
+#         ",
+#         # '{cc_file}.pl' every 6 using 1:3 with linespoints lc 'purple' title 'CC',\
+#         # '{sos_file}.pl' using 1:3 lc 'black' title 'SOS',\
+#     ])
 
-    path_plotting_file = f"{spectrum_dir}/spectrum_plotting.pl"
+#     path_plotting_file = f"{spectrum_dir}/spectrum_plotting.pl"
 
-    # write the plotting commands to a file
-    with open(path_plotting_file, 'w') as fp:
-        fp.write(plotting_command)
+#     # write the plotting commands to a file
+#     with open(path_plotting_file, 'w') as fp:
+#         fp.write(plotting_command)
 
-    return path_plotting_file, output_file
-
-
-def write_mctdh_tf_spectrum_plotting_file(configuration, *args):
-    """Generate gnuplot script for comparing multiple MCTDH results for different lengths of propagation """
-
-    # unpack arguments
-    nof_points, root_dir, mctdh_file, model_name, pbf, t = args
-    print(f'{root_dir}/{mctdh_file}.pl')
-    # doctor the file name to make it look better in the plot
-    plot_title = model_name.replace('_', ' ').replace('h2o', 'h_{2}o')
-
-    size = [1200, 800]
-    # size = [800, 400]
-
-    plotting_command = '\n'.join([
-        f"set terminal png size {size[0]},{size[1]}",
-        # f"set output './spectrum_{model_name:s}_{nof_points:d}_{t_final:d}fs_{tau:d}tau_{nof_BF}SOSBF_{mctdh_BF}MCTDHBF.png'",
-        f"set output '{root_dir}/spectrum_{model_name:s}_{nof_points:d}_PBF{pbf:d}_{int(t):d}fs_{tau:d}tau.png'",
-        "set style data line", "set nologscale", "set xzeroaxis", "set xlabel 'Energy[eV]'",
-        # f"set xr [ 0.{left_eV}00000E+02: 0.{right_EV}0000E+02]",
-        f"set xr [ {left_eV}: {right_EV}]",
-        f"set yr [ {min_y}: {max_y}]",
-        f"set title '{plot_title:s} spectrum, n-cos = 1, tau: {tau:d}.0 1, {int(t):d}fs'",
-        f"plot \
-            '{root_dir}/{mctdh_file}.pl' using 1:3 lw 2 lc 'black' title '{configuration}',\
-        ",
-        # '{cc_file}.pl' every 6 using 1:3 with linespoints lc 'purple' title 'CC',\
-        # '{sos_file}.pl' using 1:3 lc 'black' title 'SOS',\
-    ])
-
-    path_plotting_file = "spectrum_plotting.pl"
-
-    # write the plotting commands to a file
-    with open(path_plotting_file, 'w') as fp:
-        fp.write(plotting_command)
-
-    return path_plotting_file
+#     return path_plotting_file, output_file
 
 
-def write_mctdh_coupling_spectrum_plotting_file(configuration, *args):
-    """Generate gnuplot script for comparing multiple MCTDH results between constant/linear/quadratic coupling terms """
+# def write_mctdh_tf_spectrum_plotting_file(configuration, *args):
+#     """Generate gnuplot script for comparing multiple MCTDH results for different lengths of propagation """
 
-    # unpack arguments
-    nof_points, root_dir, mctdh_file, model_name, pbf, t = args
-    print(f'{root_dir}/{mctdh_file}.pl')
-    # doctor the file name to make it look better in the plot
-    plot_title = model_name.replace('_', ' ').replace('h2o', 'h_{2}o')
+#     # unpack arguments
+#     nof_points, root_dir, mctdh_file, model_name, pbf, t = args
+#     print(f'{root_dir}/{mctdh_file}.pl')
+#     # doctor the file name to make it look better in the plot
+#     plot_title = model_name.replace('_', ' ').replace('h2o', 'h_{2}o')
 
-    size = [1200, 800]
-    # size = [800, 400]
+#     size = [1200, 800]
+#     # size = [800, 400]
 
-    plotting_command = '\n'.join([
-        f"set terminal png size {size[0]},{size[1]}",
-        # f"set output './spectrum_{model_name:s}_{nof_points:d}_{t_final:d}fs_{tau:d}tau_{nof_BF}SOSBF_{mctdh_BF}MCTDHBF.png'",
-        f"set output '{root_dir}/spectrum_{model_name:s}_{nof_points:d}_PBF{pbf:d}_{int(t):d}fs_{tau:d}tau.png'",
-        "set style data line", "set nologscale", "set xzeroaxis", "set xlabel 'Energy[eV]'",
-        # f"set xr [ 0.{left_eV}00000E+02: 0.{right_EV}0000E+02]",
-        f"set xr [ {left_eV}: {right_EV}]",
-        f"set yr [ {min_y}: {max_y}]",
-        f"set title '{plot_title:s} spectrum, n-cos = 1, tau: {tau:d}.0 1, {int(t):d}fs'",
-        f"plot \
-            '{root_dir}/{mctdh_file}.pl' using 1:3 lw 2 lc 'black' title '{configuration}',\
-        ",
-        # '{cc_file}.pl' every 6 using 1:3 with linespoints lc 'purple' title 'CC',\
-        # '{sos_file}.pl' using 1:3 lc 'black' title 'SOS',\
-    ])
+#     plotting_command = '\n'.join([
+#         f"set terminal png size {size[0]},{size[1]}",
+#         # f"set output './spectrum_{model_name:s}_{nof_points:d}_{t_final:d}fs_{tau:d}tau_{nof_BF}SOSBF_{mctdh_BF}MCTDHBF.png'",
+#         f"set output '{root_dir}/spectrum_{model_name:s}_{nof_points:d}_PBF{pbf:d}_{int(t):d}fs_{tau:d}tau.png'",
+#         "set style data line", "set nologscale", "set xzeroaxis", "set xlabel 'Energy[eV]'",
+#         # f"set xr [ 0.{left_eV}00000E+02: 0.{right_EV}0000E+02]",
+#         f"set xr [ {left_eV}: {right_EV}]",
+#         f"set yr [ {min_y}: {max_y}]",
+#         f"set title '{plot_title:s} spectrum, n-cos = 1, tau: {tau:d}.0 1, {int(t):d}fs'",
+#         f"plot \
+#             '{root_dir}/{mctdh_file}.pl' using 1:3 lw 2 lc 'black' title '{configuration}',\
+#         ",
+#         # '{cc_file}.pl' every 6 using 1:3 with linespoints lc 'purple' title 'CC',\
+#         # '{sos_file}.pl' using 1:3 lc 'black' title 'SOS',\
+#     ])
 
-    path_plotting_file = "spectrum_plotting.pl"
+#     path_plotting_file = "spectrum_plotting.pl"
 
-    # write the plotting commands to a file
-    with open(path_plotting_file, 'w') as fp:
-        fp.write(plotting_command)
+#     # write the plotting commands to a file
+#     with open(path_plotting_file, 'w') as fp:
+#         fp.write(plotting_command)
 
-    return path_plotting_file
+#     return path_plotting_file
 
 
-def write_acf_plotting_file(configuration, *args):
-    """ a """
+# def write_mctdh_coupling_spectrum_plotting_file(configuration, *args):
+#     """Generate gnuplot script for comparing multiple MCTDH results between constant/linear/quadratic coupling terms """
 
-    # unpack arguments
-    # nof_points, mctdh_file, model_name = args
-    # nof_points, cc_file, mctdh_file, cc_file2, model_name = args
+#     # unpack arguments
+#     nof_points, root_dir, mctdh_file, model_name, pbf, t = args
+#     print(f'{root_dir}/{mctdh_file}.pl')
+#     # doctor the file name to make it look better in the plot
+#     plot_title = model_name.replace('_', ' ').replace('h2o', 'h_{2}o')
 
-    # doctor the file name to make it look better in the plot
-    plot_title = model_name.replace('_', ' ').replace('h2o', 'h_{2}o')
+#     size = [1200, 800]
+#     # size = [800, 400]
 
-    size = [1200, 800]
-    # style = "circle radius graph 0.002"
-    # style = "line 1 lc rgb '#0060ad' lt 1 lw 2 pt 7 pi -1 ps 1.5"
-    style = "line 1 lt 2 pt 12 ps 1 pi -1"
+#     plotting_command = '\n'.join([
+#         f"set terminal png size {size[0]},{size[1]}",
+#         # f"set output './spectrum_{model_name:s}_{nof_points:d}_{t_final:d}fs_{tau:d}tau_{nof_BF}SOSBF_{mctdh_BF}MCTDHBF.png'",
+#         f"set output '{root_dir}/spectrum_{model_name:s}_{nof_points:d}_PBF{pbf:d}_{int(t):d}fs_{tau:d}tau.png'",
+#         "set style data line", "set nologscale", "set xzeroaxis", "set xlabel 'Energy[eV]'",
+#         # f"set xr [ 0.{left_eV}00000E+02: 0.{right_EV}0000E+02]",
+#         f"set xr [ {left_eV}: {right_EV}]",
+#         f"set yr [ {min_y}: {max_y}]",
+#         f"set title '{plot_title:s} spectrum, n-cos = 1, tau: {tau:d}.0 1, {int(t):d}fs'",
+#         f"plot \
+#             '{root_dir}/{mctdh_file}.pl' using 1:3 lw 2 lc 'black' title '{configuration}',\
+#         ",
+#         # '{cc_file}.pl' every 6 using 1:3 with linespoints lc 'purple' title 'CC',\
+#         # '{sos_file}.pl' using 1:3 lc 'black' title 'SOS',\
+#     ])
 
-    plotting_command = '\n'.join([
-        f"set terminal png size {size[0]},{size[1]}",
-        f"set title 'ACF comparison of {t_final:d}fs'",
-        f"set style {style}", "set style data line",
-        # "set pointintervalbox 2",
-        f"set output './ACF_{model_name:s}_{nof_points:d}_{t_final:d}fs.png'",
-        "set nologscale", "set xzeroaxis", "set ylabel 'C(tau/hbar)'",
-        "set yr [ -1: 1]",
-        "set xr [ 0.0: 100.0]",
-        f"plot \
-            '{mctdh_file}' us 1:2 with linespoints ls 4 ps 3 lc 'red' title '{configuration} Real',\
-            '{cc_file}' us 1:2 lc 'green' title 'CC Real (interpolated)',\
-        ",
-        # '{cc_file2}' us 1:2 with linespoints ls 1 lc 'blue' title 'CC Real (raw RK45)'\
-    ])
+#     path_plotting_file = "spectrum_plotting.pl"
 
-    path_plotting_file = "acf_plotting.pl"
+#     # write the plotting commands to a file
+#     with open(path_plotting_file, 'w') as fp:
+#         fp.write(plotting_command)
 
-    # write the plotting commands to a file
-    with open(path_plotting_file, 'w') as fp:
-        fp.write(plotting_command)
+#     return path_plotting_file
 
-    return path_plotting_file
+
+# def write_acf_plotting_file(configuration, *args):
+#     """ a """
+
+#     # unpack arguments
+#     # nof_points, mctdh_file, model_name = args
+#     # nof_points, cc_file, mctdh_file, cc_file2, model_name = args
+
+#     # doctor the file name to make it look better in the plot
+#     plot_title = model_name.replace('_', ' ').replace('h2o', 'h_{2}o')
+
+#     size = [1200, 800]
+#     # style = "circle radius graph 0.002"
+#     # style = "line 1 lc rgb '#0060ad' lt 1 lw 2 pt 7 pi -1 ps 1.5"
+#     style = "line 1 lt 2 pt 12 ps 1 pi -1"
+
+#     plotting_command = '\n'.join([
+#         f"set terminal png size {size[0]},{size[1]}",
+#         f"set title 'ACF comparison of {t_final:d}fs'",
+#         f"set style {style}", "set style data line",
+#         # "set pointintervalbox 2",
+#         f"set output './ACF_{model_name:s}_{nof_points:d}_{t_final:d}fs.png'",
+#         "set nologscale", "set xzeroaxis", "set ylabel 'C(tau/hbar)'",
+#         "set yr [ -1: 1]",
+#         "set xr [ 0.0: 100.0]",
+#         f"plot \
+#             '{mctdh_file}' us 1:2 with linespoints ls 4 ps 3 lc 'red' title '{configuration} Real',\
+#             '{cc_file}' us 1:2 lc 'green' title 'CC Real (interpolated)',\
+#         ",
+#         # '{cc_file2}' us 1:2 with linespoints ls 1 lc 'blue' title 'CC Real (raw RK45)'\
+#     ])
+
+#     path_plotting_file = "acf_plotting.pl"
+
+#     # write the plotting commands to a file
+#     with open(path_plotting_file, 'w') as fp:
+#         fp.write(plotting_command)
+
+#     return path_plotting_file
 
 
 # -------------------------------------------------------------------------------------------------
@@ -513,15 +513,12 @@ if __name__ == "__main__":
             path_mctdh_acf = join(model_name, "auto")
             #print("path_mctdh_acf", path_mctdh_acf, "\n")
     
-            path_mctdh_spectrum = f"{configuration}_spectrum_{dir_string.format(model_name, *param_list)}_{operate_string}"
+            path_mctdh_spectrum = f"{configuration}_spectrum_{dir_string.format(model_name, *param_list)}"
     
             #print("path_mctdh_spectrum", path_mctdh_spectrum, "\n")
             # auto_path = f"./h2o_FC_{order:s}_{25:>03d}fs_{BF:>03d}BF_{spf:>02d}spf/auto"
     
             path_to_mctdh_execution_folder = join(root_dir, model_name)
-            #print(f'path_to_mctdh_execution_folder: {path_to_mctdh_execution_folder}')
-            hmm = os.path.exists(path_to_mctdh_execution_folder)
-            #print(f'path exists?: {hmm}')
     
             # if no folder, job was not even submitted
             if not os.path.isdir(path_to_mctdh_execution_folder):
@@ -539,10 +536,10 @@ if __name__ == "__main__":
                 command = generate_mctdh_pl(
                     nof_points,
                     root_dir=root_dir,
-                    output_filename=path_mctdh_spectrum,
+                    output_filename=f"{path_mctdh_spectrum}_{operate_string}",
                     input_filename=path_mctdh_acf
                 )
-    
+
                 print(command)
                 # if we just want to check how many jobs failed / haven't been submitted
                 if only_checking_output:
