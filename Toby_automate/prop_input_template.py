@@ -203,6 +203,9 @@ dav_integrator = "{dav_spec:<10} = {I:>5}, {R:>10}".format(
 For VMF calculations, only the BS, ABM or RK5/8 integrator may be used for the differential equations. Default is ABM. For VMF calculations the integrator must carry the extension S=all (or no extension at all), i.e. there is only one integrator within the VMF scheme. For CMF calculations, the following combinations of integrators are possible: ABM/spf + SIL/A, BS/spf + SIL/A, RKx/spf + SIL/A, BS/all, ABM/all, RKx/all.
 """
 
+#VMF   
+#RK5/all = 1.0d-07  
+
 
 propagation_integrator_section = "\n".join([
     int_begin,
