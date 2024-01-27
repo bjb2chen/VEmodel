@@ -70,7 +70,7 @@ def generate_basic_multi_set_spf_basis_section(n_BF, N, A):
     """Generate basic multi set with same # of spf for all states and modes"""
     spf_definitions  = []
     for n in N.values():
-        string = f"      m{n:<3d}      =  {n_BF:d}"
+        string = f"      m{n:<3d}      =  1"
         for a in range(A-1):
             string += f", {n_BF:d}"
         spf_definitions.append(string)
@@ -203,9 +203,6 @@ dav_integrator = "{dav_spec:<10} = {I:>5}, {R:>10}".format(
 For VMF calculations, only the BS, ABM or RK5/8 integrator may be used for the differential equations. Default is ABM. For VMF calculations the integrator must carry the extension S=all (or no extension at all), i.e. there is only one integrator within the VMF scheme. For CMF calculations, the following combinations of integrators are possible: ABM/spf + SIL/A, BS/spf + SIL/A, RKx/spf + SIL/A, BS/all, ABM/all, RKx/all.
 """
 
-#VMF   
-#RK5/all = 1.0d-07  
-
 
 propagation_integrator_section = "\n".join([
     int_begin,
@@ -237,7 +234,7 @@ def _generate_basic_wavefunction(basic_HO_wavepacket, nof_electronic_states, ope
         int_wf_begin,
         build_begin,
         #initial_state_spec.format(nof_electronic_states),
-        initial_state_spec.format(2),
+        initial_state_spec.format(1),
         basic_HO_wavepacket,
         build_end,
         operate_spec.format(operate_string),
