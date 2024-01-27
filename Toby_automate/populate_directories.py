@@ -19,8 +19,8 @@ def create_input_file(source_dir, *args):
     name, bf, tf = args
 
     nof_pbf = bf
-    nof_spf = 1  # fix to 1 for the moment (this is tdh)
-    # nof_spf = 4  # this is mctdh
+    #nof_spf = 1  # fix to 1 for the moment (this is tdh)
+    nof_spf = 3  # this is mctdh
 
 
     for operate_string in ["Ex", "Ey", "Ez"]:
