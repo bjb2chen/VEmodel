@@ -12,4 +12,7 @@ D3H CoF3 diabatization - [https://www.youtube.com/watch?v=7tNUAFYKCQE&ab_channel
 
 [Project Poster Reference](https://github.com/bjb2chen/vmodels/files/10171706/SCP2022_bjc_20685630_White.pdf)
 
+![Water_spectra](https://github.com/bjb2chen/vmodels/assets/51763900/e1223346-b899-455e-ad1f-97dd8d09de17)
+
+
 ![CoF4](https://github.com/bjb2chen/vmodels/assets/51763900/eb5d7752-d0d4-4151-9af5-d399e079bf3a)
