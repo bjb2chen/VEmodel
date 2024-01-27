@@ -39,7 +39,7 @@ eV_dict = {
     "vcm":       (18, 9.5),
     #
     "op_nh36Q_5st":  (11, 2),
-    f"{project_name}": (19, 3)
+    f"{project_name}": (21, 11)
 }
 
 y_dict = {
@@ -56,7 +56,7 @@ y_dict = {
     "vcm":       (-1.5, 34),
     #
     "op_nh36Q_5st":       (-1.5, 40),
-    f"{project_name}": (-1.5, 30)
+    f"{project_name}": (-1.5, 60)
 }
 
 left_eV, right_EV = eV_dict[project_name]
@@ -685,6 +685,97 @@ if __name__ == "__main__":
             # if False:  # plotting ACF vs SOS
             #     plotting_file = write_acf_sos_plotting_file(configuration, nof_points, new_cc_acf, auto_path, new_sos_acf)
             #     os.system(f"gnuplot {plotting_file}")
+    if True:
+        try:
+            root_dir_x = join(work_root, calculation_spec, 'Ex')
+            root_dir_y = join(work_root, calculation_spec, 'Ey')
+            root_dir_z = join(work_root, calculation_spec, 'Ez')
+            print(root_dir_x)
+            print(root_dir_y)
+            print(root_dir_z)
+            # Load data from 'auto_x' file if it exists
+            auto_x_path = f"{root_dir_x}/{path_mctdh_spectrum}_Ex.pl"
+            if os.path.exists(auto_x_path):
+                print(auto_x_path, 'exists')
+                auto_x = np.loadtxt(auto_x_path)
+            else:
+                auto_x = None
+    
+            # Load data from 'auto_y' file if it exists
+            auto_y_path = f"{root_dir_y}/{path_mctdh_spectrum}_Ey.pl"
+            if os.path.exists(auto_y_path):
+                print(auto_y_path, 'exists')
+                auto_y = np.loadtxt(auto_y_path)
+            else:
+                auto_y = None
+    
+            # Load data from 'auto_z' file if it exists
+            auto_z_path = f"{root_dir_z}/{path_mctdh_spectrum}_Ez.pl"
+            if os.path.exists(auto_z_path):
+                print(auto_z_path, 'exists')
+                auto_z = np.loadtxt(auto_z_path)
+            else:
+                auto_z = None
+    
+        except Exception as e:
+            print(f"Error loading files: {e}")
+    
+        try:
+            # Find a non-empty array among auto_x, auto_y, and auto_z
+            non_empty_array = next(arr for arr in [auto_x, auto_y, auto_z] if arr is not None)
+    
+            # Extract x values (assuming the x values are the same in all files)
+            x_values = non_empty_array[:, 0]
+    
+            # Sum the 4th column across the three files
+            sum_column_4 = np.zeros_like(x_values)
+    
+            # Add the 4th column of each existing array to the sum
+            for arr in [auto_x, auto_y, auto_z]:
+                if arr is not None:
+                    sum_column_4 += arr[:, 3]
+    
+            # Create a new array with x values and summed 4th column
+            auto_total = np.column_stack((x_values, sum_column_4))
+    
+            # Save the result to 'auto_total' file
+            np.savetxt('auto_total', auto_total, header='x_values  sum_column_4', fmt='%12.8f', comments='')
+    
+            print("Process completed. Check 'auto_total' file for the result.")
+    
+        except Exception as e:
+            print(f"Error in creating auto_total: {e}")
+
+    size = [1200, 800]
+
+    output_file = f'xyz_spectrum.png'
+
+    plotting_command = '\n'.join([
+        f"set terminal png size {size[0]},{size[1]}",
+        # f"set output './spectrum_{model_name:s}_{nof_points:d}_{t_final:d}fs_{tau:d}tau_{nof_BF}SOSBF_{mctdh_BF}{configuration}BF.png'",
+        f"set output '{output_file:s}'",
+        "set style data line", "set nologscale", "set xzeroaxis", "set xlabel 'Energy[eV]'",
+        # f"set xr [ 0.{left_eV}00000E+02: 0.{right_EV}0000E+02]",
+        f"set xr [ {left_eV}: {right_EV}]",
+        f"set yr [ {min_y}: {max_y}]",
+        f"set title '{project_name:s} spectrum, n-cos = 1, tau: {tau:d}.0 1'",
+        #, {int(t):d}fs'",
+        f"plot 'auto_total' using 1:2 lw 2 lc 'black' title 'mctdh g1'",
+        #     '{root_dir}/{mctdh_file}_{operate_string}.pl' using 1:3 lw 2 lc 'black' title '{configuration} g1',\
+        #     '{root_dir}/{mctdh_file}_{operate_string}.pl' using 1:4 lw 2 lc 'red' title '{configuration} g2',\
+        # ",
+        # '{cc_file}.pl' every 6 using 1:3 with linespoints lc 'purple' title 'CC',\
+        # '{sos_file}.pl' using 1:3 lc 'black' title 'SOS',\
+    ])
+
+    path_plotting_file = f"spectrum_plotting.pl"
+
+    # write the plotting commands to a file
+    with open(path_plotting_file, 'w') as fp:
+        fp.write(plotting_command)
+
+    os.system(f"gnuplot {path_plotting_file}")
+    print('Please check png:', output_file)
 
     print(f"{'-'*35}  Successfully Completed jobs  {'-'*35}\n")
     for key in completed_jobs.keys():
