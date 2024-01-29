@@ -685,10 +685,6 @@ if __name__ == "__main__":
             # if False:  # plotting ACF vs SOS
             #     plotting_file = write_acf_sos_plotting_file(configuration, nof_points, new_cc_acf, auto_path, new_sos_acf)
             #     os.system(f"gnuplot {plotting_file}")
-    
-    # A major problem with this approach right now is that it will only check the lastest calculation_spec.
-    # So all the previous calculation spec runs will not work, e.g. 20.0 fs, 100.0 fs, and 500.0 fs
-    # Only will hit 500.0 fs...
 
         if True:
             try:
