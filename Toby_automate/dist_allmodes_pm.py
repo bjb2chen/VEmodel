@@ -700,9 +700,12 @@ def mctdh(filnam, modes_included, **kwargs):
     distcoord_plus, distcoord_minus, distcoord_plus_x2, distcoord_minus_x2 = diabatize[0], diabatize[1], diabatize[2], diabatize[3]
     distcoord_pp, distcoord_pm, distcoord_mp, distcoord_mm = diabatize[4], diabatize[5], diabatize[6], diabatize[7]
 
+    coord_disp_plus = {}
+    #, coord_disp_minus, coord_disp_plusx2, coord_disp_minusx2, coord_disp_pp, coord_disp_pm, coord_disp_mp, coord_disp_mm = {}
+
     for icomp in range(1, ndim + 1):
-        coord_disp_plus = distcoord_plus[icomp]
-        print(f'coord_disp_plus: {coord_disp_plus}')
+        coord_disp_plus[icomp] = distcoord_plus[icomp]
+        print(f'coord_disp_plus: {coord_disp_plus[icomp]}')
         coord_disp_minus = distcoord_minus[icomp]
         print(f'coord_disp_minus: {coord_disp_minus}')
         coord_disp_plusx2 = distcoord_plus_x2[icomp]
@@ -902,7 +905,10 @@ def mctdh(filnam, modes_included, **kwargs):
                                     # Compute linear SOC
                                     linear_SOC_cm_real[idx] = (DSOME_cm_plus_real[idx] - DSOME_cm_minus_real[idx]) / (2 * qsize)
                                     linear_SOC_cm_imag[idx] = (DSOME_cm_plus_imag[idx] - DSOME_cm_minus_imag[idx]) / (2 * qsize)
-                                    #linear_SOC_cm_real[idx] *= coord_disp_plus[mode]
+                                    # working implementation, tested
+                                    # gotta check the math if icomp (say icomp=8 is retrieved by imode=8)
+                                    # real_SOC_linear1 = linear_SOC_cm_real[idx] * coord_disp_plus[imode] 
+                                    # print('real_SOC_linear1', real_SOC_linear1)
                 
                                     # Compute quadratic SOC
                                     quadratic_SOC_cm_real[idx] = (DSOME_cm_plusx2_real[idx] + DSOME_cm_minusx2_real[idx] - 2.0 * DSOME_cm_0_real[idx]) / (4.0 * qsize * qsize)
