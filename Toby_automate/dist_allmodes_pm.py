@@ -951,6 +951,8 @@ def mctdh(filnam, modes_included, **kwargs):
     # Open mctdh.op file for writing
     with open('mctdh.op', 'a') as mctdh_file:
 
+        # mctdh_file.write() is OK because compatible with for loops
+
         # Write the TDIPOLE block
         mctdh_file.write("-----------------------------------------\n")
         mctdh_file.write("# ELECTRONIC TRANSITION DIPOLES\n")
