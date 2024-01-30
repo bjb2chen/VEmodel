@@ -961,10 +961,10 @@ def mctdh(filnam, modes_included, **kwargs):
                                     mctdh_file.write(f"b{jst}{ist}_m{imode}_m{jmode}i = {bilinear_SOC_cm_imag[idx]:.16f}, cm-1\n")
                                     mctdh_file.write("\n")
     
-                                    print(f"State {jst} & {ist} SOC (real) {full_Ham_SOC_cm_real[idx]} cm-1\n")
-                                    mctdh_file.write(f"SOC{jst}{ist}_m{imode}r = {full_Ham_SOC_cm_real[idx]:.16f}, cm-1\n")
-                                    print(f"State {jst} & {ist} SOC (imag) {full_Ham_SOC_cm_imag[idx]} cm-1\n")
-                                    mctdh_file.write(f"SOC{jst}{ist}_m{imode}i = {full_Ham_SOC_cm_imag[idx]:.16f}, cm-1\n")
+                                    print(f"State {jst} & {ist} SOC (real) at modes {imode} & {jmode} {full_Ham_SOC_cm_real[idx]} cm-1\n")
+                                    mctdh_file.write(f"SOC{jst}{ist}_m{imode}_m{jmode}r = {full_Ham_SOC_cm_real[idx]:.16f}, cm-1\n")
+                                    print(f"State {jst} & {ist} SOC (imag) at modes {imode} & {jmode} {full_Ham_SOC_cm_imag[idx]} cm-1\n")
+                                    mctdh_file.write(f"SOC{jst}{ist}_m{imode}_m{jmode}i = {full_Ham_SOC_cm_imag[idx]:.16f}, cm-1\n")
                                     mctdh_file.write("\n")
 
                                 except Exception as e:
@@ -1084,41 +1084,6 @@ def mctdh(filnam, modes_included, **kwargs):
                         mctdh_file.write(f"b{jst}{ist}_m{imode}_m{jmode} |1 S{jst}&{ist} |{lmode_count} q |{kmode_count} q\n")
 
         if SOC_flag:
-
-            # Write SOC LINEAR AND QUADRATIC OFF-DIAGONAL VIBRONIC COUPLINGS
-            mctdh_file.write("-----------------------------------------\n")
-            mctdh_file.write("# SOC LINEAR AND QUADRATIC OFF-DIAGONAL VIBRONIC COUPLINGS\n")
-            mctdh_file.write("-----------------------------------------\n")
-            for kmode in range(1, nmodes + 1):  
-                imode = modes_included[kmode]
-                kmode_count = kmode + 1
-                for ist in range(1, nstate + 1):
-                    jlast = ist - 1
-                    for jst in range(1, jlast + 1):
-
-                        #note to self: the I* is performing ARITHMETIC on SOr_{jst}_{ist} prepared earlier, does that mean we neeed to remove the l and _m{imode}
-                        mctdh_file.write(f"I*l{jst}{ist}_m{imode}r |1 Z{jst}&{ist}|{kmode_count} q\n")
-                        mctdh_file.write(f"-I*l{jst}{ist}_m{imode}i |1 Z{ist}&{jst}|{kmode_count} q\n")
-                        mctdh_file.write(f"I*q{jst}{ist}_m{imode}r |1 Z{jst}&{ist}|{kmode_count} q^2\n")
-                        mctdh_file.write(f"-I*q{jst}{ist}_m{imode}i |1 Z{ist}&{jst}|{kmode_count} q^2\n")
-
-            # Write SOC BILINEAR OFF-DIAGONAL VIBRONIC COUPLINGS
-            mctdh_file.write("-----------------------------------------\n")
-            mctdh_file.write("# SOC BILINEAR OFF-DIAGONAL VIBRONIC COUPLINGS\n")
-            mctdh_file.write("-----------------------------------------\n")
-            for kmode in range(1, nmodes + 1):
-                imode = modes_included[kmode]
-                kmode_count = kmode + 1
-                lmode_last = kmode - 1
-                for lmode in range(1, lmode_last + 1):
-                    jmode = modes_included[lmode]
-                    lmode_count = lmode + 1
-                    for ist in range(1, nstate + 1):
-                        jlast = ist - 1
-                        for jst in range(1, jlast + 1):
-
-                            mctdh_file.write(f"I*b{jst}{ist}_m{imode}_m{jmode}r |1 Z{jst}&{ist} |{lmode_count} q |{kmode_count} q\n")
-                            mctdh_file.write(f"-I*b{jst}{ist}_m{imode}_m{jmode}i |1 Z{ist}&{jst} |{lmode_count} q |{kmode_count} q\n")
             
             # Write FULL HAMILTONIAN SOC OFF-DIAGONAL VIBRONIC COUPLINGS
             mctdh_file.write("-----------------------------------------\n")
@@ -1126,13 +1091,21 @@ def mctdh(filnam, modes_included, **kwargs):
             mctdh_file.write("-----------------------------------------\n")
             for kmode in range(1, nmodes + 1):  
                 imode = modes_included[kmode]
-                kmode_count = kmode + 1
-                for ist in range(1, nstate + 1):
-                    jlast = ist - 1
-                    for jst in range(1, jlast + 1):
-
-                        mctdh_file.write(f"I*SOC{jst}{ist}_m{imode}r |1 Z{jst}&{ist}|{kmode_count} q\n")
-                        mctdh_file.write(f"-I*SOC{jst}{ist}_m{imode}i |1 Z{ist}&{jst}|{kmode_count} q\n")
+                lmode_last = kmode - 1
+                for lmode in range(1, lmode_last + 1):
+                    jmode = modes_included[lmode]
+                    for ist in range(1, nstate + 1):
+                        jlast = ist - 1
+                        for jst in range(1, jlast + 1):
+                            #note to self: the I* is performing ARITHMETIC on SOr_{jst}_{ist} prepared earlier, does that mean we neeed to remove the l and _m{imode}
+                            mctdh_file.write(f"I*l{jst}{ist}_m{imode}r |1 Z{jst}&{ist}|{kmode_count} q\n")
+                            mctdh_file.write(f"-I*l{jst}{ist}_m{imode}i |1 Z{ist}&{jst}|{kmode_count} q\n")
+                            mctdh_file.write(f"I*q{jst}{ist}_m{imode}r |1 Z{jst}&{ist}|{kmode_count} q^2\n")
+                            mctdh_file.write(f"-I*q{jst}{ist}_m{imode}i |1 Z{ist}&{jst}|{kmode_count} q^2\n")
+                            mctdh_file.write(f"I*b{jst}{ist}_m{imode}_m{jmode}r |1 Z{jst}&{ist} |{lmode_count} q |{kmode_count} q\n")
+                            mctdh_file.write(f"-I*b{jst}{ist}_m{imode}_m{jmode}i |1 Z{ist}&{jst} |{lmode_count} q |{kmode_count} q\n")
+                            mctdh_file.write(f"I*SOC{jst}{ist}_m{imode}_m{jmode}r |1 Z{jst}&{ist}|{kmode_count} q\n")
+                            mctdh_file.write(f"-I*SOC{jst}{ist}_m{imode}_m{jmode}i |1 Z{ist}&{jst}|{kmode_count} q\n")
 
         # Close the file
         mctdh_file.write("-----------------------------------------\n")
