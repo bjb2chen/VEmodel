@@ -701,25 +701,31 @@ def mctdh(filnam, modes_included, **kwargs):
     distcoord_pp, distcoord_pm, distcoord_mp, distcoord_mm = diabatize[4], diabatize[5], diabatize[6], diabatize[7]
 
     coord_disp_plus = {}
-    #, coord_disp_minus, coord_disp_plusx2, coord_disp_minusx2, coord_disp_pp, coord_disp_pm, coord_disp_mp, coord_disp_mm = {}
+    coord_disp_minus = {}
+    coord_disp_plusx2 = {}
+    coord_disp_minusx2 = {}
+    coord_disp_pp = {}
+    coord_disp_pm = {}
+    coord_disp_mp = {}
+    coord_disp_mm = {}
 
     for icomp in range(1, ndim + 1):
         coord_disp_plus[icomp] = distcoord_plus[icomp]
-        print(f'coord_disp_plus: {coord_disp_plus[icomp]}')
-        coord_disp_minus = distcoord_minus[icomp]
-        print(f'coord_disp_minus: {coord_disp_minus}')
-        coord_disp_plusx2 = distcoord_plus_x2[icomp]
-        print(f'coord_disp_plusx2: {coord_disp_plusx2}')
-        coord_disp_minusx2 = distcoord_minus_x2[icomp]
-        print(f'coord_disp_minusx2: {coord_disp_minusx2}')
-        coord_disp_pp = distcoord_pp[icomp]
-        print(f'coord_disp_pp: {coord_disp_pp}')
-        coord_disp_pm = distcoord_pm[icomp]
-        print(f'coord_disp_pm: {coord_disp_pm}')
-        coord_disp_mp = distcoord_mp[icomp]
-        print(f'coord_disp_mp: {coord_disp_mp}')
-        coord_disp_mm = distcoord_mm[icomp]
-        print(f'coord_disp_mm: {coord_disp_mm}')
+        print(f'icomp: {icomp}, coord_disp_plus: {coord_disp_plus[icomp]}')
+        coord_disp_minus[icomp] = distcoord_minus[icomp]
+        print(f'icomp: {icomp}, coord_disp_minus: {coord_disp_minus[icomp]}')
+        coord_disp_plusx2[icomp] = distcoord_plus_x2[icomp]
+        print(f'icomp: {icomp}, coord_disp_plusx2: {coord_disp_plusx2[icomp]}')
+        coord_disp_minusx2[icomp] = distcoord_minus_x2[icomp]
+        print(f'icomp: {icomp}, coord_disp_minusx2: {coord_disp_minusx2[icomp]}')
+        coord_disp_pp[icomp] = distcoord_pp[icomp]
+        print(f'icomp: {icomp}, coord_disp_pp: {coord_disp_pp[icomp]}')
+        coord_disp_pm[icomp] = distcoord_pm[icomp]
+        print(f'icomp: {icomp}, coord_disp_pm: {coord_disp_pm[icomp]}')
+        coord_disp_mp[icomp] = distcoord_mp[icomp]
+        print(f'icomp: {icomp}, coord_disp_mp: {coord_disp_mp[icomp]}')
+        coord_disp_mm[icomp] = distcoord_mm[icomp]
+        print(f'icomp: {icomp}, coord_disp_mm: {coord_disp_mm[icomp]}')
 
     # Loop through modes
     for kmode in range(1, nmodes + 1):
@@ -903,18 +909,33 @@ def mctdh(filnam, modes_included, **kwargs):
                                     idx = (jst, ist)
         
                                     # Compute linear SOC
-                                    linear_SOC_cm_real[idx] = (DSOME_cm_plus_real[idx] - DSOME_cm_minus_real[idx]) / (2 * qsize)
-                                    linear_SOC_cm_imag[idx] = (DSOME_cm_plus_imag[idx] - DSOME_cm_minus_imag[idx]) / (2 * qsize)
-                                    # working implementation, tested
-                                    # gotta check the math if icomp (say icomp=8 is retrieved by imode=8)
-                                    # real_SOC_linear1 = linear_SOC_cm_real[idx] * coord_disp_plus[imode] 
-                                    # print('real_SOC_linear1', real_SOC_linear1)
+                                    DSOME_cm_plus_real[idx] *= coord_disp_plus[imode]
+                                    DSOME_cm_plus_imag[idx] *= coord_disp_plus[imode]
+                                    DSOME_cm_minus_real[idx] *= coord_disp_minus[imode]
+                                    DSOME_cm_minus_imag[idx] *= coord_disp_minus[imode] 
+
+                                    linear_SOC_cm_real[idx] = (DSOME_cm_plus_real[idx]- DSOME_cm_minus_real[idx]) / (2 * qsize)
+                                    linear_SOC_cm_imag[idx] = (DSOME_cm_plus_imag[idx]- DSOME_cm_minus_imag[idx]) / (2 * qsize)
                 
                                     # Compute quadratic SOC
+                                    DSOME_cm_plusx2_real[idx] *= coord_disp_plusx2[imode]**2
+                                    DSOME_cm_plusx2_imag[idx] *= coord_disp_plusx2[imode]**2
+                                    DSOME_cm_minusx2_real[idx] *= coord_disp_minusx2[imode]**2
+                                    DSOME_cm_minusx2_imag[idx] *= coord_disp_minusx2[imode]**2
+
                                     quadratic_SOC_cm_real[idx] = (DSOME_cm_plusx2_real[idx] + DSOME_cm_minusx2_real[idx] - 2.0 * DSOME_cm_0_real[idx]) / (4.0 * qsize * qsize)
                                     quadratic_SOC_cm_imag[idx] = (DSOME_cm_plusx2_imag[idx] + DSOME_cm_minusx2_imag[idx] - 2.0 * DSOME_cm_0_imag[idx]) / (4.0 * qsize * qsize)
     
                                     # Compute bilinear SOC
+                                    DSOME_cm_pp_real[idx] *= coord_disp_pp[imode] * coord_disp_pp[jmode]
+                                    DSOME_cm_pp_imag[idx] *= coord_disp_pp[imode] * coord_disp_pp[jmode]
+                                    DSOME_cm_mm_real[idx] *= coord_disp_mm[imode] * coord_disp_mm[jmode]
+                                    DSOME_cm_mm_imag[idx] *= coord_disp_mm[imode] * coord_disp_mm[jmode]
+                                    DSOME_cm_pm_real[idx] *= coord_disp_pm[imode] * coord_disp_pm[jmode]
+                                    DSOME_cm_pm_imag[idx] *= coord_disp_pm[imode] * coord_disp_pm[jmode]
+                                    DSOME_cm_mp_real[idx] *= coord_disp_mp[imode] * coord_disp_mp[jmode]
+                                    DSOME_cm_mp_imag[idx] *= coord_disp_mp[imode] * coord_disp_mp[jmode]
+
                                     bilinear_SOC_cm_real[idx] = ( DSOME_cm_pp_real[idx] + DSOME_cm_mm_real[idx] - DSOME_cm_pm_real[idx] - DSOME_cm_mp_real[idx] ) / (4.0 * qsize * qsize )
                                     bilinear_SOC_cm_imag[idx] = ( DSOME_cm_pp_imag[idx] + DSOME_cm_mm_imag[idx] - DSOME_cm_pm_imag[idx] - DSOME_cm_mp_imag[idx] ) / (4.0 * qsize * qsize )
     
@@ -956,8 +977,6 @@ def mctdh(filnam, modes_included, **kwargs):
 
     # Open mctdh.op file for writing
     with open('mctdh.op', 'a') as mctdh_file:
-
-        # mctdh_file.write() is OK because compatible with for loops
 
         # Write the TDIPOLE block
         mctdh_file.write("-----------------------------------------\n")
