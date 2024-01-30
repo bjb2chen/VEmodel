@@ -918,10 +918,10 @@ def mctdh(filnam, modes_included, **kwargs):
                                     linear_SOC_cm_imag[idx] = (DSOME_cm_plus_imag[idx]- DSOME_cm_minus_imag[idx]) / (2 * qsize)
                 
                                     # Compute quadratic SOC
-                                    DSOME_cm_plusx2_real[idx] *= coord_disp_plusx2[imode]**2
-                                    DSOME_cm_plusx2_imag[idx] *= coord_disp_plusx2[imode]**2
-                                    DSOME_cm_minusx2_real[idx] *= coord_disp_minusx2[imode]**2
-                                    DSOME_cm_minusx2_imag[idx] *= coord_disp_minusx2[imode]**2
+                                    DSOME_cm_plusx2_real[idx] *= coord_disp_plusx2[imode] * coord_disp_plusx2[imode]
+                                    DSOME_cm_plusx2_imag[idx] *= coord_disp_plusx2[imode] * coord_disp_plusx2[imode] 
+                                    DSOME_cm_minusx2_real[idx] *= coord_disp_minusx2[imode] * coord_disp_minusx2[imode]
+                                    DSOME_cm_minusx2_imag[idx] *= coord_disp_minusx2[imode] * coord_disp_minusx2[imode]
 
                                     quadratic_SOC_cm_real[idx] = (DSOME_cm_plusx2_real[idx] + DSOME_cm_minusx2_real[idx] - 2.0 * DSOME_cm_0_real[idx]) / (4.0 * qsize * qsize)
                                     quadratic_SOC_cm_imag[idx] = (DSOME_cm_plusx2_imag[idx] + DSOME_cm_minusx2_imag[idx] - 2.0 * DSOME_cm_0_imag[idx]) / (4.0 * qsize * qsize)
