@@ -23,7 +23,7 @@ def create_input_file(source_dir, *args):
     nof_spf = 3  # this is mctdh
 
 
-    for operate_string in ["Ex", "Ey", "Ez"]:
+    for operate_string in ["IO"]:
 
         """
         the operator file name needs to be inside the *.inp file
@@ -67,7 +67,7 @@ def initalize_directories():
 
         create_input_file(directory, project_name, *param_list)
 
-        for operate_string in ["Ex", "Ey", "Ez"]:
+        for operate_string in ["IO"]:
             src_path_op = join(home_root, f"{project_name}_{operate_string}.op")
             dst_path_op = join(directory, f"{project_name}_{operate_string}.op")
             copyfile("mctdh.op", src_path_op)

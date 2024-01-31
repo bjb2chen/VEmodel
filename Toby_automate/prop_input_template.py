@@ -70,9 +70,10 @@ def generate_basic_multi_set_spf_basis_section(n_BF, N, A):
     """Generate basic multi set with same # of spf for all states and modes"""
     spf_definitions  = []
     for n in N.values():
-        string = f"      m{n:<3d}      =  1"
+        string = f"      m{n:<3d}      =  {n_BF:d}"
         for a in range(A-1):
             string += f", {n_BF:d}"
+        string += f", 1"
         spf_definitions.append(string)
     return _generate_basic_spf_basis(spf_definitions, multi=True)
 
@@ -117,7 +118,7 @@ def _generate_basic_harmonic_oscillator_pbfs(pbfs_definitions, nof_electronic_st
     return "\n".join([
         pbs_begin,
         *pbfs_definitions,
-        electronic_basis.format(nof_electronic_states),
+        electronic_basis.format(nof_electronic_states+1),
         pbs_end,
     ])
 
@@ -225,7 +226,7 @@ int_wf_end = "end-init_wf-section"
 initial_state_spec = "   init_state={:d}"
 
 # this applies the dipole moment operator onto the wavefunction at every step
-operate_spec = "operate={:s}"
+operate_spec = "operate=IO"
 
 # see https://www.pci.uni-heidelberg.de/tc/usr/mctdh/doc/mctdh/input_docu.html#wfbuild
 def _generate_basic_wavefunction(basic_HO_wavepacket, nof_electronic_states, operate_string):
@@ -233,8 +234,7 @@ def _generate_basic_wavefunction(basic_HO_wavepacket, nof_electronic_states, ope
     return "\n".join([
         int_wf_begin,
         build_begin,
-        #initial_state_spec.format(nof_electronic_states),
-        initial_state_spec.format(1),
+        initial_state_spec.format(nof_electronic_states+1),
         basic_HO_wavepacket,
         build_end,
         operate_spec.format(operate_string),

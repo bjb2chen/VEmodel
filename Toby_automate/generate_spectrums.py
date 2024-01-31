@@ -249,7 +249,7 @@ def write_spectrum_plotting_file(configuration, *args):
     plot_title = model_name.replace('_', ' ').replace('h2o', 'h_{2}o')
 
     size = [1200, 800]
-    # size = [800, 400]
+    #size = [800, 400]
 
     output_file = f'{root_dir}/{configuration}_spectrum_{model_name:s}_{nof_points:d}_PBF{pbf:d}_{int(t):d}fs_{tau:d}tau_{operate_string}.png'
 
@@ -506,7 +506,7 @@ if __name__ == "__main__":
         print(param_list)
 
         calculation_spec = dir_string.format(model_name, *param_list)
-        for operate_string in ["Ex", "Ey", "Ez"]:
+        for operate_string in ["IO"]:
             root_dir = join(work_root, calculation_spec, operate_string)
             print(f'root_dir: {root_dir}')
     
@@ -688,30 +688,30 @@ if __name__ == "__main__":
 
         if True:
             try:
-                root_dir_x = join(work_root, calculation_spec, 'Ex')
-                root_dir_y = join(work_root, calculation_spec, 'Ey')
-                root_dir_z = join(work_root, calculation_spec, 'Ez')
-                print(root_dir_x)
-                print(root_dir_y)
+                # root_dir_x = join(work_root, calculation_spec, 'Ex')
+                # root_dir_y = join(work_root, calculation_spec, 'Ey')
+                root_dir_z = join(work_root, calculation_spec, 'IO')
+                # print(root_dir_x)
+                # print(root_dir_y)
                 print(root_dir_z)
                 # Load data from 'auto_x' file if it exists
-                auto_x_path = f"{root_dir_x}/{path_mctdh_spectrum}_Ex.pl"
-                if os.path.exists(auto_x_path):
-                    print(auto_x_path, 'exists')
-                    auto_x = np.loadtxt(auto_x_path)
-                else:
-                    auto_x = None
+                # auto_x_path = f"{root_dir_x}/{path_mctdh_spectrum}_Ex.pl"
+                # if os.path.exists(auto_x_path):
+                #     print(auto_x_path, 'exists')
+                #     auto_x = np.loadtxt(auto_x_path)
+                # else:
+                #     auto_x = None
         
-                # Load data from 'auto_y' file if it exists
-                auto_y_path = f"{root_dir_y}/{path_mctdh_spectrum}_Ey.pl"
-                if os.path.exists(auto_y_path):
-                    print(auto_y_path, 'exists')
-                    auto_y = np.loadtxt(auto_y_path)
-                else:
-                    auto_y = None
+                # # Load data from 'auto_y' file if it exists
+                # auto_y_path = f"{root_dir_y}/{path_mctdh_spectrum}_Ey.pl"
+                # if os.path.exists(auto_y_path):
+                #     print(auto_y_path, 'exists')
+                #     auto_y = np.loadtxt(auto_y_path)
+                # else:
+                #     auto_y = None
         
                 # Load data from 'auto_z' file if it exists
-                auto_z_path = f"{root_dir_z}/{path_mctdh_spectrum}_Ez.pl"
+                auto_z_path = f"{root_dir_z}/{path_mctdh_spectrum}_IO.pl"
                 if os.path.exists(auto_z_path):
                     print(auto_z_path, 'exists')
                     auto_z = np.loadtxt(auto_z_path)
@@ -723,7 +723,7 @@ if __name__ == "__main__":
         
             try:
                 # Find a non-empty array among auto_x, auto_y, and auto_z
-                non_empty_array = next(arr for arr in [auto_x, auto_y, auto_z] if arr is not None)
+                non_empty_array = next(arr for arr in [auto_z] if arr is not None)
         
                 # Extract x values (assuming the x values are the same in all files)
                 x_values = non_empty_array[:, 0]
@@ -732,7 +732,7 @@ if __name__ == "__main__":
                 sum_column_4 = np.zeros_like(x_values)
         
                 # Add the 4th column of each existing array to the sum
-                for arr in [auto_x, auto_y, auto_z]:
+                for arr in [auto_z]:
                     if arr is not None:
                         sum_column_4 += arr[:, 3]
         
