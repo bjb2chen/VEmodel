@@ -472,6 +472,16 @@ def diabatization(filnam, modes_included, **kwargs):
 #Now we move on to extract vibronic coupling constants using finite difference
 #and write the data in an mctdh operator file
 
+def extract_ground_state_energy(hessout, pattern):
+    try:
+        command = f'grep "{pattern}" {hessout} | tail -1 | cut -c40-'
+        result = subprocess.run(command, shell=True, text=True, capture_output=True)
+        output = float(result.stdout.strip().replace(" ", ""))
+        return output
+    except Exception as e:
+        print("Cannot find ground state energy")
+        return None
+
 def refG_extract(file_path, pattern):
     try:
         # Use subprocess.run with the direct command
@@ -637,6 +647,7 @@ def mctdh(filnam, modes_included, **kwargs):
     amu2me = kwargs.get('amu2me', 1822.88839)
     dipoles = kwargs.get('dipoles')
     diabatize = kwargs.get('diabatize')
+    hessout = kwargs.get('hessout')
 
     try:
         subprocess.run(['rm', '-f', 'mctdh.op'])
@@ -676,21 +687,36 @@ def mctdh(filnam, modes_included, **kwargs):
 
         with open("mctdh.op", "a") as mctdh_file:
             mctdh_file.write("#Diagonal and Off-diagonal diabatic Hamiltonian elements at reference structure\n")
+
+            GSE = extract_ground_state_energy(hessout, 'TOTAL ENERGY =')
+            D1E = extract_diabatic_energy(f'{filnam}_refG.out', f'STATE #.* 1.S GMC-PT-LEVEL DIABATIC ENERGY=')
+            print(f'The ground state energy is: {GSE} Hartree\n')
+            print(f'Diabat #1 energy is: {D1E} Hartree\n')
+            linear_shift = (D1E - GSE) * ha2ev
+            print(f'Linear shift value: {linear_shift} eV\n')
     
             for ist in range(1, nstate + 1):
 
                 Ediab = refG_extract(f'{filnam}_refG.out', f'STATE #.* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY=')
     
-                mctdh_file.write(f"v{ist} = {Ediab:.9f}, ev\n")
+                mctdh_file.write(f"v{ist} = {Ediab+linear_shift:.9f}, ev\n")
     
                 # Extract coupling energy between state jst and ist
                 for jst in range(1, ist):
 
                     Coup_ev = refG_extract(f'{filnam}_refG.out', f'STATE #.* {jst} &.* {ist}.S GMC-PT-LEVEL COUPLING')
 
+                    # if Coup_ev > 0:
+                    #     mctdh_file.write(f"v{jst}{ist} = {Coup_ev+linear_shift:.9f}, ev\n")
+
+                    # else:
+                    #     mctdh_file.write(f"v{jst}{ist} = {Coup_ev:.9f}, ev\n")
+
                     mctdh_file.write(f"v{jst}{ist} = {Coup_ev:.9f}, ev\n")
     
                 mctdh_file.write("\n")
+
+            mctdh_file.write(f"v{nstate+1} = {0.0:.9f}, ev\n")
         
             mctdh_file.write("\n")
 
@@ -1130,6 +1156,23 @@ def mctdh(filnam, modes_included, **kwargs):
             mctdh_file.write("\n")
             mctdh_file.write("\nend-hamiltonian-section\n\n")
 
+        # Write HAMILTONIAN-SECTION_IO
+        mctdh_file.write(f"HAMILTONIAN-SECTION_IO\n")
+        mctdh_file.write("\n")
+
+        # Write modes and mode labels
+        mctdh_file.write(" modes | el")
+        for imode_include in range(1, nmodes + 1):
+            mctdh_file.write(f" | m{modes_included[imode_include]}")
+        mctdh_file.write("\n")
+        mctdh_file.write("-----------------------------------------\n")
+
+        for ist in range(1, nstate + 1):
+            mctdh_file.write(f"1.0         |1 S{nstate + 1}&{ist}")
+            mctdh_file.write("\n")
+        mctdh_file.write("\n")
+        mctdh_file.write("\nend-hamiltonian-section\n\n")
+
         # Close the file
         mctdh_file.write("end-operator\n")
 
@@ -1182,7 +1225,7 @@ def main():
     pprint.pprint(tdipole_block)
     pprint.pprint(dipoles)
 
-    make_mctdh = mctdh(filnam, modes_included, ndim=ndim, freqcm=freqcm, qsize=qsize, ha2ev=ha2ev, wn2ev=wn2ev, wn2eh=wn2eh, ang2br=ang2br, amu2me=amu2me, dipoles=dipoles, diabatize=diabatize)
+    make_mctdh = mctdh(filnam, modes_included, ndim=ndim, freqcm=freqcm, qsize=qsize, ha2ev=ha2ev, wn2ev=wn2ev, wn2eh=wn2eh, ang2br=ang2br, amu2me=amu2me, dipoles=dipoles, diabatize=diabatize, hessout=hessout)
 
     print('The run was a success!')
 
