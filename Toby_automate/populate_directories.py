@@ -40,7 +40,7 @@ def create_input_file(source_dir, *args):
         xyz_name = f"{project_name}_init_st{operate_string}"
 
         input_string = "\n\n".join([
-            prop_input_template.run_section_propagation.format(tfinal=tf/2, tout=0.5, name=name),
+            prop_input_template.run_section_propagation.format(tfinal=tf/2, tout=0.1, name=name),
             prop_input_template.operator_section.format(opfile_name=f"{xyz_name:}"),
             prop_input_template.generate_basic_multi_set_spf_basis_section(nof_spf, N, A),
             prop_input_template.generate_basic_harmonic_oscillator_primative_basis_section(nof_pbf, N, A),
