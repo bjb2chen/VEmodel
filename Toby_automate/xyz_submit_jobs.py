@@ -26,16 +26,16 @@ def submit_jobs():
 
         run_on_high_mem = '--partition=highmem' if (False or param_list[0] == 1000) else ''
 
-        for operate_string in ["IO"]:
+        for operate_string in range(1, A+2):
             
-            job_name = "PBF{:d}_tf{:.0f}_{:s}_{:s}".format(*param_list, project_name, operate_string)
-            input_file_name = f"{project_name}_{operate_string}.inp"
+            job_name = "PBF{:d}_tf{:.0f}_{:s}_{:d}".format(*param_list, project_name, operate_string)
+            input_file_name = f"{project_name}_init_st{operate_string}.inp"
 
             command = (
                 f"sbatch --mem={gbs}GB "
                 f"{run_on_high_mem} "
                 f"--job-name={job_name} "
-                f"--chdir={submit_dir}/{operate_string} "
+                f"--chdir={submit_dir}/init_st{operate_string} "
                 f"{submit_dir}/{execute_script} {input_file_name}"
             )
             

@@ -226,7 +226,7 @@ int_wf_end = "end-init_wf-section"
 initial_state_spec = "   init_state={:d}"
 
 # this applies the dipole moment operator onto the wavefunction at every step
-operate_spec = "operate=IO"
+operate_spec = "operate={:s}"
 
 # see https://www.pci.uni-heidelberg.de/tc/usr/mctdh/doc/mctdh/input_docu.html#wfbuild
 def _generate_basic_wavefunction(basic_HO_wavepacket, nof_electronic_states, operate_string):
@@ -234,10 +234,10 @@ def _generate_basic_wavefunction(basic_HO_wavepacket, nof_electronic_states, ope
     return "\n".join([
         int_wf_begin,
         build_begin,
-        initial_state_spec.format(nof_electronic_states+1),
+        initial_state_spec.format(operate_string),
         basic_HO_wavepacket,
         build_end,
-        operate_spec.format(operate_string),
+        operate_spec.format("IO"),
         int_wf_end,
     ])
 

@@ -39,7 +39,7 @@ eV_dict = {
     "vcm":       (18, 9.5),
     #
     "op_nh36Q_5st":  (11, 2),
-    f"{project_name}": (21, 11)
+    f"{project_name}": (0, 10)
 }
 
 y_dict = {
@@ -56,7 +56,7 @@ y_dict = {
     "vcm":       (-1.5, 34),
     #
     "op_nh36Q_5st":       (-1.5, 40),
-    f"{project_name}": (-1.5, 60)
+    f"{project_name}": (-1.5, 100)
 }
 
 left_eV, right_EV = eV_dict[project_name]
@@ -251,7 +251,7 @@ def write_spectrum_plotting_file(configuration, *args):
     size = [1200, 800]
     #size = [800, 400]
 
-    output_file = f'{root_dir}/{configuration}_spectrum_{model_name:s}_{nof_points:d}_PBF{pbf:d}_{int(t):d}fs_{tau:d}tau_{operate_string}.png'
+    output_file = f'{root_dir}/{configuration}_spectrum_{model_name:s}_{nof_points:d}_PBF{pbf:d}_{int(t):d}fs_{tau:d}tau_init_st{operate_string}.png'
 
     plotting_command = '\n'.join([
         f"set terminal png size {size[0]},{size[1]}",
@@ -263,8 +263,8 @@ def write_spectrum_plotting_file(configuration, *args):
         f"set yr [ {min_y}: {max_y}]",
         f"set title '{plot_title:s} spectrum, n-cos = 1, tau: {tau:d}.0 1, {int(t):d}fs'",
         f"plot \
-            '{root_dir}/{mctdh_file}_{operate_string}.pl' using 1:3 lw 2 lc 'black' title '{configuration} g1',\
-            '{root_dir}/{mctdh_file}_{operate_string}.pl' using 1:4 lw 2 lc 'red' title '{configuration} g2',\
+            '{root_dir}/{mctdh_file}_init_st{operate_string}.pl' using 1:3 lw 2 lc 'black' title '{configuration} g1',\
+            '{root_dir}/{mctdh_file}_init_st{operate_string}.pl' using 1:4 lw 2 lc 'red' title '{configuration} g2',\
         ",
         # '{cc_file}.pl' every 6 using 1:3 with linespoints lc 'purple' title 'CC',\
         # '{sos_file}.pl' using 1:3 lc 'black' title 'SOS',\
@@ -506,8 +506,8 @@ if __name__ == "__main__":
         print(param_list)
 
         calculation_spec = dir_string.format(model_name, *param_list)
-        for operate_string in ["IO"]:
-            root_dir = join(work_root, calculation_spec, operate_string)
+        for operate_string in range(1, A+2):
+            root_dir = join(work_root, calculation_spec, f"init_st{operate_string}")
             print(f'root_dir: {root_dir}')
     
             path_mctdh_acf = join(model_name, "auto")
@@ -536,7 +536,7 @@ if __name__ == "__main__":
                 command = generate_mctdh_pl(
                     nof_points,
                     root_dir=root_dir,
-                    output_filename=f"{path_mctdh_spectrum}_{operate_string}",
+                    output_filename=f"{path_mctdh_spectrum}_init_st{operate_string}",
                     input_filename=path_mctdh_acf
                 )
 
@@ -635,7 +635,7 @@ if __name__ == "__main__":
             # copy auto files over
             src_acf_path = join(path_to_mctdh_execution_folder, 'auto')
             print(f'src_acf_path: {src_acf_path}')
-            dst_acf_path = join(auto_dir, f"auto_{calculation_spec}_{operate_string}")
+            dst_acf_path = join(auto_dir, f"auto_{calculation_spec}_init_st{operate_string}")
             print(f'dst_acf_path: {dst_acf_path}')
             shutil.copy(src_acf_path, dst_acf_path)
     
@@ -688,35 +688,17 @@ if __name__ == "__main__":
 
         if True:
             try:
-                # root_dir_x = join(work_root, calculation_spec, 'Ex')
-                # root_dir_y = join(work_root, calculation_spec, 'Ey')
-                root_dir_z = join(work_root, calculation_spec, 'IO')
-                # print(root_dir_x)
-                # print(root_dir_y)
-                print(root_dir_z)
-                # Load data from 'auto_x' file if it exists
-                # auto_x_path = f"{root_dir_x}/{path_mctdh_spectrum}_Ex.pl"
-                # if os.path.exists(auto_x_path):
-                #     print(auto_x_path, 'exists')
-                #     auto_x = np.loadtxt(auto_x_path)
-                # else:
-                #     auto_x = None
-        
-                # # Load data from 'auto_y' file if it exists
-                # auto_y_path = f"{root_dir_y}/{path_mctdh_spectrum}_Ey.pl"
-                # if os.path.exists(auto_y_path):
-                #     print(auto_y_path, 'exists')
-                #     auto_y = np.loadtxt(auto_y_path)
-                # else:
-                #     auto_y = None
-        
-                # Load data from 'auto_z' file if it exists
-                auto_z_path = f"{root_dir_z}/{path_mctdh_spectrum}_IO.pl"
-                if os.path.exists(auto_z_path):
-                    print(auto_z_path, 'exists')
-                    auto_z = np.loadtxt(auto_z_path)
-                else:
-                    auto_z = None
+                for operate_string in range(1, A+2):
+                    root_dir_z = join(work_root, calculation_spec, f'init_st{operate_string}')
+    
+                    print(root_dir_z)
+                    # Load data from 'auto_z' file if it exists
+                    auto_z_path = f"{root_dir_z}/{path_mctdh_spectrum}_init_st{operate_string}.pl"
+                    if os.path.exists(auto_z_path):
+                        print(auto_z_path, 'exists')
+                        auto_z = np.loadtxt(auto_z_path)
+                    else:
+                        auto_z = None
         
             except Exception as e:
                 print(f"Error loading files: {e}")

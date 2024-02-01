@@ -1011,9 +1011,13 @@ def mctdh(filnam, modes_included, **kwargs):
 
         for ist in range(2, nstate + 1):
             for idx in range(0, 3):
-                operate_lst = ["x", "y", "z"]
-                mctdh_file.write(f"E{operate_lst[idx]}_1_{ist} = {dipoles[ist][idx]}")
+                mctdh_file.write(f"IO_1_{ist} = {dipoles[ist][idx]}")
                 mctdh_file.write("\n")
+
+            # for idx in range(0, 3):
+            #     operate_lst = ["x", "y", "z"]
+            #     mctdh_file.write(f"E{operate_lst[idx]}_1_{ist} = {dipoles[ist][idx]}")
+            #     mctdh_file.write("\n")
             mctdh_file.write("\n")
 
         mctdh_file.write("end-parameter-section\n")
@@ -1137,24 +1141,24 @@ def mctdh(filnam, modes_included, **kwargs):
         mctdh_file.write("-----------------------------------------\n")
         mctdh_file.write("\nend-hamiltonian-section\n\n")
 
-        # Write TRANSITION DIPOLE HAMILTONIAN-SECTION_E*
-        for idx in range(0, 3):
-            operate_lst = ["x", "y", "z"]
-            mctdh_file.write(f"HAMILTONIAN-SECTION_E{operate_lst[idx]}\n")
-            mctdh_file.write("\n")
+        # # Write TRANSITION DIPOLE HAMILTONIAN-SECTION_E*
+        # for idx in range(0, 3):
+        #     operate_lst = ["x", "y", "z"]
+        #     mctdh_file.write(f"HAMILTONIAN-SECTION_E{operate_lst[idx]}\n")
+        #     mctdh_file.write("\n")
 
-            # Write modes and mode labels
-            mctdh_file.write(" modes | el")
-            for imode_include in range(1, nmodes + 1):
-                mctdh_file.write(f" | m{modes_included[imode_include]}")
-            mctdh_file.write("\n")
-            mctdh_file.write("-----------------------------------------\n")
+        #     # Write modes and mode labels
+        #     mctdh_file.write(" modes | el")
+        #     for imode_include in range(1, nmodes + 1):
+        #         mctdh_file.write(f" | m{modes_included[imode_include]}")
+        #     mctdh_file.write("\n")
+        #     mctdh_file.write("-----------------------------------------\n")
 
-            for ist in range(2, nstate + 1):
-                mctdh_file.write(f"E{operate_lst[idx]}_1_{ist}         |1 S1&{ist}")
-                mctdh_file.write("\n")
-            mctdh_file.write("\n")
-            mctdh_file.write("\nend-hamiltonian-section\n\n")
+        #     for ist in range(2, nstate + 1):
+        #         mctdh_file.write(f"E{operate_lst[idx]}_1_{ist}         |1 S1&{ist}")
+        #         mctdh_file.write("\n")
+        #     mctdh_file.write("\n")
+        #     mctdh_file.write("\nend-hamiltonian-section\n\n")
 
         # Write HAMILTONIAN-SECTION_IO
         mctdh_file.write(f"HAMILTONIAN-SECTION_IO\n")

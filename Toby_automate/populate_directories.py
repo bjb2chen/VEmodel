@@ -23,7 +23,7 @@ def create_input_file(source_dir, *args):
     nof_spf = 3  # this is mctdh
 
 
-    for operate_string in ["IO"]:
+    for operate_string in range(1, A+2): 
 
         """
         the operator file name needs to be inside the *.inp file
@@ -32,8 +32,12 @@ def create_input_file(source_dir, *args):
             - system_Ex.op, system_Ey.op, system_Ez.op
         and three input files
             - system_Ex.inp, system_Ey.inp, system_Ez.inp
+
+        If H2O 3 state calculation, A=3.
+        We need fictitious ground state, '4th state'
+        Therefore, range(1, A+2) gives init_state=4,3,2,1.     
         """
-        xyz_name = f"{project_name}_{operate_string}"
+        xyz_name = f"{project_name}_init_st{operate_string}"
 
         input_string = "\n\n".join([
             prop_input_template.run_section_propagation.format(tfinal=tf/2, tout=0.5, name=name),
@@ -67,19 +71,19 @@ def initalize_directories():
 
         create_input_file(directory, project_name, *param_list)
 
-        for operate_string in ["IO"]:
-            src_path_op = join(home_root, f"{project_name}_{operate_string}.op")
-            dst_path_op = join(directory, f"{project_name}_{operate_string}.op")
+        for operate_string in range(1, A+2):
+            src_path_op = join(home_root, f"{project_name}_init_st{operate_string}.op")
+            dst_path_op = join(directory, f"{project_name}_init_st{operate_string}.op")
             copyfile("mctdh.op", src_path_op)
             copyfile(src_path_op, dst_path_op)
 
             # sub directories
-            xyz_subdirectory = join(directory, f"{operate_string}")
+            xyz_subdirectory = join(directory, f"init_st{operate_string}")
             os.makedirs(xyz_subdirectory, exist_ok=True)
-            xyz_sub_path = join(xyz_subdirectory, f"{project_name}_{operate_string}.op")
+            xyz_sub_path = join(xyz_subdirectory, f"{project_name}_init_st{operate_string}.op")
             copyfile(src_path_op, xyz_sub_path)
 
-            inp_file_name = f"{project_name}_{operate_string}.inp"
+            inp_file_name = f"{project_name}_init_st{operate_string}.inp"
             xyz_inp_path = join(directory, inp_file_name)
             xyz_dst_path = join(xyz_subdirectory, inp_file_name)
             copyfile(xyz_inp_path, xyz_dst_path)
