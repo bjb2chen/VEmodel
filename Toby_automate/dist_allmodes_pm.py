@@ -698,6 +698,13 @@ def mctdh(filnam, modes_included, **kwargs):
             for ist in range(1, nstate + 1):
 
                 Ediab = refG_extract(f'{filnam}_refG.out', f'STATE #.* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY=')
+
+                # format_string = "{label:<25s}={value:>-15.9f}{units:>8s}\n"
+                # make_line = functools.partial(format_string.format, units=", ev")
+
+                # #mctdh_file.write(f"v{ist} = {Ediab+linear_shift:.9f}, ev\n")
+                # str21 = make_line(label=f"v{ist}", value=Ediab+linear_shift)
+                # mctdh_file.write(str21)
     
                 mctdh_file.write(f"v{ist} = {Ediab+linear_shift:.9f}, ev\n")
     
@@ -1009,16 +1016,16 @@ def mctdh(filnam, modes_included, **kwargs):
         mctdh_file.write("# ELECTRONIC TRANSITION DIPOLES\n")
         mctdh_file.write("-----------------------------------------\n")
 
-        for ist in range(2, nstate + 1):
-            for idx in range(0, 3):
-                mctdh_file.write(f"IO_1_{ist} = {dipoles[ist][idx]}")
-                mctdh_file.write("\n")
+        # for ist in range(2, nstate + 1):
+        #     for idx in range(0, 3):
+        #         mctdh_file.write(f"IO_1_{ist} = {dipoles[ist][idx]}")
+        #         mctdh_file.write("\n")
 
-            # for idx in range(0, 3):
-            #     operate_lst = ["x", "y", "z"]
-            #     mctdh_file.write(f"E{operate_lst[idx]}_1_{ist} = {dipoles[ist][idx]}")
-            #     mctdh_file.write("\n")
+        for idx in range(0, 3):
+            operate_lst = ["x", "y", "z"]
+            mctdh_file.write(f"E{operate_lst[idx]}_1_{ist} = {dipoles[ist][idx]}")
             mctdh_file.write("\n")
+        mctdh_file.write("\n")
 
         mctdh_file.write("end-parameter-section\n")
         # Write the header

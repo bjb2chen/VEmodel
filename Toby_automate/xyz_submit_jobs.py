@@ -26,7 +26,7 @@ def submit_jobs():
 
         run_on_high_mem = '--partition=highmem' if (False or param_list[0] == 1000) else ''
 
-        for operate_string in range(1, A+2):
+        for operate_string in range(A+1, A+2):
             
             job_name = "PBF{:d}_tf{:.0f}_{:s}_{:d}".format(*param_list, project_name, operate_string)
             input_file_name = f"{project_name}_init_st{operate_string}.inp"

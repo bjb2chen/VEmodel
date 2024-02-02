@@ -506,7 +506,7 @@ if __name__ == "__main__":
         print(param_list)
 
         calculation_spec = dir_string.format(model_name, *param_list)
-        for operate_string in range(1, A+2):
+        for operate_string in range(A+1, A+2):
             root_dir = join(work_root, calculation_spec, f"init_st{operate_string}")
             print(f'root_dir: {root_dir}')
     
@@ -688,7 +688,7 @@ if __name__ == "__main__":
 
         if True:
             try:
-                for operate_string in range(1, A+2):
+                for operate_string in range(A+1, A+2):
                     root_dir_z = join(work_root, calculation_spec, f'init_st{operate_string}')
     
                     print(root_dir_z)
