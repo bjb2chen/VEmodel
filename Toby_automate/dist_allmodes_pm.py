@@ -1016,16 +1016,16 @@ def mctdh(filnam, modes_included, **kwargs):
         mctdh_file.write("# ELECTRONIC TRANSITION DIPOLES\n")
         mctdh_file.write("-----------------------------------------\n")
 
-        # for ist in range(2, nstate + 1):
+        for ist in range(2, nstate + 1):
         #     for idx in range(0, 3):
         #         mctdh_file.write(f"IO_1_{ist} = {dipoles[ist][idx]}")
         #         mctdh_file.write("\n")
 
-        for idx in range(0, 3):
-            operate_lst = ["x", "y", "z"]
-            mctdh_file.write(f"E{operate_lst[idx]}_1_{ist} = {dipoles[ist][idx]}")
+            for idx in range(0, 3):
+                operate_lst = ["x", "y", "z"]
+                mctdh_file.write(f"E{operate_lst[idx]}_1_{ist} = {dipoles[ist][idx]}")
+                mctdh_file.write("\n")
             mctdh_file.write("\n")
-        mctdh_file.write("\n")
 
         mctdh_file.write("end-parameter-section\n")
         # Write the header
@@ -1059,8 +1059,9 @@ def mctdh(filnam, modes_included, **kwargs):
         mctdh_file.write("-----------------------------------------\n")
         mctdh_file.write("# ELECTRONIC COUPLING AT REFERENCE STRUCTURE\n")
         mctdh_file.write("-----------------------------------------\n")
-        for ist in range(1, nstate + 1):
+        for ist in range(1, nstate + 2):
             mctdh_file.write(f"v{ist}  |1 S{ist}&{ist}\n")
+        mctdh_file.write("\n")
         for ist in range(1, nstate + 1):
             jlast = ist - 1
             for jst in range(1, jlast + 1):
