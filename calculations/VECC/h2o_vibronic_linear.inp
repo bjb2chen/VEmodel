@@ -1,0 +1,49 @@
+RUN-SECTION
+title = wavefunction propagation of h2o_vibronic_linear
+name = h2o_vibronic_linear
+propagation
+tout = 0.10 tfinal = 50.00
+geninwf
+psi=single
+auto=once
+end-run-section
+
+OPERATOR-SECTION
+opname = h2o_vibronic_linear
+end-operator-section
+
+SPF-BASIS-SECTION
+multi-set
+      v01           =  3, 3, 6, 1
+      v02, v03      =  3, 3, 6, 1
+end-spf-basis-section
+
+
+PRIMITIVE-BASIS-SECTION
+    v01    HO     100   0.0   1.0   1.0
+    v02    HO     100   0.0   1.0   1.0
+    v03    HO     100   0.0   1.0   1.0
+    el     el     4
+end-primitive-basis-section
+
+INTEGRATOR-SECTION
+CMF/var    =   0.5,    1.0d-05
+BS/spf     =     7,    1.0d-05,    2.5d-04
+SIL/A      =     5,    1.0d-05
+end-integrator-section
+
+INIT_WF-SECTION
+build
+   init_state=4
+-----------------------------------------------------------
+#  mode   type  center  moment.  freq.    mass
+-----------------------------------------------------------
+    v01    HO     0.0    0.0      1.0     1.0
+    v02    HO     0.0    0.0      1.0     1.0
+    v03    HO     0.0    0.0      1.0     1.0
+-----------------------------------------------------------
+end-build
+operate=Ex
+end-init_wf-section
+
+end-input
