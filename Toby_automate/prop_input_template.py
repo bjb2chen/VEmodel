@@ -62,7 +62,7 @@ def _generate_basic_spf_basis(spf_definitions, multi=False):
 def generate_basic_single_set_spf_basis_section(n_BF, N):
     """Generate basic single set with same # of spf for all states and modes"""
     spf_definitions  = [
-        f"      m{n:<3d}      =  {n_BF:d}" for n in N.values()
+        f"      v{n:>02d}      =  {n_BF:d}" for n in N.values()
     ]
     return _generate_basic_spf_basis(spf_definitions)
 
@@ -70,7 +70,7 @@ def generate_basic_multi_set_spf_basis_section(n_BF, N, A):
     """Generate basic multi set with same # of spf for all states and modes"""
     spf_definitions  = []
     for n in N.values():
-        string = f"      m{n:<3d}      =  {n_BF:d}"
+        string = f"      v{n:>02d}      =  {n_BF:d}"
         for a in range(A-1):
             string += f", {n_BF:d}"
         string += f", 1"
@@ -125,7 +125,7 @@ def _generate_basic_harmonic_oscillator_pbfs(pbfs_definitions, nof_electronic_st
 def generate_basic_harmonic_oscillator_primative_basis_section(n_BF, N, A):
     """Generate PBF's with same # of H.O. basis functions for all modes"""
     pbf_definitions  = [
-        f"    m{n:<3d}    HO     {n_BF:d}   {ho_spec:s}" for n in N.values()
+        f"    v{n:>02d}    HO     {n_BF:d}   {ho_spec:s}" for n in N.values()
     ]
     return _generate_basic_harmonic_oscillator_pbfs(pbf_definitions, A)
 
@@ -237,7 +237,7 @@ def _generate_basic_wavefunction(basic_HO_wavepacket, nof_electronic_states, ope
         initial_state_spec.format(operate_string),
         basic_HO_wavepacket,
         build_end,
-        operate_spec.format("IO"),
+        operate_spec.format("Ex"),
         int_wf_end,
     ])
 
@@ -249,7 +249,7 @@ def generate_basic_harmonic_oscillator_wavefunction_section(N, A, operate_string
         "#  mode   type  center  moment.  freq.    mass",
         "-----------------------------------------------------------",
         *[
-            f"    m{n:<3d}    HO     0.0    0.0      1.0     1.0" for n in N.values()
+            f"    v{n:>02d}    HO     0.0    0.0      1.0     1.0" for n in N.values()
         ],
         "-----------------------------------------------------------",
     ])
