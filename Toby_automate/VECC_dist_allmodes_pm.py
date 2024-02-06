@@ -661,6 +661,7 @@ def mctdh(filnam, modes_included, **kwargs):
     Linear = []
     Quadratic = []
     Bilinear = []
+    SOC = []
 
     #Heading for mctdh.op
     Heading.append("OP_DEFINE-SECTION")
@@ -701,7 +702,7 @@ def mctdh(filnam, modes_included, **kwargs):
 
                 Ediab = refG_extract(f'{filnam}_refG.out', f'STATE #.* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY=')
 
-                EH.append(make_line(label=f"EH_s{ist:>02d}", value=Ediab+linear_shift))
+                EH.append(make_line(label=f"EH_s{ist:>02d}_s{ist:>02d}", value=Ediab+linear_shift))
     
                 # Extract coupling energy between state jst and ist
                 for jst in range(1, ist):
@@ -712,7 +713,7 @@ def mctdh(filnam, modes_included, **kwargs):
     
                 EH.append("\n")
 
-            EH.append(make_line(label=f"EH_s{nstate+1:>02d}", value=0.0))
+            EH.append(make_line(label=f"EH_s{nstate+1:>02d}_s{nstate+1:>02d}", value=0.0))
         
             EH.append("\n")
 
@@ -887,7 +888,9 @@ def mctdh(filnam, modes_included, **kwargs):
                         
                         print(f"State {jst} & {ist} Bilinear Off-Diagonal: {bilinear_offdiag_ev}\n")
                         Bilinear.append(make_line(label=f"C1_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}", value=bilinear_offdiag_ev))
+
                         if SOC_flag:
+
                             try:
                                 # intialize dictionaries to contain
                                 linear_SOC_cm_real = {}
@@ -972,23 +975,25 @@ def mctdh(filnam, modes_included, **kwargs):
                                 # Probably is distcoord_plus and distcoord_minus for x1,x2 respectively
     
                                 # Print and store results
-                                mctdh_file.write(f"l{jst}{ist}_m{imode}r = {linear_SOC_cm_real[idx]:.16f}, cm-1\n")
-                                mctdh_file.write(f"l{jst}{ist}_m{imode}i = {linear_SOC_cm_imag[idx]:.16f}, cm-1\n")
-                                mctdh_file.write("\n")
+                                SOC.append(make_line(label=f"C1_s{jst:>02d}_s{ist:>02d}_v{imode:>02d}r", value=linear_SOC_cm_real[idx], units=', cm-1'))
+                                SOC.append(make_line(label=f"C1_s{jst:>02d}_s{ist:>02d}_v{imode:>02d}i", value=linear_SOC_cm_imag[idx], units=', cm-1'))
+                                SOC.append("\n")
 
-                                mctdh_file.write(f"q{jst}{ist}_m{imode}r = {quadratic_SOC_cm_real[idx]:.16f}, cm-1\n")
-                                mctdh_file.write(f"q{jst}{ist}_m{imode}i = {quadratic_SOC_cm_imag[idx]:.16f}, cm-1\n") 
-                                mctdh_file.write("\n")
+                                SOC.append(make_line(label=f"C2_s{jst:>02d}s{ist:>02d}_v{imode:>02d}r", value=quadratic_SOC_cm_real[idx], units=', cm-1'))
+                                SOC.append(make_line(label=f"C2_s{jst:>02d}s{ist:>02d}_v{imode:>02d}i", value=quadratic_SOC_cm_imag[idx], units=', cm-1')) 
+                                SOC.append("\n")
 
-                                mctdh_file.write(f"b{jst}{ist}_m{imode}_m{jmode}r = {bilinear_SOC_cm_real[idx]:.16f}, cm-1\n")
-                                mctdh_file.write(f"b{jst}{ist}_m{imode}_m{jmode}i = {bilinear_SOC_cm_imag[idx]:.16f}, cm-1\n")
-                                mctdh_file.write("\n")
+                                SOC.append(make_line(label=f"C1_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}r", value=bilinear_SOC_cm_real[idx], units=', cm-1'))
+                                SOC.append(make_line(label=f"C1_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}i", value=bilinear_SOC_cm_imag[idx], units=', cm-1'))
+                                SOC.append("\n")
 
-                                print(f"State {jst} & {ist} SOC (real) at modes {imode} & {jmode} {full_Ham_SOC_cm_real[idx]} cm-1\n")
-                                mctdh_file.write(f"SOC{jst}{ist}_m{imode}_m{jmode}r = {full_Ham_SOC_cm_real[idx]:.16f}, cm-1\n")
-                                print(f"State {jst} & {ist} SOC (imag) at modes {imode} & {jmode} {full_Ham_SOC_cm_imag[idx]} cm-1\n")
-                                mctdh_file.write(f"SOC{jst}{ist}_m{imode}_m{jmode}i = {full_Ham_SOC_cm_imag[idx]:.16f}, cm-1\n")
-                                mctdh_file.write("\n")
+                                print(f"State {jst:>02d} & {ist:>02d} SOC (real) at modes {imode:>02d} & {jmode:>02d} {full_Ham_SOC_cm_real[idx]}, cm-1\n")
+                                SOC.append(make_line(label=f"SOC_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}r", value=full_Ham_SOC_cm_real[idx], units=', cm-1'))
+
+                                print(f"State {jst:>02d} & {ist:>02d} SOC (imag) at modes {imode:>02d} & {jmode:>02d} {full_Ham_SOC_cm_imag[idx]}, cm-1\n")
+                                SOC.append(make_line(label=f"SOC_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}i", value=full_Ham_SOC_cm_imag[idx], units=', cm-1'))
+                                SOC.append("\n")
+
                             except Exception as e:
                                 print(f"Error in SOC: {str(e)}")
                     #Bilinear.append("\n")
@@ -1001,6 +1006,8 @@ def mctdh(filnam, modes_included, **kwargs):
     Params.extend(Quadratic)
     Params.append("\n")
     Params.extend(Bilinear)
+    Params.append("\n")
+    Params.extend(SOC)
     Params.append("\n")
 
     with open("mctdh.op", "a") as mctdh_file:
@@ -1155,14 +1162,14 @@ def mctdh(filnam, modes_included, **kwargs):
                         jlast = ist - 1
                         for jst in range(1, jlast + 1):
                             #note to self: the I* is performing ARITHMETIC on SOr_{jst}_{ist} prepared earlier, does that mean we neeed to remove the l and _m{imode}
-                            mctdh_file.write(f"I*l{jst}{ist}_m{imode}r |1 Z{jst}&{ist}|{kmode_count} q\n")
-                            mctdh_file.write(f"-I*l{jst}{ist}_m{imode}i |1 Z{ist}&{jst}|{kmode_count} q\n")
-                            mctdh_file.write(f"I*q{jst}{ist}_m{imode}r |1 Z{jst}&{ist}|{kmode_count} q^2\n")
-                            mctdh_file.write(f"-I*q{jst}{ist}_m{imode}i |1 Z{ist}&{jst}|{kmode_count} q^2\n")
-                            mctdh_file.write(f"I*b{jst}{ist}_m{imode}_m{jmode}r |1 Z{jst}&{ist} |{lmode_count} q |{kmode_count} q\n")
-                            mctdh_file.write(f"-I*b{jst}{ist}_m{imode}_m{jmode}i |1 Z{ist}&{jst} |{lmode_count} q |{kmode_count} q\n")
-                            mctdh_file.write(f"I*SOC{jst}{ist}_m{imode}_m{jmode}r |1 Z{jst}&{ist}|{kmode_count} q\n")
-                            mctdh_file.write(f"-I*SOC{jst}{ist}_m{imode}_m{jmode}i |1 Z{ist}&{jst}|{kmode_count} q\n")
+                            mctdh_file.write(f"I*C1_s{jst:>02d}_s{ist:>02d}_v{imode:>02d}r |1 Z{jst}&{ist}|{kmode_count} q\n")
+                            mctdh_file.write(f"-I*C1_s{jst:>02d}_s{ist:>02d}_v{imode:>02d}i |1 Z{ist}&{jst}|{kmode_count} q\n")
+                            mctdh_file.write(f"I*C2_s{jst:>02d}s{ist:>02d}_v{imode:>02d}r |1 Z{jst}&{ist}|{kmode_count} q^2\n")
+                            mctdh_file.write(f"-I*C2_s{jst:>02d}s{ist:>02d}_v{imode:>02d}i |1 Z{ist}&{jst}|{kmode_count} q^2\n")
+                            mctdh_file.write(f"I*C1_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}r |1 Z{jst}&{ist} |{lmode_count} q |{kmode_count} q\n")
+                            mctdh_file.write(f"-I*C1_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}i |1 Z{ist}&{jst} |{lmode_count} q |{kmode_count} q\n")
+                            mctdh_file.write(f"I*SOC_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}r |1 Z{jst}&{ist}|{kmode_count} q\n")
+                            mctdh_file.write(f"-I*SOC_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}i |1 Z{ist}&{jst}|{kmode_count} q\n")
 
         # Close the file
         mctdh_file.write("-----------------------------------------\n")
@@ -1194,12 +1201,12 @@ def mctdh(filnam, modes_included, **kwargs):
         # Write modes and mode labels
         mctdh_file.write(" modes | el")
         for imode_include in range(1, nmodes + 1):
-            mctdh_file.write(f" | m{modes_included[imode_include]}")
+            mctdh_file.write(f" | v{modes_included[imode_include]:>02d}")
         mctdh_file.write("\n")
         mctdh_file.write("-----------------------------------------\n")
 
         for ist in range(1, nstate + 1):
-            mctdh_file.write(f"Ex_s00_s{ist:>02d}         |1 S{nstate + 1}&{ist}")
+            mctdh_file.write(f"1.0         |1 S{nstate + 1}&{ist}")
             mctdh_file.write("\n")
         mctdh_file.write("\n")
         mctdh_file.write("\nend-hamiltonian-section\n\n")
