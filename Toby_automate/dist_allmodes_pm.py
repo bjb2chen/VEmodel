@@ -5,6 +5,7 @@ import os
 import shutil
 import re
 import json
+import functools
 import itertools as it
 from project_parameters import *
 
@@ -654,24 +655,34 @@ def mctdh(filnam, modes_included, **kwargs):
     except Exception as e:
         print(f"Error deleting {'mctdh.op'}: {str(e)}")
 
+    Heading = []
+    EH = []
+    Params = []
+    Linear = []
+    Quadratic = []
+    Bilinear = []
+    SOC = []
+    Ham = []
+    Ham1 = []
+    Ham2 = []
+    Ham3 = []
+    Ham4 = []
+    Ham5 = []
+    Ham6 = []
+    Ham7 = []
+    Ham8 = []
+
     #Heading for mctdh.op
-    str1 = "OP_DEFINE-SECTION"
-    str2 = "title"
+    Heading.append("OP_DEFINE-SECTION")
+    Heading.append("title")
+    nstate = A
+    Heading.append(f'{filnam} {nstate} states + ' + str(nmodes) + ' modes')
+    Heading.append("end-title ")
+    Heading.append("end-op_define-section\n")
+    Heading.append("PARAMETER-SECTION\n")
 
-    nstate = find_nstate(f'{filnam}_refG.out')
-
-    str3 = "end-title "
-    str4 = "end-op_define-section"
-    str5 = ""
-    # lines 482,483
-    str6 = "PARAMETER-SECTION"
-    str7 = ""
-    str8 = f'{filnam} {nstate} states + ' + str(nmodes) + ' modes'
-    strlst = [str1, str2, str8, str3, str4, str5, str6, str7]
-
-    with open('mctdh.op', 'w') as mctdh_file:
-        for idx in strlst:
-            mctdh_file.write(idx+'\n')
+    format_string = "{label:<25s}={value:>-15.9f}{units:>8s}\n"
+    make_line = functools.partial(format_string.format, units=", ev")
 
     refG_exists = subprocess.call(["ls", f"{filnam}_refG.out"]) == 0
 
@@ -686,7 +697,8 @@ def mctdh(filnam, modes_included, **kwargs):
             DSOME_cm_0_real, DSOME_cm_0_imag = DSOME_cm_0[0], DSOME_cm_0[1]
 
         with open("mctdh.op", "a") as mctdh_file:
-            mctdh_file.write("#Diagonal and Off-diagonal diabatic Hamiltonian elements at reference structure\n")
+            EH.append("#             Electronic Hamitonian             #\n")
+            EH.append("# --------------------------------------------- #\n")
 
             GSE = extract_ground_state_energy(hessout, 'TOTAL ENERGY =')
             D1E = extract_diabatic_energy(f'{filnam}_refG.out', f'STATE #.* 1.S GMC-PT-LEVEL DIABATIC ENERGY=')
@@ -699,33 +711,28 @@ def mctdh(filnam, modes_included, **kwargs):
 
                 Ediab = refG_extract(f'{filnam}_refG.out', f'STATE #.* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY=')
 
-                # format_string = "{label:<25s}={value:>-15.9f}{units:>8s}\n"
-                # make_line = functools.partial(format_string.format, units=", ev")
-
-                # #mctdh_file.write(f"v{ist} = {Ediab+linear_shift:.9f}, ev\n")
-                # str21 = make_line(label=f"v{ist}", value=Ediab+linear_shift)
-                # mctdh_file.write(str21)
-    
-                mctdh_file.write(f"v{ist} = {Ediab+linear_shift:.9f}, ev\n")
+                EH.append(make_line(label=f"EH_s{ist:>02d}_s{ist:>02d}", value=Ediab+linear_shift))
     
                 # Extract coupling energy between state jst and ist
                 for jst in range(1, ist):
 
                     Coup_ev = refG_extract(f'{filnam}_refG.out', f'STATE #.* {jst} &.* {ist}.S GMC-PT-LEVEL COUPLING')
 
-                    # if Coup_ev > 0:
-                    #     mctdh_file.write(f"v{jst}{ist} = {Coup_ev+linear_shift:.9f}, ev\n")
-
-                    # else:
-                    #     mctdh_file.write(f"v{jst}{ist} = {Coup_ev:.9f}, ev\n")
-
-                    mctdh_file.write(f"v{jst}{ist} = {Coup_ev:.9f}, ev\n")
+                    EH.append(make_line(label=f"EH_s{jst:>02d}_s{ist:>02d}", value=Coup_ev))
     
-                mctdh_file.write("\n")
+                EH.append("\n")
 
-            mctdh_file.write(f"v{nstate+1} = {0.0:.9f}, ev\n")
+            EH.append(make_line(label=f"EH_s{nstate+1:>02d}_s{nstate+1:>02d}", value=0.0))
         
-            mctdh_file.write("\n")
+            EH.append("\n")
+
+        with open('mctdh.op', 'w') as mctdh_file:
+    
+            for idx in Heading:
+                mctdh_file.write(idx+'\n')
+    
+            for idx in EH:
+                mctdh_file.write(idx)
 
     else:
         print(f"Skip extracting Hamiltonians from the non-existing {filnam}_refG.out")
@@ -760,254 +767,281 @@ def mctdh(filnam, modes_included, **kwargs):
         coord_disp_mm[icomp] = distcoord_mm[icomp]
         print(f'icomp: {icomp}, coord_disp_mm: {coord_disp_mm[icomp]}')
 
+    Params.append(f"#                  Frequencies                  #\n")
+    Params.append(f"# --------------------------------------------- #\n")
+    Linear.append(f"#           Linear Coupling Constants           #\n")
+    Linear.append(f"# --------------------------------------------- #\n")
+    Quadratic.append(f"#         Quadratic Coupling Constants          #\n")
+    Quadratic.append(f"# --------------------------------------------- #\n")
+    Bilinear.append(f"#         Bilinear Coupling Constants           #\n")
+    Bilinear.append(f"# --------------------------------------------- #\n")
+
     # Loop through modes
     for kmode in range(1, nmodes + 1):
         imode = modes_included[kmode]
     
         vibron_ev = freqcm[imode] * wn2ev
-        with open("mctdh.op", "a") as mctdh_file:
-            mctdh_file.write(f"#Parameters for mode {imode}\n")
-            mctdh_file.write("#Vibron:\n")
-            mctdh_file.write(f"w_m{imode} = {vibron_ev:.16f}, ev\n\n")
-            mctdh_file.write("#Linear and quadratic diagonal and off-diagonal vibronic coupling constants:\n")
-    
-            grace_code_plus = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_+{qsize}.out"])
-            grace_code_minus = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_-{qsize}.out"])
-            grace_code_plusx2 = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_+{qsize}x2.out"])
-            grace_code_minusx2 = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_-{qsize}x2.out"])
-    
-            if all(code == 0 for code in [grace_code_plus, grace_code_minus, grace_code_plusx2, grace_code_minusx2]):
-                print("\n good to extract\n")
-                # Extract the diagonal and off-diagonal vibronic coupling
+        Params.append(make_line(label=f"w{imode:>02d}", value=vibron_ev))
+        #Params.append("\n")
+        #Coupling.append("#Linear and quadratic diagonal and off-diagonal vibronic coupling constants:\n")
+
+        grace_code_plus = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_+{qsize}.out"])
+        grace_code_minus = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_-{qsize}.out"])
+        grace_code_plusx2 = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_+{qsize}x2.out"])
+        grace_code_minusx2 = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_-{qsize}x2.out"])
+
+        if all(code == 0 for code in [grace_code_plus, grace_code_minus, grace_code_plusx2, grace_code_minusx2]):
+            print("\n good to extract\n")
+            # Extract the diagonal and off-diagonal vibronic coupling
+            for ist in range(1, nstate + 1):
+                pattern = f'STATE #.* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY='
+                # Extract Ediab_au_plus
+                Ediab_au_plus = extract_diabatic_energy(f'{filnam}_mode{imode}_+{qsize}.out', pattern)
+                # Extract Ediab_au_plusx2
+                Ediab_au_plusx2 = extract_diabatic_energy(f'{filnam}_mode{imode}_+{qsize}x2.out', pattern)
+                # Extract Ediab_au_minus
+                Ediab_au_minus = extract_diabatic_energy(f'{filnam}_mode{imode}_-{qsize}.out', pattern)
+                # Extract Ediab_au_minusx2
+                Ediab_au_minusx2 = extract_diabatic_energy(f'{filnam}_mode{imode}_-{qsize}x2.out', pattern)
+                # Extract Ediab_au_0
+                Ediab_au_0 = extract_diabatic_energy(f'{filnam}_refG.out', pattern)
+                linear_diag_ev = (Ediab_au_plus - Ediab_au_minus) * ha2ev / (2 * qsize)
+                quadratic_diag_ev = (Ediab_au_plusx2 + Ediab_au_minusx2 - 2.0 * Ediab_au_0) * ha2ev / (4.0 * qsize * qsize)
+
+                # We only view the difference between the actual force constant and the vibron
+                # as the quadratic diagonal coupling for the diabatic state.
+                quadratic_diag_ev = quadratic_diag_ev - vibron_ev
+
+                # Print and store results
+                print(f"State {ist} Linear Diagonal: {linear_diag_ev} Quadratic Diagonal: {quadratic_diag_ev}, ev\n")
+                # machine accuracy is typically 16 digits
+                Linear.append(make_line(label=f"C1_s{ist:>02d}_s{ist:>02d}_v{imode:>02d}", value=linear_diag_ev))
+                Quadratic.append(make_line(label=f"C2_s{ist:>02d}s{ist:>02d}_v{imode:>02d}v{imode:>02d}", value=quadratic_diag_ev))
+
+                # # Loop over jst
+                jlast = ist - 1
+                for jst in range(1, jlast + 1):
+                    pattern = f'STATE #.* {jst} &.* {ist}.S GMC-PT-LEVEL COUPLING'
+                    # Extract Coup_ev_plus
+                    Coup_ev_plus = extract_coupling_energy(f'{filnam}_mode{imode}_+{qsize}.out', pattern)
+                    # Extract Coup_ev_plusx2
+                    Coup_ev_plusx2 = extract_coupling_energy(f'{filnam}_mode{imode}_+{qsize}x2.out', pattern)
+                    # Extract Coup_ev_minus
+                    Coup_ev_minus = extract_coupling_energy(f'{filnam}_mode{imode}_-{qsize}.out', pattern)
+                    # Extract Coup_ev_minusx2
+                    Coup_ev_minusx2 = extract_coupling_energy(f'{filnam}_mode{imode}_-{qsize}x2.out', pattern)
+                    # Extract Coup_ev_0
+                    Coup_ev_0= extract_coupling_energy(f'{filnam}_refG.out', pattern)
+
+                    # Compute linear off-diagonal coupling
+                    linear_offdiag_ev = (Coup_ev_plus - Coup_ev_minus) / (2 * qsize)
+
+                    # Compute quadratic off-diagonal coupling
+                    quadratic_offdiag_ev = (Coup_ev_plusx2 + Coup_ev_minusx2 - 2.0 * Coup_ev_0) / (4.0 * qsize * qsize)
+
+                    # Print and store results
+                    print(f"State {jst} & {ist} Linear Off-Diagonal: {linear_offdiag_ev}\n")
+                    Linear.append(make_line(label=f"C1_s{jst:>02d}_s{ist:>02d}_v{imode:>02d}", value=linear_offdiag_ev))
+                    print(f"State {jst} & {ist} Linear Off-Diagonal: {quadratic_offdiag_ev}\n")
+                    Quadratic.append(make_line(label=f"C2_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{imode:>02d}", value=quadratic_offdiag_ev))
+
+                    if SOC_flag:
+
+                        try: 
+                            
+                            # Extract DSOME_cm_plus
+                            DSOME_cm_plus = extract_DSOME(f'{filnam}_mode{imode}_+{qsize}.out', nstate)
+                            DSOME_cm_plus_real, DSOME_cm_plus_imag = DSOME_cm_plus[0], DSOME_cm_plus[1]
+
+                            # Extract DSOME_cm_plusx2
+                            DSOME_cm_plusx2 = extract_DSOME(f'{filnam}_mode{imode}_+{qsize}x2.out', nstate)
+                            DSOME_cm_plusx2_real, DSOME_cm_plusx2_imag = DSOME_cm_plusx2[0], DSOME_cm_plusx2[1]
+
+                            # Extract DSOME_cm_minus
+                            DSOME_cm_minus = extract_DSOME(f'{filnam}_mode{imode}_-{qsize}.out', nstate)
+                            DSOME_cm_minus_real, DSOME_cm_minus_imag = DSOME_cm_minus[0], DSOME_cm_minus[1]
+
+                            # Extract DSOME_cm_minusx2
+                            DSOME_cm_minusx2 = extract_DSOME(f'{filnam}_mode{imode}_-{qsize}x2.out', nstate)
+                            DSOME_cm_minusx2_real, DSOME_cm_minusx2_imag = DSOME_cm_minusx2[0], DSOME_cm_minusx2[1]
+
+                        except Exception as e:
+                                print(f"Error in SOC: {str(e)}")
+
+        else:
+            Params.append(f"not good to extract. Skipping mode {imode} for extracting vibronic couplings\n")
+
+        # Extracting bilinear vibronic coupling
+        #Coupling.append("#Bilinear diagonal and off-diagonal vibronic coupling constants:\n")
+        lmode_last = kmode - 1
+        for lmode in range(1, lmode_last + 1):
+            jmode = modes_included[lmode]
+            grace_code_pp = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out"])
+            grace_code_pm = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out"])
+            grace_code_mp = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out"])
+            grace_code_mm = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out"])
+            if all(code == 0 for code in [grace_code_pp, grace_code_pm, grace_code_mp, grace_code_mm]):
+                print(f"\n Good to extract bilinear for modes {imode} {jmode} \n")
                 for ist in range(1, nstate + 1):
                     pattern = f'STATE #.* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY='
-                    # Extract Ediab_au_plus
-                    Ediab_au_plus = extract_diabatic_energy(f'{filnam}_mode{imode}_+{qsize}.out', pattern)
-                    # Extract Ediab_au_plusx2
-                    Ediab_au_plusx2 = extract_diabatic_energy(f'{filnam}_mode{imode}_+{qsize}x2.out', pattern)
-                    # Extract Ediab_au_minus
-                    Ediab_au_minus = extract_diabatic_energy(f'{filnam}_mode{imode}_-{qsize}.out', pattern)
-                    # Extract Ediab_au_minusx2
-                    Ediab_au_minusx2 = extract_diabatic_energy(f'{filnam}_mode{imode}_-{qsize}x2.out', pattern)
-                    # Extract Ediab_au_0
-                    Ediab_au_0 = extract_diabatic_energy(f'{filnam}_refG.out', pattern)
+                    # Extract Ediab_au_pp
+                    Ediab_au_pp = extract_diabatic_energy(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out', pattern)
+                    
+                    # Extract Ediab_au_pm
+                    Ediab_au_pm = extract_diabatic_energy(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out', pattern)
+                    
+                    # Extract Ediab_au_mp
+                    Ediab_au_mp = extract_diabatic_energy(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out', pattern)
+                    
+                    # Extract Ediab_au_mm
+                    Ediab_au_mm = extract_diabatic_energy(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out', pattern)
 
-                    linear_diag_ev = (Ediab_au_plus - Ediab_au_minus) * ha2ev / (2 * qsize)
-                    quadratic_diag_ev = (Ediab_au_plusx2 + Ediab_au_minusx2 - 2.0 * Ediab_au_0) * ha2ev / (4.0 * qsize * qsize)
-    
-                    # We only view the difference between the actual force constant and the vibron
-                    # as the quadratic diagonal coupling for the diabatic state.
-                    quadratic_diag_ev = quadratic_diag_ev - vibron_ev
-    
-                    # Print and store results
-                    print(f"State {ist} Linear Diagonal: {linear_diag_ev} Quadratic Diagonal: {quadratic_diag_ev}, ev\n")
-                    # machine accuracy is typically 16 digits
-                    mctdh_file.write(f"l{ist}_m{imode} = {linear_diag_ev:.16f}, ev\n")
-                    mctdh_file.write(f"q{ist}_m{imode} = {quadratic_diag_ev:.16f}, ev\n")
-    
+                    bilinear_diag_ev = ( Ediab_au_pp + Ediab_au_mm - Ediab_au_pm - Ediab_au_mp ) * ha2ev / (4.0 * qsize * qsize )
+                
+                    print(f"State {ist} Bilinear Diagonal: {bilinear_diag_ev}\n")
+                    Bilinear.append(make_line(label=f"C1_s{ist:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}", value=bilinear_diag_ev))
+
                     # # Loop over jst
                     jlast = ist - 1
                     for jst in range(1, jlast + 1):
                         pattern = f'STATE #.* {jst} &.* {ist}.S GMC-PT-LEVEL COUPLING'
-                        # Extract Coup_ev_plus
-                        Coup_ev_plus = extract_coupling_energy(f'{filnam}_mode{imode}_+{qsize}.out', pattern)
-                        # Extract Coup_ev_plusx2
-                        Coup_ev_plusx2 = extract_coupling_energy(f'{filnam}_mode{imode}_+{qsize}x2.out', pattern)
-                        # Extract Coup_ev_minus
-                        Coup_ev_minus = extract_coupling_energy(f'{filnam}_mode{imode}_-{qsize}.out', pattern)
-                        # Extract Coup_ev_minusx2
-                        Coup_ev_minusx2 = extract_coupling_energy(f'{filnam}_mode{imode}_-{qsize}x2.out', pattern)
-                        # Extract Coup_ev_0
-                        Coup_ev_0= extract_coupling_energy(f'{filnam}_refG.out', pattern)
+                        # Extract Coup_ev_pp
+                        Coup_ev_pp = extract_coupling_energy(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out', pattern)
+                        # Extract Coup_ev_pm
+                        Coup_ev_pm = extract_coupling_energy(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out', pattern)
+                        
+                        # Extract Coup_ev_mp
+                        Coup_ev_mp = extract_coupling_energy(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out', pattern)
+                        
+                        # Extract Coup_ev_mm
+                        Coup_ev_mm = extract_coupling_energy(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out', pattern)
     
-                        # Compute linear off-diagonal coupling
-                        linear_offdiag_ev = (Coup_ev_plus - Coup_ev_minus) / (2 * qsize)
+                        bilinear_offdiag_ev = ( Coup_ev_pp + Coup_ev_mm - Coup_ev_pm - Coup_ev_mp ) / (4.0 * qsize * qsize )
+                        
+                        print(f"State {jst} & {ist} Bilinear Off-Diagonal: {bilinear_offdiag_ev}\n")
+                        Bilinear.append(make_line(label=f"C1_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}", value=bilinear_offdiag_ev))
+
+                        if SOC_flag:
+
+                            try:
+
+                                # Extract DSOME_cm_pp
+                                DSOME_cm_pp = extract_DSOME(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out', nstate)
+                                DSOME_cm_pp_real, DSOME_cm_pp_imag = DSOME_cm_pp[0], DSOME_cm_pp[1] 
     
-                        # Compute quadratic off-diagonal coupling
-                        quadratic_offdiag_ev = (Coup_ev_plusx2 + Coup_ev_minusx2 - 2.0 * Coup_ev_0) / (4.0 * qsize * qsize)
-    
-                        # Print and store results
-                        print(f"State {jst} & {ist} Linear Off-Diagonal: {linear_offdiag_ev}\n")
-                        mctdh_file.write(f"l{jst}{ist}_m{imode} = {linear_offdiag_ev:.16f}, ev\n")
-                        print(f"State {jst} & {ist} Linear Off-Diagonal: {quadratic_offdiag_ev}\n")
-                        mctdh_file.write(f"q{jst}{ist}_m{imode} = {quadratic_offdiag_ev:.16f}, ev\n")
-                    mctdh_file.write("\n")
-    
+                                # Extract DSOME_cm_pm
+                                DSOME_cm_pm = extract_DSOME(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out', nstate)
+                                DSOME_cm_pm_real, DSOME_cm_pm_imag = DSOME_cm_pm[0], DSOME_cm_pm[1] 
+                                
+                                # Extract DSOME_cm_mp
+                                DSOME_cm_mp = extract_DSOME(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out', nstate)
+                                DSOME_cm_mp_real, DSOME_cm_mp_imag = DSOME_cm_mp[0], DSOME_cm_mp[1] 
+                                
+                                # Extract DSOME_cm_mm
+                                DSOME_cm_mm = extract_DSOME(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out', nstate)
+                                DSOME_cm_mm_real, DSOME_cm_mm_imag = DSOME_cm_mm[0], DSOME_cm_mm[1]
+
+
+                            except Exception as e:
+                                print(f"Error in SOC: {str(e)}")
             else:
-                mctdh_file.write(f"not good to extract. Skipping mode {imode} for extracting vibronic couplings\n")
-    
-            # Extracting bilinear vibronic coupling
-            mctdh_file.write("#Bilinear diagonal and off-diagonal vibronic coupling constants:\n")
+                print(f"not good to extract. Skipping mode {imode} mode {jmode} for extracting bilinear vibronic couplings")
+
+    if SOC_flag:
+
+        for kmode in range(1, nmodes + 1):
+            imode = modes_included[kmode]
             lmode_last = kmode - 1
             for lmode in range(1, lmode_last + 1):
                 jmode = modes_included[lmode]
+                for ist in range(1, nstate + 1):
+                    jlast = ist - 1
+                    for jst in range(1, jlast + 1):
 
-                grace_code_pp = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out"])
-                grace_code_pm = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out"])
-                grace_code_mp = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out"])
-                grace_code_mm = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out"])
-
-                if all(code == 0 for code in [grace_code_pp, grace_code_pm, grace_code_mp, grace_code_mm]):
-                    print(f"\n Good to extract bilinear for modes {imode} {jmode} \n")
-
-                    for ist in range(1, nstate + 1):
-                        pattern = f'STATE #.* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY='
-
-                        # Extract Ediab_au_pp
-                        Ediab_au_pp = extract_diabatic_energy(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out', pattern)
-                        
-                        # Extract Ediab_au_pm
-                        Ediab_au_pm = extract_diabatic_energy(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out', pattern)
-                        
-                        # Extract Ediab_au_mp
-                        Ediab_au_mp = extract_diabatic_energy(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out', pattern)
-                        
-                        # Extract Ediab_au_mm
-                        Ediab_au_mm = extract_diabatic_energy(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out', pattern)
-    
-                        bilinear_diag_ev = ( Ediab_au_pp + Ediab_au_mm - Ediab_au_pm - Ediab_au_mp ) * ha2ev / (4.0 * qsize * qsize )
+                        # intialize dictionaries to contain
+                        linear_SOC_cm_real = {}
+                        linear_SOC_cm_imag = {}
+                        quadratic_SOC_cm_real = {}
+                        quadratic_SOC_cm_imag = {}
+                        bilinear_SOC_cm_real = {}
+                        bilinear_SOC_cm_imag = {}
+                        full_Ham_SOC_cm_real = {}
+                        full_Ham_SOC_cm_imag = {}
                     
-                        print(f"State {ist} Bilinear Diagonal: {bilinear_diag_ev}\n")
-                        mctdh_file.write(f"b{ist}_m{imode}_m{jmode} = {bilinear_diag_ev:.16f}, ev\n")
+                        # Set jst ist tuple as index
+                        idx = (jst, ist)
+                        
+                        # Compute linear SOC
+                        DSOME_cm_plus_real[idx] *= coord_disp_plus[imode]
+                        DSOME_cm_plus_imag[idx] *= coord_disp_plus[imode]
+                        DSOME_cm_minus_real[idx] *= coord_disp_minus[imode]
+                        DSOME_cm_minus_imag[idx] *= coord_disp_minus[imode] 
+                        linear_SOC_cm_real[idx] = (DSOME_cm_plus_real[idx]- DSOME_cm_minus_real[idx]) / (2 * qsize)
+                        linear_SOC_cm_imag[idx] = (DSOME_cm_plus_imag[idx]- DSOME_cm_minus_imag[idx]) / (2 * qsize)
+                    
+                        # Compute quadratic SOC
+                        DSOME_cm_plusx2_real[idx] *= coord_disp_plusx2[imode] * coord_disp_plusx2[imode]
+                        DSOME_cm_plusx2_imag[idx] *= coord_disp_plusx2[imode] * coord_disp_plusx2[imode] 
+                        DSOME_cm_minusx2_real[idx] *= coord_disp_minusx2[imode] * coord_disp_minusx2[imode]
+                        DSOME_cm_minusx2_imag[idx] *= coord_disp_minusx2[imode] * coord_disp_minusx2[imode]
+                        quadratic_SOC_cm_real[idx] = (DSOME_cm_plusx2_real[idx] + DSOME_cm_minusx2_real[idx] - 2.0 * DSOME_cm_0_real[idx]) / (4.0 * qsize * qsize)
+                        quadratic_SOC_cm_imag[idx] = (DSOME_cm_plusx2_imag[idx] + DSOME_cm_minusx2_imag[idx] - 2.0 * DSOME_cm_0_imag[idx]) / (4.0 * qsize * qsize)
+                    
+                        # Compute bilinear SOC
+                        DSOME_cm_pp_real[idx] *= coord_disp_pp[imode] * coord_disp_pp[jmode]
+                        DSOME_cm_pp_imag[idx] *= coord_disp_pp[imode] * coord_disp_pp[jmode]
+                        DSOME_cm_mm_real[idx] *= coord_disp_mm[imode] * coord_disp_mm[jmode]
+                        DSOME_cm_mm_imag[idx] *= coord_disp_mm[imode] * coord_disp_mm[jmode]
+                        DSOME_cm_pm_real[idx] *= coord_disp_pm[imode] * coord_disp_pm[jmode]
+                        DSOME_cm_pm_imag[idx] *= coord_disp_pm[imode] * coord_disp_pm[jmode]
+                        DSOME_cm_mp_real[idx] *= coord_disp_mp[imode] * coord_disp_mp[jmode]
+                        DSOME_cm_mp_imag[idx] *= coord_disp_mp[imode] * coord_disp_mp[jmode]
+                        bilinear_SOC_cm_real[idx] = ( DSOME_cm_pp_real[idx] + DSOME_cm_mm_real[idx] - DSOME_cm_pm_real[idx] - DSOME_cm_mp_real[idx] ) / (4.0 * qsize * qsize )
+                        bilinear_SOC_cm_imag[idx] = ( DSOME_cm_pp_imag[idx] + DSOME_cm_mm_imag[idx] - DSOME_cm_pm_imag[idx] - DSOME_cm_mp_imag[idx] ) / (4.0 * qsize * qsize )
+                    
+                        # Compute full SOC
+                        full_Ham_SOC_cm_real[idx] = ( DSOME_cm_0_real[idx] + linear_SOC_cm_real[idx] + quadratic_SOC_cm_real[idx] + bilinear_SOC_cm_real[idx])
+                        full_Ham_SOC_cm_imag[idx] = ( DSOME_cm_0_imag[idx] + linear_SOC_cm_imag[idx] + quadratic_SOC_cm_imag[idx] + bilinear_SOC_cm_imag[idx])
+                    
+                        # Hij^(0) + lij^(1)*x_1 + lij^(2)*x_2 + 0.5qij^(1)*x_1 ^ 2 + 0.5qij^(2)*x_2 ^ 2 + bij^(1,2) * x_1 x_2
+                        # Does this mean I have to extract the atom coordinates from every file too?
+                        # print(imode, icomp, refcoord[icomp], nrmmod[icomp, imode], coord_disp_plus, coord_disp_minus, distcoord_plus[icomp], distcoord_minus[icomp])
+                        # Probably is distcoord_plus and distcoord_minus for x1,x2 respectively
+                        
+                        # Print and store results
+                        SOC.append(make_line(label=f"C1_s{jst:>02d}_s{ist:>02d}_v{imode:>02d}r", value=linear_SOC_cm_real[idx], units=', cm-1'))
+                        SOC.append(make_line(label=f"C1_s{jst:>02d}_s{ist:>02d}_v{imode:>02d}i", value=linear_SOC_cm_imag[idx], units=', cm-1'))
+                        SOC.append("\n")
+                    
+                        SOC.append(make_line(label=f"C2_s{jst:>02d}s{ist:>02d}_v{imode:>02d}r", value=quadratic_SOC_cm_real[idx], units=', cm-1'))
+                        SOC.append(make_line(label=f"C2_s{jst:>02d}s{ist:>02d}_v{imode:>02d}i", value=quadratic_SOC_cm_imag[idx], units=', cm-1')) 
+                        SOC.append("\n")
+                    
+                        SOC.append(make_line(label=f"C1_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}r", value=bilinear_SOC_cm_real[idx], units=', cm-1'))
+                        SOC.append(make_line(label=f"C1_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}i", value=bilinear_SOC_cm_imag[idx], units=', cm-1'))
+                        SOC.append("\n")
+                    
+                        print(f"State {jst:>02d} & {ist:>02d} SOC (real) at modes {imode:>02d} & {jmode:>02d} {full_Ham_SOC_cm_real[idx]}, cm-1\n")
+                        SOC.append(make_line(label=f"SOC_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}r", value=full_Ham_SOC_cm_real[idx], units=', cm-1'))
+                    
+                        print(f"State {jst:>02d} & {ist:>02d} SOC (imag) at modes {imode:>02d} & {jmode:>02d} {full_Ham_SOC_cm_imag[idx]}, cm-1\n")
+                        SOC.append(make_line(label=f"SOC_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}i", value=full_Ham_SOC_cm_imag[idx], units=', cm-1'))
+                        SOC.append("\n")
+
+    Params.append("\n")
+    Params.extend(Linear)
+    Params.append("\n")
+    Params.extend(Quadratic)
+    Params.append("\n")
+    Params.extend(Bilinear)
+    Params.append("\n")
+    Params.extend(SOC)
+    Params.append("\n")
+
+    with open("mctdh.op", "a") as mctdh_file:
+        for idx in Params:
+            mctdh_file.write(idx)
     
-                        # # Loop over jst
-                        jlast = ist - 1
-                        for jst in range(1, jlast + 1):
-                            pattern = f'STATE #.* {jst} &.* {ist}.S GMC-PT-LEVEL COUPLING'
-
-                            # Extract Coup_ev_pp
-                            Coup_ev_pp = extract_coupling_energy(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out', pattern)
-
-                            # Extract Coup_ev_pm
-                            Coup_ev_pm = extract_coupling_energy(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out', pattern)
-                            
-                            # Extract Coup_ev_mp
-                            Coup_ev_mp = extract_coupling_energy(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out', pattern)
-                            
-                            # Extract Coup_ev_mm
-                            Coup_ev_mm = extract_coupling_energy(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out', pattern)
-        
-                            bilinear_offdiag_ev = ( Coup_ev_pp + Coup_ev_mm - Coup_ev_pm - Coup_ev_mp ) / (4.0 * qsize * qsize )
-                            
-                            print(f"State {jst} & {ist} Bilinear Off-Diagonal: {bilinear_offdiag_ev}\n")
-                            mctdh_file.write(f"b{jst}{ist}_m{imode}_m{jmode} = {bilinear_offdiag_ev:.16f}, ev\n")
-
-                            if SOC_flag:
-
-                                try:
-
-                                    # intialize dictionaries to contain
-                                    linear_SOC_cm_real = {}
-                                    linear_SOC_cm_imag = {}
-                                    quadratic_SOC_cm_real = {}
-                                    quadratic_SOC_cm_imag = {}
-                                    bilinear_SOC_cm_real = {}
-                                    bilinear_SOC_cm_imag = {}
-                                    full_Ham_SOC_cm_real = {}
-                                    full_Ham_SOC_cm_imag = {}
-    
-                                    # Extract DSOME_cm_plus
-                                    DSOME_cm_plus = extract_DSOME(f'{filnam}_mode{imode}_+{qsize}.out', nstate)
-                                    DSOME_cm_plus_real, DSOME_cm_plus_imag = DSOME_cm_plus[0], DSOME_cm_plus[1]
-        
-                                    # Extract DSOME_cm_plusx2
-                                    DSOME_cm_plusx2 = extract_DSOME(f'{filnam}_mode{imode}_+{qsize}x2.out', nstate)
-                                    DSOME_cm_plusx2_real, DSOME_cm_plusx2_imag = DSOME_cm_plusx2[0], DSOME_cm_plusx2[1]
-        
-                                    # Extract DSOME_cm_minus
-                                    DSOME_cm_minus = extract_DSOME(f'{filnam}_mode{imode}_-{qsize}.out', nstate)
-                                    DSOME_cm_minus_real, DSOME_cm_minus_imag = DSOME_cm_minus[0], DSOME_cm_minus[1]
-        
-                                    # Extract DSOME_cm_minusx2
-                                    DSOME_cm_minusx2 = extract_DSOME(f'{filnam}_mode{imode}_-{qsize}x2.out', nstate)
-                                    DSOME_cm_minusx2_real, DSOME_cm_minusx2_imag = DSOME_cm_minusx2[0], DSOME_cm_minusx2[1]
-    
-                                    # Extract DSOME_cm_pp
-                                    DSOME_cm_pp = extract_DSOME(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out', nstate)
-                                    DSOME_cm_pp_real, DSOME_cm_pp_imag = DSOME_cm_pp[0], DSOME_cm_pp[1] 
-        
-                                    # Extract DSOME_cm_pm
-                                    DSOME_cm_pm = extract_DSOME(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out', nstate)
-                                    DSOME_cm_pm_real, DSOME_cm_pm_imag = DSOME_cm_pm[0], DSOME_cm_pm[1] 
-                                    
-                                    # Extract DSOME_cm_mp
-                                    DSOME_cm_mp = extract_DSOME(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out', nstate)
-                                    DSOME_cm_mp_real, DSOME_cm_mp_imag = DSOME_cm_mp[0], DSOME_cm_mp[1] 
-                                    
-                                    # Extract DSOME_cm_mm
-                                    DSOME_cm_mm = extract_DSOME(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out', nstate)
-                                    DSOME_cm_mm_real, DSOME_cm_mm_imag = DSOME_cm_mm[0], DSOME_cm_mm[1] 
-        
-                                    # Set jst ist tuple as index
-                                    idx = (jst, ist)
-        
-                                    # Compute linear SOC
-                                    DSOME_cm_plus_real[idx] *= coord_disp_plus[imode]
-                                    DSOME_cm_plus_imag[idx] *= coord_disp_plus[imode]
-                                    DSOME_cm_minus_real[idx] *= coord_disp_minus[imode]
-                                    DSOME_cm_minus_imag[idx] *= coord_disp_minus[imode] 
-
-                                    linear_SOC_cm_real[idx] = (DSOME_cm_plus_real[idx]- DSOME_cm_minus_real[idx]) / (2 * qsize)
-                                    linear_SOC_cm_imag[idx] = (DSOME_cm_plus_imag[idx]- DSOME_cm_minus_imag[idx]) / (2 * qsize)
-                
-                                    # Compute quadratic SOC
-                                    DSOME_cm_plusx2_real[idx] *= coord_disp_plusx2[imode] * coord_disp_plusx2[imode]
-                                    DSOME_cm_plusx2_imag[idx] *= coord_disp_plusx2[imode] * coord_disp_plusx2[imode] 
-                                    DSOME_cm_minusx2_real[idx] *= coord_disp_minusx2[imode] * coord_disp_minusx2[imode]
-                                    DSOME_cm_minusx2_imag[idx] *= coord_disp_minusx2[imode] * coord_disp_minusx2[imode]
-
-                                    quadratic_SOC_cm_real[idx] = (DSOME_cm_plusx2_real[idx] + DSOME_cm_minusx2_real[idx] - 2.0 * DSOME_cm_0_real[idx]) / (4.0 * qsize * qsize)
-                                    quadratic_SOC_cm_imag[idx] = (DSOME_cm_plusx2_imag[idx] + DSOME_cm_minusx2_imag[idx] - 2.0 * DSOME_cm_0_imag[idx]) / (4.0 * qsize * qsize)
-    
-                                    # Compute bilinear SOC
-                                    DSOME_cm_pp_real[idx] *= coord_disp_pp[imode] * coord_disp_pp[jmode]
-                                    DSOME_cm_pp_imag[idx] *= coord_disp_pp[imode] * coord_disp_pp[jmode]
-                                    DSOME_cm_mm_real[idx] *= coord_disp_mm[imode] * coord_disp_mm[jmode]
-                                    DSOME_cm_mm_imag[idx] *= coord_disp_mm[imode] * coord_disp_mm[jmode]
-                                    DSOME_cm_pm_real[idx] *= coord_disp_pm[imode] * coord_disp_pm[jmode]
-                                    DSOME_cm_pm_imag[idx] *= coord_disp_pm[imode] * coord_disp_pm[jmode]
-                                    DSOME_cm_mp_real[idx] *= coord_disp_mp[imode] * coord_disp_mp[jmode]
-                                    DSOME_cm_mp_imag[idx] *= coord_disp_mp[imode] * coord_disp_mp[jmode]
-
-                                    bilinear_SOC_cm_real[idx] = ( DSOME_cm_pp_real[idx] + DSOME_cm_mm_real[idx] - DSOME_cm_pm_real[idx] - DSOME_cm_mp_real[idx] ) / (4.0 * qsize * qsize )
-                                    bilinear_SOC_cm_imag[idx] = ( DSOME_cm_pp_imag[idx] + DSOME_cm_mm_imag[idx] - DSOME_cm_pm_imag[idx] - DSOME_cm_mp_imag[idx] ) / (4.0 * qsize * qsize )
-    
-                                    # Compute full SOC
-                                    full_Ham_SOC_cm_real[idx] = ( DSOME_cm_0_real[idx] + linear_SOC_cm_real[idx] + quadratic_SOC_cm_real[idx] + bilinear_SOC_cm_real[idx])
-                                    full_Ham_SOC_cm_imag[idx] = ( DSOME_cm_0_imag[idx] + linear_SOC_cm_imag[idx] + quadratic_SOC_cm_imag[idx] + bilinear_SOC_cm_imag[idx])
-    
-                                    # Hij^(0) + lij^(1)*x_1 + lij^(2)*x_2 + 0.5qij^(1)*x_1 ^ 2 + 0.5qij^(2)*x_2 ^ 2 + bij^(1,2) * x_1 x_2
-                                    # Does this mean I have to extract the atom coordinates from every file too?
-                                    # print(imode, icomp, refcoord[icomp], nrmmod[icomp, imode], coord_disp_plus, coord_disp_minus, distcoord_plus[icomp], distcoord_minus[icomp])
-                                    # Probably is distcoord_plus and distcoord_minus for x1,x2 respectively
-        
-                                    # Print and store results
-                                    mctdh_file.write(f"l{jst}{ist}_m{imode}r = {linear_SOC_cm_real[idx]:.16f}, cm-1\n")
-                                    mctdh_file.write(f"l{jst}{ist}_m{imode}i = {linear_SOC_cm_imag[idx]:.16f}, cm-1\n")
-                                    mctdh_file.write("\n")
-    
-                                    mctdh_file.write(f"q{jst}{ist}_m{imode}r = {quadratic_SOC_cm_real[idx]:.16f}, cm-1\n")
-                                    mctdh_file.write(f"q{jst}{ist}_m{imode}i = {quadratic_SOC_cm_imag[idx]:.16f}, cm-1\n") 
-                                    mctdh_file.write("\n")
-    
-                                    mctdh_file.write(f"b{jst}{ist}_m{imode}_m{jmode}r = {bilinear_SOC_cm_real[idx]:.16f}, cm-1\n")
-                                    mctdh_file.write(f"b{jst}{ist}_m{imode}_m{jmode}i = {bilinear_SOC_cm_imag[idx]:.16f}, cm-1\n")
-                                    mctdh_file.write("\n")
-    
-                                    print(f"State {jst} & {ist} SOC (real) at modes {imode} & {jmode} {full_Ham_SOC_cm_real[idx]} cm-1\n")
-                                    mctdh_file.write(f"SOC{jst}{ist}_m{imode}_m{jmode}r = {full_Ham_SOC_cm_real[idx]:.16f}, cm-1\n")
-                                    print(f"State {jst} & {ist} SOC (imag) at modes {imode} & {jmode} {full_Ham_SOC_cm_imag[idx]} cm-1\n")
-                                    mctdh_file.write(f"SOC{jst}{ist}_m{imode}_m{jmode}i = {full_Ham_SOC_cm_imag[idx]:.16f}, cm-1\n")
-                                    mctdh_file.write("\n")
-
-                                except Exception as e:
-                                    print(f"Error in SOC: {str(e)}")
-
-                        mctdh_file.write("\n")
-
-                else:
-                    print(f"not good to extract. Skipping mode {imode} mode {jmode} for extracting bilinear vibronic couplings")
-
     # Open mctdh.op file for writing
     with open('mctdh.op', 'a') as mctdh_file:
 
@@ -1023,7 +1057,7 @@ def mctdh(filnam, modes_included, **kwargs):
 
             for idx in range(0, 3):
                 operate_lst = ["x", "y", "z"]
-                mctdh_file.write(f"E{operate_lst[idx]}_1_{ist} = {dipoles[ist][idx]}")
+                mctdh_file.write(f"E{operate_lst[idx]}_s00_s{ist:>02d} = {dipoles[ist][idx]}")
                 mctdh_file.write("\n")
             mctdh_file.write("\n")
 
@@ -1036,7 +1070,7 @@ def mctdh(filnam, modes_included, **kwargs):
         # Write modes and mode labels
         mctdh_file.write(" modes | el")
         for imode_include in range(1, nmodes + 1):
-            mctdh_file.write(f" | m{modes_included[imode_include]}")
+            mctdh_file.write(f" | v{modes_included[imode_include]:>02d}")
         mctdh_file.write("\n")
         mctdh_file.write("-----------------------------------------\n")
     
@@ -1045,7 +1079,7 @@ def mctdh(filnam, modes_included, **kwargs):
         mctdh_file.write("-----------------------------------------\n")
         for imode_include in range(1, nmodes + 1):
             mode_count = imode_include + 1
-            mctdh_file.write(f"w_m{modes_included[imode_include]}   |{mode_count} KE\n")
+            mctdh_file.write(f"1.00*w{modes_included[imode_include]:>02d}   |{mode_count} KE\n")
     
         # Write HARMONIC OSCILLATOR POTENTIALS FOR NORMAL MODES
         mctdh_file.write("-----------------------------------------\n")
@@ -1053,34 +1087,33 @@ def mctdh(filnam, modes_included, **kwargs):
         mctdh_file.write("-----------------------------------------\n")
         for imode_include in range(1, nmodes + 1):
             mode_count = imode_include + 1
-            mctdh_file.write(f"0.5*w_m{modes_included[imode_include]}   |{mode_count}  q^2\n")
+            mctdh_file.write(f"0.50*w{modes_included[imode_include]:>02d}   |{mode_count}  q^2\n")
     
         # Write ELECTRONIC COUPLING AT REFERENCE STRUCTURE
         mctdh_file.write("-----------------------------------------\n")
         mctdh_file.write("# ELECTRONIC COUPLING AT REFERENCE STRUCTURE\n")
         mctdh_file.write("-----------------------------------------\n")
         for ist in range(1, nstate + 2):
-            mctdh_file.write(f"v{ist}  |1 S{ist}&{ist}\n")
+            mctdh_file.write(f"EH_s{ist:>02d}_s{ist:>02d} |1 S{ist}&{ist}\n")
         mctdh_file.write("\n")
         for ist in range(1, nstate + 1):
             jlast = ist - 1
             for jst in range(1, jlast + 1):
-                mctdh_file.write(f"v{jst}{ist}  |1 S{jst}&{ist}\n")
+                mctdh_file.write(f"EH_s{jst:>02d}_s{ist:>02d}  |1 S{jst}&{ist}\n")
     
         # Write LINEAR AND QUADRATIC DIAGONAL VIBRONIC COUPLINGS
         mctdh_file.write("-----------------------------------------\n")
-        mctdh_file.write("# LINEAR AND QUADRATIC DIAGONAL VIBRONIC COUPLINGS\n")
+        mctdh_file.write("# LINEAR DIAGONAL VIBRONIC COUPLINGS\n")
         mctdh_file.write("-----------------------------------------\n")
         for kmode in range(1, nmodes + 1):
             imode = modes_included[kmode]
             kmode_count = kmode + 1
             for ist in range(1, nstate + 1):
-                mctdh_file.write(f"l{ist}_m{imode} |1 S{ist}&{ist} |{kmode_count} q\n")
-                mctdh_file.write(f"0.5*q{ist}_m{imode} |1 S{ist}&{ist} |{kmode_count} q^2\n")
-    
+                mctdh_file.write(f"C1_s{ist:>02d}_s{ist:>02d}_v{imode:>02d} |1 S{ist}&{ist} |{kmode_count} q\n")
+
         # Write LINEAR AND QUADRATIC OFF-DIAGONAL VIBRONIC COUPLINGS
         mctdh_file.write("-----------------------------------------\n")
-        mctdh_file.write("# LINEAR AND QUADRATIC OFF-DIAGONAL VIBRONIC COUPLINGS\n")
+        mctdh_file.write("# LINEAR OFF-DIAGONAL VIBRONIC COUPLINGS\n")
         mctdh_file.write("-----------------------------------------\n")
         for kmode in range(1, nmodes + 1):
             imode = modes_included[kmode]
@@ -1088,8 +1121,29 @@ def mctdh(filnam, modes_included, **kwargs):
             for ist in range(1, nstate + 1):
                 jlast = ist - 1
                 for jst in range(1, jlast + 1):
-                    mctdh_file.write(f"l{jst}{ist}_m{imode} |1 S{jst}&{ist} |{kmode_count} q\n")
-                    mctdh_file.write(f"0.5*q{jst}{ist}_m{imode} |1 S{jst}&{ist} |{kmode_count} q^2\n")
+                    mctdh_file.write(f"C1_s{jst:>02d}_s{ist:>02d}_v{imode:>02d} |1 S{jst}&{ist} |{kmode_count} q\n")
+
+        # Write LINEAR AND QUADRATIC DIAGONAL VIBRONIC COUPLINGS
+        mctdh_file.write("-----------------------------------------\n")
+        mctdh_file.write("# QUADRATIC DIAGONAL VIBRONIC COUPLINGS\n")
+        mctdh_file.write("-----------------------------------------\n")
+        for kmode in range(1, nmodes + 1):
+            imode = modes_included[kmode]
+            kmode_count = kmode + 1
+            for ist in range(1, nstate + 1):
+                mctdh_file.write(f"0.50*C2_s{ist:>02d}s{ist:>02d}_v{imode:>02d}v{imode:>02d} |1 S{ist}&{ist} |{kmode_count} q^2\n")
+
+        # Write LINEAR AND QUADRATIC OFF-DIAGONAL VIBRONIC COUPLINGS
+        mctdh_file.write("-----------------------------------------\n")
+        mctdh_file.write("# QUADRATIC OFF-DIAGONAL VIBRONIC COUPLINGS\n")
+        mctdh_file.write("-----------------------------------------\n")
+        for kmode in range(1, nmodes + 1):
+            imode = modes_included[kmode]
+            kmode_count = kmode + 1
+            for ist in range(1, nstate + 1):
+                jlast = ist - 1
+                for jst in range(1, jlast + 1):
+                    mctdh_file.write(f"0.50*C2_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{imode:>02d} |1 S{jst}&{ist} |{kmode_count} q^2\n")
     
         # Write BILINEAR DIAGONAL VIBRONIC COUPLINGS
         mctdh_file.write("-----------------------------------------\n")
@@ -1103,7 +1157,7 @@ def mctdh(filnam, modes_included, **kwargs):
                 jmode = modes_included[lmode]
                 lmode_count = lmode + 1
                 for ist in range(1, nstate + 1):
-                    mctdh_file.write(f"b{ist}_m{imode}_m{jmode} |1 S{ist}&{ist} |{lmode_count} q |{kmode_count} q\n")
+                    mctdh_file.write(f"C1_s{ist:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d} |1 S{ist}&{ist} |{lmode_count} q |{kmode_count} q\n")
     
         # Write BILINEAR OFF-DIAGONAL VIBRONIC COUPLINGS
         mctdh_file.write("-----------------------------------------\n")
@@ -1119,9 +1173,12 @@ def mctdh(filnam, modes_included, **kwargs):
                 for ist in range(1, nstate + 1):
                     jlast = ist - 1
                     for jst in range(1, jlast + 1):
-                        mctdh_file.write(f"b{jst}{ist}_m{imode}_m{jmode} |1 S{jst}&{ist} |{lmode_count} q |{kmode_count} q\n")
+                        mctdh_file.write(f"C1_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d} |1 S{jst}&{ist} |{lmode_count} q |{kmode_count} q\n")
 
         if SOC_flag:
+
+            format_string = "{label:<25s}{link:<20s}\n"
+            make_line = functools.partial(format_string.format)
             
             # Write FULL HAMILTONIAN SOC OFF-DIAGONAL VIBRONIC COUPLINGS
             mctdh_file.write("-----------------------------------------\n")
@@ -1136,14 +1193,33 @@ def mctdh(filnam, modes_included, **kwargs):
                         jlast = ist - 1
                         for jst in range(1, jlast + 1):
                             #note to self: the I* is performing ARITHMETIC on SOr_{jst}_{ist} prepared earlier, does that mean we neeed to remove the l and _m{imode}
-                            mctdh_file.write(f"I*l{jst}{ist}_m{imode}r |1 Z{jst}&{ist}|{kmode_count} q\n")
-                            mctdh_file.write(f"-I*l{jst}{ist}_m{imode}i |1 Z{ist}&{jst}|{kmode_count} q\n")
-                            mctdh_file.write(f"I*q{jst}{ist}_m{imode}r |1 Z{jst}&{ist}|{kmode_count} q^2\n")
-                            mctdh_file.write(f"-I*q{jst}{ist}_m{imode}i |1 Z{ist}&{jst}|{kmode_count} q^2\n")
-                            mctdh_file.write(f"I*b{jst}{ist}_m{imode}_m{jmode}r |1 Z{jst}&{ist} |{lmode_count} q |{kmode_count} q\n")
-                            mctdh_file.write(f"-I*b{jst}{ist}_m{imode}_m{jmode}i |1 Z{ist}&{jst} |{lmode_count} q |{kmode_count} q\n")
-                            mctdh_file.write(f"I*SOC{jst}{ist}_m{imode}_m{jmode}r |1 Z{jst}&{ist}|{kmode_count} q\n")
-                            mctdh_file.write(f"-I*SOC{jst}{ist}_m{imode}_m{jmode}i |1 Z{ist}&{jst}|{kmode_count} q\n")
+                            Ham1.append(make_line(label=f"I*C1_s{jst:>02d}_s{ist:>02d}_v{imode:>02d}r", link=f"|1 Z{jst}&{ist} | {kmode_count} q"))
+                            Ham2.append(make_line(label=f"-I*C1_s{jst:>02d}_s{ist:>02d}_v{imode:>02d}i", link=f"|1 Z{ist}&{jst} | {kmode_count} q"))
+                            Ham3.append(make_line(label=f"I*C2_s{jst:>02d}s{ist:>02d}_v{imode:>02d}r", link=f"|1 Z{jst}&{ist} | {kmode_count} q^2"))
+                            Ham4.append(make_line(label=f"-I*C2_s{jst:>02d}s{ist:>02d}_v{imode:>02d}i", link=f"|1 Z{ist}&{jst} | {kmode_count} q^2"))
+                            Ham5.append(make_line(label=f"I*C1_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}r", link=f"|1 Z{jst}&{ist} | {lmode_count} q |{kmode_count} q"))
+                            Ham6.append(make_line(label=f"-I*C1_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}i", link=f"|1 Z{ist}&{jst} | {lmode_count} q |{kmode_count} q"))
+                            Ham7.append(make_line(label=f"I*SOC_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}r", link=f"|1 Z{jst}&{ist} | {kmode_count} q"))
+                            Ham8.append(make_line(label=f"-I*SOC_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}i", link=f"|1 Z{ist}&{jst} | {kmode_count} q"))
+            Ham.extend(Ham1)
+            Ham.append("\n")
+            Ham.extend(Ham2)
+            Ham.append("\n")
+            Ham.extend(Ham3)
+            Ham.append("\n")
+            Ham.extend(Ham4)
+            Ham.append("\n")
+            Ham.extend(Ham5)
+            Ham.append("\n")
+            Ham.extend(Ham6)
+            Ham.append("\n")
+            Ham.extend(Ham7)
+            Ham.append("\n")
+            Ham.extend(Ham8)
+            Ham.append("\n")
+
+            for idx in Ham:
+                mctdh_file.write(idx)
 
         # Close the file
         mctdh_file.write("-----------------------------------------\n")
@@ -1169,13 +1245,13 @@ def mctdh(filnam, modes_included, **kwargs):
         #     mctdh_file.write("\nend-hamiltonian-section\n\n")
 
         # Write HAMILTONIAN-SECTION_IO
-        mctdh_file.write(f"HAMILTONIAN-SECTION_IO\n")
+        mctdh_file.write(f"HAMILTONIAN-SECTION_Ex\n")
         mctdh_file.write("\n")
 
         # Write modes and mode labels
         mctdh_file.write(" modes | el")
         for imode_include in range(1, nmodes + 1):
-            mctdh_file.write(f" | m{modes_included[imode_include]}")
+            mctdh_file.write(f" | v{modes_included[imode_include]:>02d}")
         mctdh_file.write("\n")
         mctdh_file.write("-----------------------------------------\n")
 
