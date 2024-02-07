@@ -662,6 +662,15 @@ def mctdh(filnam, modes_included, **kwargs):
     Quadratic = []
     Bilinear = []
     SOC = []
+    Ham = []
+    Ham1 = []
+    Ham2 = []
+    Ham3 = []
+    Ham4 = []
+    Ham5 = []
+    Ham6 = []
+    Ham7 = []
+    Ham8 = []
 
     #Heading for mctdh.op
     Heading.append("OP_DEFINE-SECTION")
@@ -836,6 +845,29 @@ def mctdh(filnam, modes_included, **kwargs):
                     print(f"State {jst} & {ist} Linear Off-Diagonal: {quadratic_offdiag_ev}\n")
                     Quadratic.append(make_line(label=f"C2_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{imode:>02d}", value=quadratic_offdiag_ev))
 
+                    if SOC_flag:
+
+                        try: 
+                            
+                            # Extract DSOME_cm_plus
+                            DSOME_cm_plus = extract_DSOME(f'{filnam}_mode{imode}_+{qsize}.out', nstate)
+                            DSOME_cm_plus_real, DSOME_cm_plus_imag = DSOME_cm_plus[0], DSOME_cm_plus[1]
+
+                            # Extract DSOME_cm_plusx2
+                            DSOME_cm_plusx2 = extract_DSOME(f'{filnam}_mode{imode}_+{qsize}x2.out', nstate)
+                            DSOME_cm_plusx2_real, DSOME_cm_plusx2_imag = DSOME_cm_plusx2[0], DSOME_cm_plusx2[1]
+
+                            # Extract DSOME_cm_minus
+                            DSOME_cm_minus = extract_DSOME(f'{filnam}_mode{imode}_-{qsize}.out', nstate)
+                            DSOME_cm_minus_real, DSOME_cm_minus_imag = DSOME_cm_minus[0], DSOME_cm_minus[1]
+
+                            # Extract DSOME_cm_minusx2
+                            DSOME_cm_minusx2 = extract_DSOME(f'{filnam}_mode{imode}_-{qsize}x2.out', nstate)
+                            DSOME_cm_minusx2_real, DSOME_cm_minusx2_imag = DSOME_cm_minusx2[0], DSOME_cm_minusx2[1]
+
+                        except Exception as e:
+                                print(f"Error in SOC: {str(e)}")
+
         else:
             Params.append(f"not good to extract. Skipping mode {imode} for extracting vibronic couplings\n")
 
@@ -892,31 +924,6 @@ def mctdh(filnam, modes_included, **kwargs):
                         if SOC_flag:
 
                             try:
-                                # intialize dictionaries to contain
-                                linear_SOC_cm_real = {}
-                                linear_SOC_cm_imag = {}
-                                quadratic_SOC_cm_real = {}
-                                quadratic_SOC_cm_imag = {}
-                                bilinear_SOC_cm_real = {}
-                                bilinear_SOC_cm_imag = {}
-                                full_Ham_SOC_cm_real = {}
-                                full_Ham_SOC_cm_imag = {}
-
-                                # Extract DSOME_cm_plus
-                                DSOME_cm_plus = extract_DSOME(f'{filnam}_mode{imode}_+{qsize}.out', nstate)
-                                DSOME_cm_plus_real, DSOME_cm_plus_imag = DSOME_cm_plus[0], DSOME_cm_plus[1]
-    
-                                # Extract DSOME_cm_plusx2
-                                DSOME_cm_plusx2 = extract_DSOME(f'{filnam}_mode{imode}_+{qsize}x2.out', nstate)
-                                DSOME_cm_plusx2_real, DSOME_cm_plusx2_imag = DSOME_cm_plusx2[0], DSOME_cm_plusx2[1]
-    
-                                # Extract DSOME_cm_minus
-                                DSOME_cm_minus = extract_DSOME(f'{filnam}_mode{imode}_-{qsize}.out', nstate)
-                                DSOME_cm_minus_real, DSOME_cm_minus_imag = DSOME_cm_minus[0], DSOME_cm_minus[1]
-    
-                                # Extract DSOME_cm_minusx2
-                                DSOME_cm_minusx2 = extract_DSOME(f'{filnam}_mode{imode}_-{qsize}x2.out', nstate)
-                                DSOME_cm_minusx2_real, DSOME_cm_minusx2_imag = DSOME_cm_minusx2[0], DSOME_cm_minusx2[1]
 
                                 # Extract DSOME_cm_pp
                                 DSOME_cm_pp = extract_DSOME(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out', nstate)
@@ -932,73 +939,94 @@ def mctdh(filnam, modes_included, **kwargs):
                                 
                                 # Extract DSOME_cm_mm
                                 DSOME_cm_mm = extract_DSOME(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out', nstate)
-                                DSOME_cm_mm_real, DSOME_cm_mm_imag = DSOME_cm_mm[0], DSOME_cm_mm[1] 
-    
-                                # Set jst ist tuple as index
-                                idx = (jst, ist)
-    
-                                # Compute linear SOC
-                                DSOME_cm_plus_real[idx] *= coord_disp_plus[imode]
-                                DSOME_cm_plus_imag[idx] *= coord_disp_plus[imode]
-                                DSOME_cm_minus_real[idx] *= coord_disp_minus[imode]
-                                DSOME_cm_minus_imag[idx] *= coord_disp_minus[imode] 
-                                linear_SOC_cm_real[idx] = (DSOME_cm_plus_real[idx]- DSOME_cm_minus_real[idx]) / (2 * qsize)
-                                linear_SOC_cm_imag[idx] = (DSOME_cm_plus_imag[idx]- DSOME_cm_minus_imag[idx]) / (2 * qsize)
-            
-                                # Compute quadratic SOC
-                                DSOME_cm_plusx2_real[idx] *= coord_disp_plusx2[imode] * coord_disp_plusx2[imode]
-                                DSOME_cm_plusx2_imag[idx] *= coord_disp_plusx2[imode] * coord_disp_plusx2[imode] 
-                                DSOME_cm_minusx2_real[idx] *= coord_disp_minusx2[imode] * coord_disp_minusx2[imode]
-                                DSOME_cm_minusx2_imag[idx] *= coord_disp_minusx2[imode] * coord_disp_minusx2[imode]
-                                quadratic_SOC_cm_real[idx] = (DSOME_cm_plusx2_real[idx] + DSOME_cm_minusx2_real[idx] - 2.0 * DSOME_cm_0_real[idx]) / (4.0 * qsize * qsize)
-                                quadratic_SOC_cm_imag[idx] = (DSOME_cm_plusx2_imag[idx] + DSOME_cm_minusx2_imag[idx] - 2.0 * DSOME_cm_0_imag[idx]) / (4.0 * qsize * qsize)
+                                DSOME_cm_mm_real, DSOME_cm_mm_imag = DSOME_cm_mm[0], DSOME_cm_mm[1]
 
-                                # Compute bilinear SOC
-                                DSOME_cm_pp_real[idx] *= coord_disp_pp[imode] * coord_disp_pp[jmode]
-                                DSOME_cm_pp_imag[idx] *= coord_disp_pp[imode] * coord_disp_pp[jmode]
-                                DSOME_cm_mm_real[idx] *= coord_disp_mm[imode] * coord_disp_mm[jmode]
-                                DSOME_cm_mm_imag[idx] *= coord_disp_mm[imode] * coord_disp_mm[jmode]
-                                DSOME_cm_pm_real[idx] *= coord_disp_pm[imode] * coord_disp_pm[jmode]
-                                DSOME_cm_pm_imag[idx] *= coord_disp_pm[imode] * coord_disp_pm[jmode]
-                                DSOME_cm_mp_real[idx] *= coord_disp_mp[imode] * coord_disp_mp[jmode]
-                                DSOME_cm_mp_imag[idx] *= coord_disp_mp[imode] * coord_disp_mp[jmode]
-                                bilinear_SOC_cm_real[idx] = ( DSOME_cm_pp_real[idx] + DSOME_cm_mm_real[idx] - DSOME_cm_pm_real[idx] - DSOME_cm_mp_real[idx] ) / (4.0 * qsize * qsize )
-                                bilinear_SOC_cm_imag[idx] = ( DSOME_cm_pp_imag[idx] + DSOME_cm_mm_imag[idx] - DSOME_cm_pm_imag[idx] - DSOME_cm_mp_imag[idx] ) / (4.0 * qsize * qsize )
-
-                                # Compute full SOC
-                                full_Ham_SOC_cm_real[idx] = ( DSOME_cm_0_real[idx] + linear_SOC_cm_real[idx] + quadratic_SOC_cm_real[idx] + bilinear_SOC_cm_real[idx])
-                                full_Ham_SOC_cm_imag[idx] = ( DSOME_cm_0_imag[idx] + linear_SOC_cm_imag[idx] + quadratic_SOC_cm_imag[idx] + bilinear_SOC_cm_imag[idx])
-
-                                # Hij^(0) + lij^(1)*x_1 + lij^(2)*x_2 + 0.5qij^(1)*x_1 ^ 2 + 0.5qij^(2)*x_2 ^ 2 + bij^(1,2) * x_1 x_2
-                                # Does this mean I have to extract the atom coordinates from every file too?
-                                # print(imode, icomp, refcoord[icomp], nrmmod[icomp, imode], coord_disp_plus, coord_disp_minus, distcoord_plus[icomp], distcoord_minus[icomp])
-                                # Probably is distcoord_plus and distcoord_minus for x1,x2 respectively
-    
-                                # Print and store results
-                                SOC.append(make_line(label=f"C1_s{jst:>02d}_s{ist:>02d}_v{imode:>02d}r", value=linear_SOC_cm_real[idx], units=', cm-1'))
-                                SOC.append(make_line(label=f"C1_s{jst:>02d}_s{ist:>02d}_v{imode:>02d}i", value=linear_SOC_cm_imag[idx], units=', cm-1'))
-                                SOC.append("\n")
-
-                                SOC.append(make_line(label=f"C2_s{jst:>02d}s{ist:>02d}_v{imode:>02d}r", value=quadratic_SOC_cm_real[idx], units=', cm-1'))
-                                SOC.append(make_line(label=f"C2_s{jst:>02d}s{ist:>02d}_v{imode:>02d}i", value=quadratic_SOC_cm_imag[idx], units=', cm-1')) 
-                                SOC.append("\n")
-
-                                SOC.append(make_line(label=f"C1_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}r", value=bilinear_SOC_cm_real[idx], units=', cm-1'))
-                                SOC.append(make_line(label=f"C1_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}i", value=bilinear_SOC_cm_imag[idx], units=', cm-1'))
-                                SOC.append("\n")
-
-                                print(f"State {jst:>02d} & {ist:>02d} SOC (real) at modes {imode:>02d} & {jmode:>02d} {full_Ham_SOC_cm_real[idx]}, cm-1\n")
-                                SOC.append(make_line(label=f"SOC_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}r", value=full_Ham_SOC_cm_real[idx], units=', cm-1'))
-
-                                print(f"State {jst:>02d} & {ist:>02d} SOC (imag) at modes {imode:>02d} & {jmode:>02d} {full_Ham_SOC_cm_imag[idx]}, cm-1\n")
-                                SOC.append(make_line(label=f"SOC_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}i", value=full_Ham_SOC_cm_imag[idx], units=', cm-1'))
-                                SOC.append("\n")
 
                             except Exception as e:
                                 print(f"Error in SOC: {str(e)}")
-                    #Bilinear.append("\n")
             else:
                 print(f"not good to extract. Skipping mode {imode} mode {jmode} for extracting bilinear vibronic couplings")
+
+    if SOC_flag:
+
+        for kmode in range(1, nmodes + 1):
+            imode = modes_included[kmode]
+            lmode_last = kmode - 1
+            for lmode in range(1, lmode_last + 1):
+                jmode = modes_included[lmode]
+                for ist in range(1, nstate + 1):
+                    jlast = ist - 1
+                    for jst in range(1, jlast + 1):
+
+                        # intialize dictionaries to contain
+                        linear_SOC_cm_real = {}
+                        linear_SOC_cm_imag = {}
+                        quadratic_SOC_cm_real = {}
+                        quadratic_SOC_cm_imag = {}
+                        bilinear_SOC_cm_real = {}
+                        bilinear_SOC_cm_imag = {}
+                        full_Ham_SOC_cm_real = {}
+                        full_Ham_SOC_cm_imag = {}
+                    
+                        # Set jst ist tuple as index
+                        idx = (jst, ist)
+                        
+                        # Compute linear SOC
+                        DSOME_cm_plus_real[idx] *= coord_disp_plus[imode]
+                        DSOME_cm_plus_imag[idx] *= coord_disp_plus[imode]
+                        DSOME_cm_minus_real[idx] *= coord_disp_minus[imode]
+                        DSOME_cm_minus_imag[idx] *= coord_disp_minus[imode] 
+                        linear_SOC_cm_real[idx] = (DSOME_cm_plus_real[idx]- DSOME_cm_minus_real[idx]) / (2 * qsize)
+                        linear_SOC_cm_imag[idx] = (DSOME_cm_plus_imag[idx]- DSOME_cm_minus_imag[idx]) / (2 * qsize)
+                    
+                        # Compute quadratic SOC
+                        DSOME_cm_plusx2_real[idx] *= coord_disp_plusx2[imode] * coord_disp_plusx2[imode]
+                        DSOME_cm_plusx2_imag[idx] *= coord_disp_plusx2[imode] * coord_disp_plusx2[imode] 
+                        DSOME_cm_minusx2_real[idx] *= coord_disp_minusx2[imode] * coord_disp_minusx2[imode]
+                        DSOME_cm_minusx2_imag[idx] *= coord_disp_minusx2[imode] * coord_disp_minusx2[imode]
+                        quadratic_SOC_cm_real[idx] = (DSOME_cm_plusx2_real[idx] + DSOME_cm_minusx2_real[idx] - 2.0 * DSOME_cm_0_real[idx]) / (4.0 * qsize * qsize)
+                        quadratic_SOC_cm_imag[idx] = (DSOME_cm_plusx2_imag[idx] + DSOME_cm_minusx2_imag[idx] - 2.0 * DSOME_cm_0_imag[idx]) / (4.0 * qsize * qsize)
+                    
+                        # Compute bilinear SOC
+                        DSOME_cm_pp_real[idx] *= coord_disp_pp[imode] * coord_disp_pp[jmode]
+                        DSOME_cm_pp_imag[idx] *= coord_disp_pp[imode] * coord_disp_pp[jmode]
+                        DSOME_cm_mm_real[idx] *= coord_disp_mm[imode] * coord_disp_mm[jmode]
+                        DSOME_cm_mm_imag[idx] *= coord_disp_mm[imode] * coord_disp_mm[jmode]
+                        DSOME_cm_pm_real[idx] *= coord_disp_pm[imode] * coord_disp_pm[jmode]
+                        DSOME_cm_pm_imag[idx] *= coord_disp_pm[imode] * coord_disp_pm[jmode]
+                        DSOME_cm_mp_real[idx] *= coord_disp_mp[imode] * coord_disp_mp[jmode]
+                        DSOME_cm_mp_imag[idx] *= coord_disp_mp[imode] * coord_disp_mp[jmode]
+                        bilinear_SOC_cm_real[idx] = ( DSOME_cm_pp_real[idx] + DSOME_cm_mm_real[idx] - DSOME_cm_pm_real[idx] - DSOME_cm_mp_real[idx] ) / (4.0 * qsize * qsize )
+                        bilinear_SOC_cm_imag[idx] = ( DSOME_cm_pp_imag[idx] + DSOME_cm_mm_imag[idx] - DSOME_cm_pm_imag[idx] - DSOME_cm_mp_imag[idx] ) / (4.0 * qsize * qsize )
+                    
+                        # Compute full SOC
+                        full_Ham_SOC_cm_real[idx] = ( DSOME_cm_0_real[idx] + linear_SOC_cm_real[idx] + quadratic_SOC_cm_real[idx] + bilinear_SOC_cm_real[idx])
+                        full_Ham_SOC_cm_imag[idx] = ( DSOME_cm_0_imag[idx] + linear_SOC_cm_imag[idx] + quadratic_SOC_cm_imag[idx] + bilinear_SOC_cm_imag[idx])
+                    
+                        # Hij^(0) + lij^(1)*x_1 + lij^(2)*x_2 + 0.5qij^(1)*x_1 ^ 2 + 0.5qij^(2)*x_2 ^ 2 + bij^(1,2) * x_1 x_2
+                        # Does this mean I have to extract the atom coordinates from every file too?
+                        # print(imode, icomp, refcoord[icomp], nrmmod[icomp, imode], coord_disp_plus, coord_disp_minus, distcoord_plus[icomp], distcoord_minus[icomp])
+                        # Probably is distcoord_plus and distcoord_minus for x1,x2 respectively
+                        
+                        # Print and store results
+                        SOC.append(make_line(label=f"C1_s{jst:>02d}_s{ist:>02d}_v{imode:>02d}r", value=linear_SOC_cm_real[idx], units=', cm-1'))
+                        SOC.append(make_line(label=f"C1_s{jst:>02d}_s{ist:>02d}_v{imode:>02d}i", value=linear_SOC_cm_imag[idx], units=', cm-1'))
+                        SOC.append("\n")
+                    
+                        SOC.append(make_line(label=f"C2_s{jst:>02d}s{ist:>02d}_v{imode:>02d}r", value=quadratic_SOC_cm_real[idx], units=', cm-1'))
+                        SOC.append(make_line(label=f"C2_s{jst:>02d}s{ist:>02d}_v{imode:>02d}i", value=quadratic_SOC_cm_imag[idx], units=', cm-1')) 
+                        SOC.append("\n")
+                    
+                        SOC.append(make_line(label=f"C1_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}r", value=bilinear_SOC_cm_real[idx], units=', cm-1'))
+                        SOC.append(make_line(label=f"C1_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}i", value=bilinear_SOC_cm_imag[idx], units=', cm-1'))
+                        SOC.append("\n")
+                    
+                        print(f"State {jst:>02d} & {ist:>02d} SOC (real) at modes {imode:>02d} & {jmode:>02d} {full_Ham_SOC_cm_real[idx]}, cm-1\n")
+                        SOC.append(make_line(label=f"SOC_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}r", value=full_Ham_SOC_cm_real[idx], units=', cm-1'))
+                    
+                        print(f"State {jst:>02d} & {ist:>02d} SOC (imag) at modes {imode:>02d} & {jmode:>02d} {full_Ham_SOC_cm_imag[idx]}, cm-1\n")
+                        SOC.append(make_line(label=f"SOC_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}i", value=full_Ham_SOC_cm_imag[idx], units=', cm-1'))
+                        SOC.append("\n")
 
     Params.append("\n")
     Params.extend(Linear)
@@ -1148,6 +1176,9 @@ def mctdh(filnam, modes_included, **kwargs):
                         mctdh_file.write(f"C1_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d} |1 S{jst}&{ist} |{lmode_count} q |{kmode_count} q\n")
 
         if SOC_flag:
+
+            format_string = "{label:<25s}{link:<20s}\n"
+            make_line = functools.partial(format_string.format)
             
             # Write FULL HAMILTONIAN SOC OFF-DIAGONAL VIBRONIC COUPLINGS
             mctdh_file.write("-----------------------------------------\n")
@@ -1162,14 +1193,33 @@ def mctdh(filnam, modes_included, **kwargs):
                         jlast = ist - 1
                         for jst in range(1, jlast + 1):
                             #note to self: the I* is performing ARITHMETIC on SOr_{jst}_{ist} prepared earlier, does that mean we neeed to remove the l and _m{imode}
-                            mctdh_file.write(f"I*C1_s{jst:>02d}_s{ist:>02d}_v{imode:>02d}r |1 Z{jst}&{ist}|{kmode_count} q\n")
-                            mctdh_file.write(f"-I*C1_s{jst:>02d}_s{ist:>02d}_v{imode:>02d}i |1 Z{ist}&{jst}|{kmode_count} q\n")
-                            mctdh_file.write(f"I*C2_s{jst:>02d}s{ist:>02d}_v{imode:>02d}r |1 Z{jst}&{ist}|{kmode_count} q^2\n")
-                            mctdh_file.write(f"-I*C2_s{jst:>02d}s{ist:>02d}_v{imode:>02d}i |1 Z{ist}&{jst}|{kmode_count} q^2\n")
-                            mctdh_file.write(f"I*C1_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}r |1 Z{jst}&{ist} |{lmode_count} q |{kmode_count} q\n")
-                            mctdh_file.write(f"-I*C1_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}i |1 Z{ist}&{jst} |{lmode_count} q |{kmode_count} q\n")
-                            mctdh_file.write(f"I*SOC_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}r |1 Z{jst}&{ist}|{kmode_count} q\n")
-                            mctdh_file.write(f"-I*SOC_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}i |1 Z{ist}&{jst}|{kmode_count} q\n")
+                            Ham1.append(make_line(label=f"I*C1_s{jst:>02d}_s{ist:>02d}_v{imode:>02d}r", link=f"|1 Z{jst}&{ist} | {kmode_count} q"))
+                            Ham2.append(make_line(label=f"-I*C1_s{jst:>02d}_s{ist:>02d}_v{imode:>02d}i", link=f"|1 Z{ist}&{jst} | {kmode_count} q"))
+                            Ham3.append(make_line(label=f"I*C2_s{jst:>02d}s{ist:>02d}_v{imode:>02d}r", link=f"|1 Z{jst}&{ist} | {kmode_count} q^2"))
+                            Ham4.append(make_line(label=f"-I*C2_s{jst:>02d}s{ist:>02d}_v{imode:>02d}i", link=f"|1 Z{ist}&{jst} | {kmode_count} q^2"))
+                            Ham5.append(make_line(label=f"I*C1_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}r", link=f"|1 Z{jst}&{ist} | {lmode_count} q |{kmode_count} q"))
+                            Ham6.append(make_line(label=f"-I*C1_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}i", link=f"|1 Z{ist}&{jst} | {lmode_count} q |{kmode_count} q"))
+                            Ham7.append(make_line(label=f"I*SOC_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}r", link=f"|1 Z{jst}&{ist} | {kmode_count} q"))
+                            Ham8.append(make_line(label=f"-I*SOC_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}i", link=f"|1 Z{ist}&{jst} | {kmode_count} q"))
+            Ham.extend(Ham1)
+            Ham.append("\n")
+            Ham.extend(Ham2)
+            Ham.append("\n")
+            Ham.extend(Ham3)
+            Ham.append("\n")
+            Ham.extend(Ham4)
+            Ham.append("\n")
+            Ham.extend(Ham5)
+            Ham.append("\n")
+            Ham.extend(Ham6)
+            Ham.append("\n")
+            Ham.extend(Ham7)
+            Ham.append("\n")
+            Ham.extend(Ham8)
+            Ham.append("\n")
+
+            for idx in Ham:
+                mctdh_file.write(idx)
 
         # Close the file
         mctdh_file.write("-----------------------------------------\n")
