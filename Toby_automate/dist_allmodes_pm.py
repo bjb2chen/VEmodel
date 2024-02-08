@@ -342,10 +342,10 @@ def diabatization(**kwargs):
                     f'distcoord_plus[icomp] {distcoord_plus[icomp]}\n',
                     f'distcoord_minus[icomp] {distcoord_minus[icomp]}\n',
                 ]
-                print(p_args)
+                #print(p_args)
                 # print(*p_args)
-                # for p in p_args:
-                #     print(p)
+                for p in p_args:
+                    print(p)
 
         # Delete existing dist_structure files
         for dist_file in ['dist_structure_plus', 'dist_structure_minus', 'dist_structure_plusx2', 'dist_structure_minusx2']:
@@ -641,18 +641,18 @@ def extract_DSOME(filnam, nstate):
             except Exception as e:
                 print(f"Error processing line: {DSOMEline} - {e}")
 
-    for left_state_idx in range(1, int(nstate)):
-        for right_state_idx in range(left_state_idx+1, int(nstate)+1):
+    for l_idx in range(1, int(nstate)):
+        for r_idx in range(l_idx+1, int(nstate)+1):
             for level_idx in range(1, 3):
-                full_extracted_set[left_state_idx, right_state_idx, level_idx] = DSOME_set[f'{left_state_idx} & {right_state_idx}, {level_idx}']
+                full_extracted_set[l_idx, r_idx, level_idx] = DSOME_set[f'{l_idx} & {r_idx}, {level_idx}']
 
-            summed_set_real[left_state_idx, right_state_idx] = full_extracted_set[left_state_idx, right_state_idx, 1].real + \
-                                                               full_extracted_set[left_state_idx, right_state_idx, 2].real
+            summed_set_real[l_idx, r_idx] = full_extracted_set[l_idx, r_idx, 1].real + \
+                                                               full_extracted_set[l_idx, r_idx, 2].real
 
-            summed_set_imag[left_state_idx, right_state_idx] = full_extracted_set[left_state_idx, right_state_idx, 1].imag + \
-                                                               full_extracted_set[left_state_idx, right_state_idx, 2].imag
+            summed_set_imag[l_idx, r_idx] = full_extracted_set[l_idx, r_idx, 1].imag + \
+                                                               full_extracted_set[l_idx, r_idx, 2].imag
 
-            append_J[left_state_idx, right_state_idx] = complex(0,summed_set_imag[left_state_idx, right_state_idx])
+            append_J[l_idx, r_idx] = complex(0,summed_set_imag[l_idx, r_idx])
 
     #return full_extracted_set, summed_set_real, summed_set_imag, append_J
     return [summed_set_real, summed_set_imag]
@@ -696,6 +696,7 @@ def mctdh(**kwargs):
     zeroth_filename = f'{filnam}_refG.out'
 
     displacement_keys = ["+1", "+2", "-1", "-2"]
+    displacement_keys_bi = ["++", "+-", "-+", "--"]
 
     # allocate list of dictionaries
     # displacement_filenames = [{} for k in range(1, nmodes+1)]
@@ -852,10 +853,6 @@ def mctdh(**kwargs):
             "+2": f'{filnam}_mode{imode}_+{qsize}x2.out',
             "-1": f'{filnam}_mode{imode}_-{qsize}.out',
             "-2": f'{filnam}_mode{imode}_-{qsize}x2.out',
-            # "-2": f'{filnam}_mode{imode}_-{qsize}x2.out',
-            # "-2": f'{filnam}_mode{imode}_-{qsize}x2.out',
-            # "-2": f'{filnam}_mode{imode}_-{qsize}x2.out',
-            # "-2": f'{filnam}_mode{imode}_-{qsize}x2.out',
         }
 
         vibron_ev = freqcm[imode] * wn2ev
@@ -982,7 +979,7 @@ def mctdh(**kwargs):
                     #     except Exception as e:
                     #         print(f"Error in SOC: {str(e)}")
                     #         pass  # keep executing, we just needed to log that there was an error
-                    #         # breakpoint()
+                    #         #     ()
 
 
 
@@ -991,6 +988,14 @@ def mctdh(**kwargs):
         lmode_last = kmode - 1
         for lmode in range(1, lmode_last + 1):
             jmode = modes_included[lmode]
+
+            displacement_filenames_bi = {
+                "++": f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out',
+                "+-": f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out',
+                "-+": f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out',
+                "--": f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out',
+            }
+
             grace_code_pp = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out"])
             grace_code_pm = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out"])
             grace_code_mp = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out"])
@@ -1068,7 +1073,7 @@ def mctdh(**kwargs):
         for key in displacement_keys:
             try:
                 dsome_real, dsome_imag = extract_DSOME(displacement_filenames[key], nstate)
-                DSOME_cm[k] = {'real': dsome_real, 'imag': dsome_imag}
+                DSOME_cm[key] = {'real': dsome_real, 'imag': dsome_imag}
                 # DSOME_cm[key] = [dsome_real, dsome_imag]
             except Exception as e:
                 print(f"Error in SOC: {str(e)}")
@@ -1199,9 +1204,11 @@ def mctdh(**kwargs):
 
         mctdh_file.write("end-parameter-section\n")
         # Write the header
-        mctdh_file.write("-----------------------------------------\n")
-        mctdh_file.write("HAMILTONIAN-SECTION\n")
-        mctdh_file.write("-----------------------------------------\n")
+        string_test = ""
+        string_test += "-----------------------------------------\n"
+        string_test += "# HAMILTONIAN-SECTION\n"
+        string_test += "-----------------------------------------\n"
+        mctdh_file.write(string_test)
 
         # Write modes and mode labels
         mctdh_file.write(" modes | el")
@@ -1370,6 +1377,8 @@ def mctdh(**kwargs):
                             hamiltonian_blocks['SOC-Real'] += make_line(label=f"I*SOC_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}r", link=f"|1 Z{jst}&{ist} | {kmode_count} q")  # noqa: E501
                             hamiltonian_blocks['SOC-Imag'] += make_line(label=f"-I*SOC_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}i", link=f"|1 Z{ist}&{jst} | {kmode_count} q")  # noqa: E501
 
+            output_string = ""
+            
             for k in key_order:  # glue the blocks together
                 output_string += hamiltonian_blocks[k] + "\n"
             print("Hey check the output string, and the hamiltonian_blocks"); breakpoint()
