@@ -446,7 +446,7 @@ def diabatization(**kwargs):
 
     # Loop over modes and do linear displacements
     for i in range(nof_modes):
-        q1_label = modes_included[i+1]
+        q1_label = modes_included[i]
 
         _remove_existing_distorted_structure_files(linear_disp_filenames)
         index = (i, )
@@ -460,7 +460,7 @@ def diabatization(**kwargs):
 
         # 2D distortion to get bilinear vibronic coupling
         for j in range(i):
-            q2_label = modes_included[j+1]
+            q2_label = modes_included[j]
 
             if not precompute_bilinear:  # modify disp_coord in-place
                 _compute_bi_linear_displacements(i, j, rsize, mode_array, disp_coord)
