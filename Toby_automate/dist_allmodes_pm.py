@@ -232,8 +232,11 @@ def diabatization(**kwargs):
 
     # -------------------------------------------------------------------------
     # NEIL's mappings
-    freq_array = freqcm  # assume we return the array
-    mode_array = nrmmod  # assume we return the array
+
+    s_idx = [i-1 for i in selected_mode_list]  # need to shift by 1 for 0-indexed arrays
+    freq_array = freqcm[s_idx]  # assume we return the array
+    mode_array = nrmmod[:, s_idx]  # assume we return the array
+
     atom_list = [*atmlst.values()]
     charge_list = [*chrglst.values()]
 
@@ -303,7 +306,8 @@ def diabatization(**kwargs):
         }
         assert set(displacements.keys()) == set(linear_disp_keys), f"{linear_disp_keys=} no longer agree!"
 
-        shape = (Z*3, N_tot)
+        #shape = (Z*3, N_tot)
+        shape = (Z*3, N)
         for k in linear_disp_keys:
             assert displacements[k].shape == shape, f"{k=} {displacements[k].shape=} not {shape=}?"
 
@@ -333,7 +337,8 @@ def diabatization(**kwargs):
         }
         assert set(displacements.keys()) == set(bi_linear_disp_keys), f"{bi_linear_disp_keys=} no longer agree!"
 
-        shape = (Z*3, N_tot, N_tot)
+        #shape = (Z*3, N_tot, N_tot)
+        shape = (Z*3, N, N)
         for k in bi_linear_disp_keys:
             assert displacements[k].shape == shape, f"{k=} {displacements[k].shape=} not {shape=}?"
 
@@ -427,7 +432,7 @@ def diabatization(**kwargs):
 
                 with open(games_filename+'.inp', 'a') as fp:
                     fp.write(data)  # can you just do data + ' $END' in one write?
-                    fp.write(' $END')
+                    fp.write('\n $END')
 
                 grace1 = subprocess_run_wrapper(["grep", "DONE WITH MP2 ENERGY", games_filename+'.out'])
                 gamess_calculation_not_run = bool(grace1.returncode != 0)
@@ -471,7 +476,7 @@ def diabatization(**kwargs):
 
             with open(games_filename+'.inp', 'a') as fp:
                 fp.write(data)  # can you just do data + ' $END' in one write?
-                fp.write(' $END')
+                fp.write('\n $END')
 
             # Check if the calculation is done already
             grace2 = subprocess_run_wrapper(["grep", "DONE WITH MP2 ENERGY", games_filename + '.out'])
@@ -512,17 +517,16 @@ def diabatization(**kwargs):
     # -------------------------------------------------------------------------
 
     rsize = _preconvert_qsize_to_rsize(freq_array, qsize)
-
+ 
     # modify disp_coord in-place
     _precompute_linear_displacements(rsize, mode_array, ref_coord_array, disp_coord)
-
-    if precompute_bilinear:  # modify disp_coord in-place (may take a lot of memory?)
-        _precompute_bilinear_displacements(rsize, mode_array, disp_coord)
-
+ 
+    # if precompute_bilinear:  # modify disp_coord in-place (may take a lot of memory?)
+    _precompute_bilinear_displacements(rsize, mode_array, disp_coord)
+ 
     # Loop over modes (that you selected) and do linear displacements
     for i in range(N):
-        print(i)
-
+ 
         _remove_existing_distorted_structure_files(linear_disp_filenames)
         index = (i, )
         _save_distorted_structure(
@@ -530,25 +534,20 @@ def diabatization(**kwargs):
             linear_disp_filenames,
             linear_disp_keys
         )
-
         _create_linear_diabatization_input_files(i, filnam, qsize)
-
+ 
         # 2D distortion to get bilinear vibronic coupling
         for j in range(0, i):
-
-            if not precompute_bilinear:  # modify disp_coord in-place
-                _compute_bi_linear_displacements(i, j, rsize, mode_array, disp_coord)
-
+ 
             _remove_existing_distorted_structure_files(bi_linear_disp_filenames)
-            index = (i, j) if precompute_bilinear else (j, )
+            index = (i, j)
             _save_distorted_structure(
                 index, disp_coord, charge_list, atom_list,
                 bi_linear_disp_filenames,
                 bi_linear_disp_keys,
             )
-
             _create_bilinear_diabatization_input_files(i, j, filnam, qsize)
-
+ 
     return disp_coord
 
 
@@ -1875,6 +1874,7 @@ def main(ref_file="ref_structure", ncols=5, **kwargs):
     })
     # name, modes = pp.filnam, pp.modes_included
     diabatize = diabatization(**diabatization_kwargs)
+    #pprint.pprint(diabatize)
     print("Diabatization successfully modified"); return
 
     tdipole_block = extract_lines_between_patterns(
