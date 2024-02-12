@@ -4,6 +4,7 @@
 import os
 from os.path import splitext
 import sys
+import types
 import subprocess
 import shutil
 import re
@@ -17,8 +18,73 @@ import pprint
 
 
 # local packages
-import project_parameters
+import project_parameters as pp
 from project_parameters import *  # eventually remove this
+
+
+# ---------------------------------------------------------------------------------------
+
+def subprocess_run_wrapper(*args, **kwargs):
+    """ Subprocess.run() returns the value from std.in """
+
+    assert len(args) == 1
+    command = args[0]
+
+    if False and __debug__:  # for checking
+        print(args)
+        print(command)
+        print(kwargs)
+
+        breakpoint()
+
+    if pp.dry_run:
+        print(" ".join(command)+'\n')
+        # fake a return value
+        return_obj = types.SimpleNamespace()
+        return_obj.returncode = 0
+        return return_obj
+    else:
+        return subprocess.run(command, **kwargs)
+
+
+def subprocess_call_wrapper(*args, **kwargs):
+    """ subprocess.call only returns 1/0  """
+
+    assert len(args) == 1
+    command = args[0]
+
+    if False and __debug__:  # for checking
+        print(args)
+        print(command)
+        print(kwargs)
+        breakpoint()
+
+    if pp.dry_run:
+        print(" ".join(command)+'\n')
+        # fake a return value
+        return_obj = types.SimpleNamespace()
+        return_obj.returncode = 0
+        return return_obj
+    else:
+        return subprocess.call(command, **kwargs)
+
+
+def os_system_wrapper(*args, **kwargs):
+    """  """
+    assert len(args) == 1
+    command = args[0]
+
+    if False and __debug__:  # for checking
+        print(args)
+        print(command)
+        print(kwargs)
+        breakpoint()
+
+    if pp.dry_run:
+        print(f"{command}\n")
+        return
+    else:
+        return os.system(command, **kwargs)
 
 
 # ---------------------------------------------------------------------------------------
@@ -57,37 +123,22 @@ def _remove_existing_distorted_structure_files(filename_dict):
     """ Delete existing distorted structure files """
     for filename in filename_dict.values():
         try:
-            subprocess.run(['rm', '-f', filename])
+            subprocess_run_wrapper(['rm', '-f', filename])
         except Exception as e:
             print(f"Error deleting {filename}: {str(e)}")
     return
 
+
 # ---------------------------------------------------------------------------------------
-
-# this function should be moved to project_parameters.py!
-# def filter_modes(excluded_set, ndim):
-#     modes_included = {}
-#     print("NUMBER OF EXCLUDED MODES:", len(excluded_set))
-#     print("They are modes:", *excluded_set)
-
-#     # Iterate through modes to check inclusion
-#     for imode in range(1, ndim + 1):
-#         if imode not in excluded_set:
-#             modes_included[len(modes_included)+1] = imode
-#             print(len(modes_included), imode)
-
-#     print("Number of Modes Included:", len(modes_included))
-
-#     return modes_included
 
 
 def my_subgam(path, **kwargs):
     """ x """
 
     # if its easier to just change project parameters i would recommend doing
-    # ncpus = project_parameters.ncpus
-    # nhour = project_parameters.nhour
-    # ngb = project_parameters.ngb
+    # ncpus = pp.ncpus
+    # nhour = pp.nhour
+    # ngb = pp.ngb
 
     ncpus = kwargs.get('ncpus', 2)
     nhour = kwargs.get('nhour', 1)
@@ -116,11 +167,6 @@ def my_subgam(path, **kwargs):
     with open(f"{input_no_ext}.slurm", "w") as slurm_file:
         slurm_file.write(file_contents)
 
-    command = (
-        "sbatch"
-        f" {input_no_ext}.slurm"
-    )
-
     return f"{input_no_ext}.slurm"
 
 
@@ -136,7 +182,7 @@ def diabatization(**kwargs):
 
     # -------------------------------------------------------------------------
     # unpacking (should get rid of these two lines eventually)
-    modes_included = kwargs['modes_included']
+    # modes_included = kwargs['modes_included']
     filnam = filename = kwargs['project_filename']
 
     # kwargs has a bunch more items inside it
@@ -155,7 +201,7 @@ def diabatization(**kwargs):
     amu2me = kwargs.get('amu2me', 1822.88839)
 
     # if its easier to just change project parameters i would recommend doing
-    # amu2me = project_parameters.amu2me
+    # amu2me = pp.amu2me
     # <...> (etc.)
     # since you have to use these values everywhere I take back what I said about using kwargs
     # probably best to just use project parameters
@@ -194,12 +240,28 @@ def diabatization(**kwargs):
     # make a list for easy calculations
     ref_coord_array = np.array([*refcoord.values()])
 
-    # N should always be an integer!!
-    # instead just use `modes_included` when you need to loop over stuff
-    N = len(project_parameters.N)
+    nof_surfaces = A  # alias
     nof_modes = N  # alias
+    nof_atoms = Z  # alias
 
     NEW = np.newaxis  # alias
+
+    if ((Z*3)**2 > 1e4):
+        print("Maybe think about not precomputing? Check with Neil again?")
+        breakpoint()
+        import sys; sys.exit()
+        # ---------------------------------------------------------------------
+        # may want to consider indexing the array?
+
+        # throw away the modes we don't need
+        column_index = [j-1 for j in selected_mode_list]
+
+        # anything whose dimensionality was N_tot we need to reduce
+        # (throw away everything except the columns you needed)
+        mode_array = np.array(mode_array[:, column_index])
+        freq_array = np.array(freq_array[:, column_index])
+        breakpoint()
+        # ---------------------------------------------------------------------
 
     """ precomputing the bilinear makes a (ndim, nof_modes, nof_modes) sized numpy array
     for each of the 4 ++, +-, -+, -- bilinear keys.
@@ -220,15 +282,17 @@ def diabatization(**kwargs):
 
     def _precompute_linear_displacements(R_array, mode_array, reference, distored_coords):
         """
-        `R_array` is assumed to be of dimension (ndim)
-        `mode_array` is assumed to be of dimension (ndim, nof_modes)
+        `reference` is (Z*3, ) ~ x,y,and z coordinates for each atom
+        `R_array` is assumed to be of dimension (N_tot) ~ 1 value of displacement for all modes
+        `mode_array` is assumed to be of dimension (Z*3, nof_modes)
+        Z*3 == 9
+
         Use broadcasting.
 
         The first dimension iterates over the atoms and their xyz coordinates.
         The second dimension iterates over the normal modes.
-
-        ndim == nof_modes (as far as I can tell?)
         """
+        Z, N = pp.Z, pp.N
 
         # the `:` of the second dimension of mode_array is what we index with i or j
         displacements = {
@@ -239,8 +303,9 @@ def diabatization(**kwargs):
         }
         assert set(displacements.keys()) == set(linear_disp_keys), f"{linear_disp_keys=} no longer agree!"
 
+        shape = (Z*3, N_tot)
         for k in linear_disp_keys:
-            assert displacements[k].shape == (ndim, ndim), f"{k=} {displacements[k].shape=} not {(ndim, nof_modes)=}?"
+            assert displacements[k].shape == shape, f"{k=} {displacements[k].shape=} not {shape=}?"
 
         # store the displacements in the `distored_coords` dictionary
         for key in linear_disp_keys:
@@ -250,27 +315,26 @@ def diabatization(**kwargs):
 
     def _precompute_bilinear_displacements(R_array, mode_array, distored_coords):
         """
-        `R_array` is assumed to be of dimension (ndim)
-        `mode_array` is assumed to be of dimension (ndim, nof_modes, nof_modes)
+        `R_array` is assumed to be of dimension (Z*3)
+        `mode_array` is assumed to be of dimension (Z*3, N, N)
         Use broadcasting.
 
         The first dimension iterates over the atoms and their xyz coordinates.
         The second dimension iterates over the normal modes (i).
         The third dimension iterates over the normal modes (j).
-
-        ndim == nof_modes (as far as I can tell?)
         """
+        Z, N = pp.Z, pp.N
 
         displacements = {
             "++": distored_coords["+1"][:, :, NEW] + R_array[NEW, NEW, :] * mode_array[:, NEW, :],
             "+-": distored_coords["+1"][:, :, NEW] - R_array[NEW, NEW, :] * mode_array[:, NEW, :],
             "-+": distored_coords["-1"][:, :, NEW] + R_array[NEW, NEW, :] * mode_array[:, NEW, :],
             "--": distored_coords["-1"][:, :, NEW] - R_array[NEW, NEW, :] * mode_array[:, NEW, :],
-        } 
+        }
         assert set(displacements.keys()) == set(bi_linear_disp_keys), f"{bi_linear_disp_keys=} no longer agree!"
 
+        shape = (Z*3, N_tot, N_tot)
         for k in bi_linear_disp_keys:
-            shape = (ndim, nof_modes*3, nof_modes*3)  # 3 represents 3 xyz coordinates for each mode?
             assert displacements[k].shape == shape, f"{k=} {displacements[k].shape=} not {shape=}?"
 
         # store the displacements in the `distored_coords` dictionary
@@ -282,6 +346,17 @@ def diabatization(**kwargs):
     def _save_distorted_structure(mode_idx, displaced_q, charge_list, atom_list, filename_list, key_list):
         """ save the distorted structure to the `distored_structure_filenames`
         `displaced_q` is an array of dimension (ndim, ndim)
+
+        mode_idx can be (i, ) or (i, j, )
+        so that
+            d[(offset+0, *mode_idx)]
+        is like
+            d[a, i, j]
+            or
+            d[a, i]
+        where the first index is picking the atom xyz
+        and the second index is the first modes xyz
+        and the third index is the second modex xyz
         """
 
         header, data = "{:<2s} {:} ", "{: .10f} " * natoms
@@ -314,25 +389,24 @@ def diabatization(**kwargs):
             # write to file
             path = filename_list[key]
             with open(path, 'a') as fp:
-                fp.write("\n".join(file_contents))
+                fp.write("".join(file_contents))
 
         return
 
-    def _create_linear_diabatization_input_files(filename, q1_label, qsize):
+    def _create_linear_diabatization_input_files(i, filename, qsize):
         """ this could be improved somewhat
 
         The `q1_label` goes from (1 -> nof_modes+1) rather than (0 -> nof_modes).
         """
-
+        q1_label = pp.mode_map_dict[i]  # returns the label of the mode at the array's ith index
         refG_out = f"{filename}_refG.out"
 
         # Check if the reference geometry calculation is done?
-        grace0 = subprocess.run(["grep", "DONE WITH MP2 ENERGY", refG_out])
+        grace0 = subprocess_run_wrapper(["grep", "DONE WITH MP2 ENERGY", refG_out])
         ref_geom_flag_exists = bool(grace0.returncode == 0)
 
         for d1 in ['+', '-']:
             p_or_m = {'+': 'plus', '-': 'minus'}[d1]
-
             for suffix in ['', 'x2']:
                 games_filename = f'{filename}_mode{q1_label}_{d1}{qsize}{suffix}'
                 distored_struct_file = f'dist_structure_{p_or_m}{suffix}'
@@ -347,22 +421,22 @@ def diabatization(**kwargs):
 
                 # so you only write to this file to then change another file?
                 # but i guess its good to have a record of these files?
+                #
                 with open(distored_struct_file, 'r', errors='replace') as fp:
                     data = fp.read()
 
                 with open(games_filename+'.inp', 'a') as fp:
                     fp.write(data)  # can you just do data + ' $END' in one write?
-                    fp.write('\n')
                     fp.write(' $END')
 
-                grace1 = subprocess.run(["grep", "DONE WITH MP2 ENERGY", games_filename+'.out'])
+                grace1 = subprocess_run_wrapper(["grep", "DONE WITH MP2 ENERGY", games_filename+'.out'])
                 gamess_calculation_not_run = bool(grace1.returncode != 0)
 
                 # This means that refG completed successfully and `diabmode*.out` not completed
-                if ref_geom_flag_exists and gamess_calculation_not_run:
+                if (ref_geom_flag_exists and gamess_calculation_not_run) or pp.dry_run:
                     print(f"Running calculations for {games_filename}")
                     try:
-                        os.system("sbatch" + " " + my_subgam(games_filename+'.inp', ncpus=2, ngb=1, nhour=1))
+                        os_system_wrapper("sbatch" + " " + my_subgam(games_filename+'.inp', ncpus=2, ngb=1, nhour=1))
                     except Exception as e:
                         print(f"Error running diabatization calculation: {str(e)}")
                 else:
@@ -370,14 +444,16 @@ def diabatization(**kwargs):
 
         return
 
-    def _create_bilinear_diabatization_input_files(filename, q1_label, q2_label, qsize):
+    def _create_bilinear_diabatization_input_files(i, j, filename, qsize):
         """ this could be improved somewhat
         """
+        q1_label = pp.mode_map_dict[i]  # returns the label of the mode at the array's i-th index
+        q2_label = pp.mode_map_dict[j]  # returns the label of the mode at the array's j-th index
 
         refG_out = f"{filename}_refG.out"
 
         # Check if the reference geometry calculation is done?
-        grace0 = subprocess.run(["grep", "DONE WITH MP2 ENERGY", refG_out])
+        grace0 = subprocess_run_wrapper(["grep", "DONE WITH MP2 ENERGY", refG_out])
         ref_geom_flag_exists = bool(grace0.returncode == 0)
 
         for d1, d2 in it.product(['+', '-'], ['+', '-']):
@@ -395,18 +471,17 @@ def diabatization(**kwargs):
 
             with open(games_filename+'.inp', 'a') as fp:
                 fp.write(data)  # can you just do data + ' $END' in one write?
-                fp.write('\n')
                 fp.write(' $END')
 
             # Check if the calculation is done already
-            grace2 = subprocess.run(["grep", "DONE WITH MP2 ENERGY", games_filename + '.out'])
+            grace2 = subprocess_run_wrapper(["grep", "DONE WITH MP2 ENERGY", games_filename + '.out'])
             gamess_calculation_not_run = bool(grace2.returncode != 0)
 
             # this will never work? grace0 is not defined
-            if ref_geom_flag_exists and gamess_calculation_not_run:
+            if (ref_geom_flag_exists and gamess_calculation_not_run) or pp.dry_run:
                 print(f"Running calculations for {games_filename}!")
                 try:
-                    os.system("sbatch" + " " + my_subgam(games_filename+'.inp', ncpus=2, ngb=1, nhour=1))
+                    os_system_wrapper("sbatch" + " " + my_subgam(games_filename+'.inp', ncpus=2, ngb=1, nhour=1))
                 except Exception as e:
                     print(f"Error running diabatization calculation: {str(e)}")
             else:
@@ -444,9 +519,9 @@ def diabatization(**kwargs):
     if precompute_bilinear:  # modify disp_coord in-place (may take a lot of memory?)
         _precompute_bilinear_displacements(rsize, mode_array, disp_coord)
 
-    # Loop over modes and do linear displacements
-    for i in range(nof_modes):
-        q1_label = modes_included[i]
+    # Loop over modes (that you selected) and do linear displacements
+    for i in range(N):
+        print(i)
 
         _remove_existing_distorted_structure_files(linear_disp_filenames)
         index = (i, )
@@ -456,11 +531,10 @@ def diabatization(**kwargs):
             linear_disp_keys
         )
 
-        _create_linear_diabatization_input_files(filnam, q1_label, qsize)
+        _create_linear_diabatization_input_files(i, filnam, qsize)
 
         # 2D distortion to get bilinear vibronic coupling
-        for j in range(i):
-            q2_label = modes_included[j]
+        for j in range(0, i):
 
             if not precompute_bilinear:  # modify disp_coord in-place
                 _compute_bi_linear_displacements(i, j, rsize, mode_array, disp_coord)
@@ -473,7 +547,7 @@ def diabatization(**kwargs):
                 bi_linear_disp_keys,
             )
 
-            _create_bilinear_diabatization_input_files(filnam, q1_label, q2_label, qsize)
+            _create_bilinear_diabatization_input_files(i, j, filnam, qsize)
 
     return disp_coord
 
@@ -486,7 +560,7 @@ def diabatization(**kwargs):
 def extract_ground_state_energy(hessout, pattern):
     try:
         command = f'grep "{pattern}" {hessout} | tail -1 | cut -c40-'
-        result = subprocess.run(command, shell=True, text=True, capture_output=True)
+        result = subprocess_run_wrapper(command, shell=True, text=True, capture_output=True)
         output = float(result.stdout.strip().replace(" ", ""))
         return output
     except Exception as e:
@@ -498,7 +572,7 @@ def refG_extract(file_path, pattern):
     try:
         # Use subprocess.run with the direct command
         command = f'grep "{pattern}" "{file_path}" | tail -1 | cut -c62-'
-        result = subprocess.run(command, shell=True, text=True, capture_output=True)
+        result = subprocess_run_wrapper(command, shell=True, text=True, capture_output=True)
 
         # If there is output, convert it to float
         try:
@@ -519,18 +593,18 @@ def extract_diabatic_energy(file_path, pattern):
     try:
         # Use subprocess.run with the direct command
         command = f'grep "{pattern}" "{file_path}" | tail -1 | cut -c44-61'
-        result = subprocess.run(command, shell=True, text=True, capture_output=True)
+        result = subprocess_run_wrapper(command, shell=True, text=True, capture_output=True)
 
         # If there is output, convert it to float
         try:
             output = float(result.stdout.strip().replace(" ", ""))
             return output
         except Exception as e:
-                with open(file_path, 'r', errors='replace') as file:
-                    for line in reversed(file.readlines()):
-                        match = re.search(pattern, line)
-                        if match:
-                            return float(line[44:62].strip().replace(" ", ""))
+            with open(file_path, 'r', errors='replace') as file:
+                for line in reversed(file.readlines()):
+                    match = re.search(pattern, line)
+                    if match:
+                        return float(line[44:62].strip().replace(" ", ""))
     except subprocess.CalledProcessError:
         # Return None if there is an error
         return None
@@ -540,7 +614,7 @@ def extract_coupling_energy(file_path, pattern):
     try:
         # Use subprocess.run with the direct command
         command = f'grep "{pattern}" "{file_path}" | tail -1 | cut -c62-'
-        result = subprocess.run(command, shell=True, text=True, capture_output=True)
+        result = subprocess_run_wrapper(command, shell=True, text=True, capture_output=True)
 
         # If there is output, convert it to float
         try:
@@ -592,7 +666,7 @@ def extract_DSOME(filnam, nstate):
     end_pattern = 'SOC EIG. VALUES and VECTORS IN DIABATS (DIRECT MAX.)'
 
     sed_command = f"sed -n '/{start_pattern}/,/{end_pattern}/p' {filnam}"
-    result = subprocess.run(sed_command, shell=True, text=True, capture_output=True)
+    result = subprocess_run_wrapper(sed_command, shell=True, text=True, capture_output=True)
 
     if result.stdout.splitlines(): # True if not empty list
         selected_lines = result.stdout.splitlines()
@@ -656,7 +730,7 @@ def mctdh(**kwargs):
     """ description of function """
 
     try:  # remove the previous file, as we are about to write to it
-        subprocess.run(['rm', '-f', 'mctdh.op'])
+        subprocess_run_wrapper(['rm', '-f', 'mctdh.op'])
     except Exception as e:
         print(f"Error deleting {'mctdh.op'}: {str(e)}")
 
@@ -741,11 +815,11 @@ def mctdh(**kwargs):
     format_string = "{label:<25s}={value:>-15.9f}{units:>8s}\n"
     make_line = functools.partial(format_string.format, units=", ev")
 
-    refG_exists = subprocess.call(["ls", zeroth_filename]) == 0
+    refG_exists = subprocess_call_wrapper(["ls", zeroth_filename]) == 0
 
     if refG_exists:
 
-        SOC_check = subprocess.run(['grep', "(DIRECT MAX.)", zeroth_filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        SOC_check = subprocess_run_wrapper(['grep', "(DIRECT MAX.)", zeroth_filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         SOC_flag = SOC_check.returncode == 0
 
         if SOC_flag:
@@ -824,18 +898,13 @@ def mctdh(**kwargs):
         coord_disp_mm[icomp] = distcoord_mm[icomp]
         print(f'icomp: {icomp}, coord_disp_mm: {coord_disp_mm[icomp]}')
 
-    Params.append(f"#                  Frequencies                  #\n")
-    Params.append(f"# --------------------------------------------- #\n")
-    Linear.append(f"#           Linear Coupling Constants           #\n")
-    Linear.append(f"# --------------------------------------------- #\n")
-    Quadratic.append(f"#         Quadratic Coupling Constants          #\n")
-    Quadratic.append(f"# --------------------------------------------- #\n")
-    Bilinear.append(f"#         Bilinear Coupling Constants           #\n")
-    Bilinear.append(f"# --------------------------------------------- #\n")
+    spacer_format_string = f"# {'-':^60s} #\n"
+    hfs = header_format_string = "# {:^60s} #\n" + spacer_format_string
 
-    # header_string = "# {header:^40s} #\n"
-    # spacer_string = "# " + '-'*40 + "#\n"
-    # Bilinear = header_string.format("Bilinear Coupling Constants")
+    params.append(hfs.format('Frequencies'))
+    linear.append(hfs.format('Linear Coupling Constants'))
+    quadratic.append(hfs.format('Quadratic Coupling Constants'))
+    bilinear.append(hfs.format('Bilinear Coupling Constants'))
 
     # Loop through modes
     for kmode in range(1, nmodes + 1):
@@ -859,7 +928,7 @@ def mctdh(**kwargs):
 
         grace_code = {}
         for key in displacement_keys:
-            grace_code[key] = subprocess.call(["grep", "DONE WITH MP2 ENERGY", displacement_filenames[key]])
+            grace_code[key] = subprocess_call_wrapper(["grep", "DONE WITH MP2 ENERGY", displacement_filenames[key]])
 
         """ either of these work (logic wise)
             if any(code != 0 for code in grace_code.values()):
@@ -950,10 +1019,10 @@ def mctdh(**kwargs):
         for lmode in range(1, lmode_last + 1):
             jmode = modes_included[lmode]
 
-            grace_code_pp = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out"])
-            grace_code_pm = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out"])
-            grace_code_mp = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out"])
-            grace_code_mm = subprocess.call(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out"])
+            grace_code_pp = subprocess_call_wrapper(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out"])
+            grace_code_pm = subprocess_call_wrapper(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out"])
+            grace_code_mp = subprocess_call_wrapper(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out"])
+            grace_code_mm = subprocess_call_wrapper(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out"])
 
             if all(code == 0 for code in [grace_code_pp, grace_code_pm, grace_code_mp, grace_code_mm]):
                 print(f"\n Good to extract bilinear for modes {imode} {jmode} \n")
@@ -1143,153 +1212,206 @@ def mctdh(**kwargs):
                         SOC.append(make_line(label=f"SOC_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}i", value=full_Ham_SOC_cm_imag[idx], units=', cm-1'))
                         SOC.append("\n")
 
+    file_contents = params + ['\n',]
+    file_contents += linear + ['\n',]
+    file_contents += quadratic + ['\n',]
+    file_contents += bilinear + ['\n',]
+    file_contents += SOC + ['\n',]
 
-    Params.append("\n")
-    Params.extend(Linear)
-    Params.append("\n")
-    Params.extend(Quadratic)
-    Params.append("\n")
-    Params.extend(Bilinear)
-    Params.append("\n")
-    Params.extend(SOC)
-    Params.append("\n")
+    # Params.append("\n")
+    # Params.extend(Linear)
+    # Params.append("\n")
+    # Params.extend(Quadratic)
+    # Params.append("\n")
+    # Params.extend(Bilinear)
+    # Params.append("\n")
+    # Params.extend(SOC)
+    # Params.append("\n")
 
-    with open("mctdh.op", "a") as mctdh_file:
-        for idx in Params:
-            mctdh_file.write(idx)
+    # different header style
+    hfs = header_format_string = spacer_format_string + "# {:^60s} #\n" + spacer_format_string
+
+    file_contents += _make_ETD_block(header_format_string)
+    file_contents += "end-parameter-section\n"
+
+    header_name_list = [
+        "HAMILTONIAN-SECTION",
+        "KINETIC OPERATOR FOR NORMAL MODES",
+        "HARMONIC OSCILLATOR POTENTIALS FOR NORMAL MODES",
+        "ELECTRONIC COUPLING AT REFERENCE STRUCTURE",
+        "LINEAR DIAGONAL VIBRONIC COUPLINGS",
+        "LINEAR OFF-DIAGONAL VIBRONIC COUPLINGS",
+        "QUADRATIC DIAGONAL VIBRONIC COUPLINGS",
+        "QUADRATIC OFF-DIAGONAL VIBRONIC COUPLINGS",
+        "BILINEAR DIAGONAL VIBRONIC COUPLINGS",
+        "BILINEAR OFF-DIAGONAL VIBRONIC COUPLINGS",
+    ]
 
     # Open mctdh.op file for writing
     with open('mctdh.op', 'a') as mctdh_file:
 
-        # Write the TDIPOLE block
-        mctdh_file.write("-----------------------------------------\n")
-        mctdh_file.write("# ELECTRONIC TRANSITION DIPOLES\n")
-        mctdh_file.write("-----------------------------------------\n")
+        labels = [
 
-        for ist in range(2, nstate + 1):
-        #     for idx in range(0, 3):
-        #         mctdh_file.write(f"IO_1_{ist} = {dipoles[ist][idx]}")
-        #         mctdh_file.write("\n")
+        ]
 
-            for idx in range(0, 3):
-                operate_lst = ["x", "y", "z"]
-                mctdh_file.write(f"E{operate_lst[idx]}_s00_s{ist:>02d} = {dipoles[ist][idx]}")
-                mctdh_file.write("\n")
+        # this part isn't done yet ---- IN PROGRESS
+
+        def _make_hamiltonian_section():
+
+            block = header_format_string.format(header_name_list[0])
+
+            # Write modes and mode labels
+            mode_labels = [f"v{n:>02d}" for n in pp.selected_mode_list]
+            block += "modes | el | " + " | ".join(mode_labels) + "\n"
+
+            for i, label in enumerate(pp.selected_mode_list):
+                block += f"1.00*w{label:>02d}   |{i+2} KE\n"
+                block += f"0.50*w{label:>02d}   |{i+2} q^2\n"
+
+            for a in range(1, A+2):
+                block += f"EH_s{a:>02d}_s{a:>02d} |1 S{a}&{a}\n"
+
+            block += "\n"
+
+            _list1 = [
+                "EH_s{}_s{}",
+                "C1_s{}_s{}_v{}",
+                "C1_s{}_s{}_v{}_v{}",
+                "C2_s{}_s{}_v{}_v{}",
+            ]
+
+            _list2 = [
+                "|1 S{a:}&{a:} |{i:} q",
+                "|1 S{b:}&{a:} |{i:} q",
+                "|1 S{a:}&{a:} |{i:} q^2",
+                "|1 S{a:}&{a:} |{i:} q |{j:} q",
+                "|1 S{b:}&{a:} |{i:} q |{j:} q",
+            ]
+
+            for a in range(1, A+1):
+                for b in range(1, a):
+                    block += f"EH_s{b:>02d}_s{a:>02d}  |1 S{b}&{a}\n"
+
+            # Write LINEAR AND QUADRATIC DIAGONAL VIBRONIC COUPLINGS
+            for i, a in it.product(range(1, N+1), range(1, A+1)):
+                i_label = mode_map_dict[i]
+                block += f"C1_s{a:>02d}_s{a:>02d}_v{i_label:>02d} |1 S{a}&{a} |{i+1} q\n"
+
+            # Write LINEAR AND QUADRATIC OFF-DIAGONAL VIBRONIC COUPLINGS
+            for i, a in it.product(range(1, N+1), range(1, A+1)):
+                i_label = mode_map_dict[i]
+                for b in range(1, a):
+                    block += (
+                        f"C1_s{b:>02d}_s{a:>02d}_v{i_label:>02d}"
+                        f" |1 S{b}&{a} |{i+1} q\n"
+                    )
+
+            # Write LINEAR AND QUADRATIC DIAGONAL VIBRONIC COUPLINGS
+            for i, a in it.product(range(1, N+1), range(1, A+1)):
+                i_label = mode_map_dict[i]
+                block += (
+                    f"0.50*C2_s{a:>02d}s{a:>02d}_v{i_label:>02d}v{i_label:>02d}"
+                    f" |1 S{a}&{a} |{i+1} q^2\n"
+                )
+
+            # Write BILINEAR DIAGONAL VIBRONIC COUPLINGS
+            for i, a in it.product(range(1, N+1), range(1, A+1)):
+                for j in range(1, i):
+                    i_label, j_label = mode_map_dict[[i, j]]
+                    block += (
+                            f"C1_s{a:>02d}s{a:>02d}_v{i_label:>02d}v{j_label:>02d}"
+                            f" |1 S{a}&{a} |{i+1} q |{j+1} q\n"
+                        )
+
+            # Write BILINEAR OFF-DIAGONAL VIBRONIC COUPLINGS
+            for i, a in it.product(range(1, N+1), range(1, A+1)):
+                for j, b in it.product(range(1, i), range(1, a)):
+                    i_label, j_label = mode_map_dict[[i, j]]
+                    block += (
+                            f"C1_s{b:>02d}s{a:>02d}_v{i_label:>02d}v{j_label:>02d}"
+                            f" |1 S{b}&{a} |{i+1} q |{j+1} q\n"
+                        )
+
+            # ------------------------------------------------------------
+            # Write KINETIC OPERATOR FOR NORMAL MODES (mostly fine)
+            for imode_include in range(1, nmodes + 1):
+                mode_count = imode_include + 1
+                mctdh_file.write(f"1.00*w{modes_included[imode_include]:>02d}   |{mode_count} KE\n")
+
+            # Write HARMONIC OSCILLATOR POTENTIALS FOR NORMAL MODES
+            for imode_include in range(1, nmodes + 1):
+                mode_count = imode_include + 1
+                mctdh_file.write(f"0.50*w{modes_included[imode_include]:>02d}   |{mode_count}  q^2\n")
+
+            # Write ELECTRONIC COUPLING AT REFERENCE STRUCTURE
+            for ist in range(1, nstate + 2):
+                mctdh_file.write(f"EH_s{ist:>02d}_s{ist:>02d} |1 S{ist}&{ist}\n")
+
             mctdh_file.write("\n")
-
-        mctdh_file.write("end-parameter-section\n")
-        # Write the header
-        mctdh_file.write("-----------------------------------------\n")
-        mctdh_file.write("HAMILTONIAN-SECTION\n")
-        mctdh_file.write("-----------------------------------------\n")
-
-        # Write modes and mode labels
-        mctdh_file.write(" modes | el")
-        for imode_include in range(1, nmodes + 1):
-            mctdh_file.write(f" | v{modes_included[imode_include]:>02d}")
-        mctdh_file.write("\n")
-        mctdh_file.write("-----------------------------------------\n")
-
-        # Write KINETIC OPERATOR FOR NORMAL MODES
-        mctdh_file.write("# KINETIC OPERATOR FOR NORMAL MODES\n")
-        mctdh_file.write("-----------------------------------------\n")
-        for imode_include in range(1, nmodes + 1):
-            mode_count = imode_include + 1
-            mctdh_file.write(f"1.00*w{modes_included[imode_include]:>02d}   |{mode_count} KE\n")
-
-        # Write HARMONIC OSCILLATOR POTENTIALS FOR NORMAL MODES
-        mctdh_file.write("-----------------------------------------\n")
-        mctdh_file.write("# HARMONIC OSCILLATOR POTENTIALS FOR NORMAL MODES\n")
-        mctdh_file.write("-----------------------------------------\n")
-        for imode_include in range(1, nmodes + 1):
-            mode_count = imode_include + 1
-            mctdh_file.write(f"0.50*w{modes_included[imode_include]:>02d}   |{mode_count}  q^2\n")
-
-        # Write ELECTRONIC COUPLING AT REFERENCE STRUCTURE
-        mctdh_file.write("-----------------------------------------\n")
-        mctdh_file.write("# ELECTRONIC COUPLING AT REFERENCE STRUCTURE\n")
-        mctdh_file.write("-----------------------------------------\n")
-        for ist in range(1, nstate + 2):
-            mctdh_file.write(f"EH_s{ist:>02d}_s{ist:>02d} |1 S{ist}&{ist}\n")
-        mctdh_file.write("\n")
-        for ist in range(1, nstate + 1):
-            jlast = ist - 1
-            for jst in range(1, jlast + 1):
-                mctdh_file.write(f"EH_s{jst:>02d}_s{ist:>02d}  |1 S{jst}&{ist}\n")
-
-        # Write LINEAR AND QUADRATIC DIAGONAL VIBRONIC COUPLINGS
-        mctdh_file.write("-----------------------------------------\n")
-        mctdh_file.write("# LINEAR DIAGONAL VIBRONIC COUPLINGS\n")
-        mctdh_file.write("-----------------------------------------\n")
-        for kmode in range(1, nmodes + 1):
-            imode = modes_included[kmode]
-            kmode_count = kmode + 1
-            for ist in range(1, nstate + 1):
-                mctdh_file.write(f"C1_s{ist:>02d}_s{ist:>02d}_v{imode:>02d} |1 S{ist}&{ist} |{kmode_count} q\n")
-
-        # Write LINEAR AND QUADRATIC OFF-DIAGONAL VIBRONIC COUPLINGS
-        mctdh_file.write("-----------------------------------------\n")
-        mctdh_file.write("# LINEAR OFF-DIAGONAL VIBRONIC COUPLINGS\n")
-        mctdh_file.write("-----------------------------------------\n")
-        for kmode in range(1, nmodes + 1):
-            imode = modes_included[kmode]
-            kmode_count = kmode + 1
             for ist in range(1, nstate + 1):
                 jlast = ist - 1
                 for jst in range(1, jlast + 1):
-                    mctdh_file.write(f"C1_s{jst:>02d}_s{ist:>02d}_v{imode:>02d} |1 S{jst}&{ist} |{kmode_count} q\n")
+                    mctdh_file.write(f"EH_s{jst:>02d}_s{ist:>02d}  |1 S{jst}&{ist}\n")
 
-        # Write LINEAR AND QUADRATIC DIAGONAL VIBRONIC COUPLINGS
-        mctdh_file.write("-----------------------------------------\n")
-        mctdh_file.write("# QUADRATIC DIAGONAL VIBRONIC COUPLINGS\n")
-        mctdh_file.write("-----------------------------------------\n")
-        for kmode in range(1, nmodes + 1):
-            imode = modes_included[kmode]
-            kmode_count = kmode + 1
-            for ist in range(1, nstate + 1):
-                mctdh_file.write(f"0.50*C2_s{ist:>02d}s{ist:>02d}_v{imode:>02d}v{imode:>02d} |1 S{ist}&{ist} |{kmode_count} q^2\n")
-
-        # Write LINEAR AND QUADRATIC OFF-DIAGONAL VIBRONIC COUPLINGS
-        mctdh_file.write("-----------------------------------------\n")
-        mctdh_file.write("# QUADRATIC OFF-DIAGONAL VIBRONIC COUPLINGS\n")
-        mctdh_file.write("-----------------------------------------\n")
-        for kmode in range(1, nmodes + 1):
-            imode = modes_included[kmode]
-            kmode_count = kmode + 1
-            for ist in range(1, nstate + 1):
-                jlast = ist - 1
-                for jst in range(1, jlast + 1):
-                    mctdh_file.write(f"0.50*C2_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{imode:>02d} |1 S{jst}&{ist} |{kmode_count} q^2\n")
-
-        # Write BILINEAR DIAGONAL VIBRONIC COUPLINGS
-        mctdh_file.write("-----------------------------------------\n")
-        mctdh_file.write("# BILINEAR DIAGONAL VIBRONIC COUPLINGS\n")
-        mctdh_file.write("-----------------------------------------\n")
-        for kmode in range(1, nmodes + 1):
-            imode = modes_included[kmode]
-            kmode_count = kmode + 1
-            lmode_last = kmode - 1
-            for lmode in range(1, lmode_last + 1):
-                jmode = modes_included[lmode]
-                lmode_count = lmode + 1
+            # Write LINEAR AND QUADRATIC DIAGONAL VIBRONIC COUPLINGS
+            for kmode in range(1, nmodes + 1):
+                imode = modes_included[kmode]
+                kmode_count = kmode + 1
                 for ist in range(1, nstate + 1):
-                    mctdh_file.write(f"C1_s{ist:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d} |1 S{ist}&{ist} |{lmode_count} q |{kmode_count} q\n")
+                    mctdh_file.write(f"C1_s{ist:>02d}_s{ist:>02d}_v{imode:>02d} |1 S{ist}&{ist} |{kmode_count} q\n")
 
-        # Write BILINEAR OFF-DIAGONAL VIBRONIC COUPLINGS
-        mctdh_file.write("-----------------------------------------\n")
-        mctdh_file.write("# BILINEAR OFF-DIAGONAL VIBRONIC COUPLINGS\n")
-        mctdh_file.write("-----------------------------------------\n")
-        for kmode in range(1, nmodes + 1):
-            imode = modes_included[kmode]
-            kmode_count = kmode + 1
-            lmode_last = kmode - 1
-            for lmode in range(1, lmode_last + 1):
-                jmode = modes_included[lmode]
-                lmode_count = lmode + 1
+            # Write LINEAR AND QUADRATIC OFF-DIAGONAL VIBRONIC COUPLINGS
+            for kmode in range(1, nmodes + 1):
+                imode = modes_included[kmode]
+                kmode_count = kmode + 1
                 for ist in range(1, nstate + 1):
                     jlast = ist - 1
                     for jst in range(1, jlast + 1):
-                        mctdh_file.write(f"C1_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d} |1 S{jst}&{ist} |{lmode_count} q |{kmode_count} q\n")
+                        mctdh_file.write(f"C1_s{jst:>02d}_s{ist:>02d}_v{imode:>02d} |1 S{jst}&{ist} |{kmode_count} q\n")
+
+            # Write LINEAR AND QUADRATIC DIAGONAL VIBRONIC COUPLINGS
+            for kmode in range(1, nmodes + 1):
+                imode = modes_included[kmode]
+                kmode_count = kmode + 1
+                for ist in range(1, nstate + 1):
+                    mctdh_file.write(f"0.50*C2_s{ist:>02d}s{ist:>02d}_v{imode:>02d}v{imode:>02d} |1 S{ist}&{ist} |{kmode_count} q^2\n")
+
+            # Write LINEAR AND QUADRATIC OFF-DIAGONAL VIBRONIC COUPLINGS
+            for kmode in range(1, nmodes + 1):
+                imode = modes_included[kmode]
+                kmode_count = kmode + 1
+                for ist in range(1, nstate + 1):
+                    jlast = ist - 1
+                    for jst in range(1, jlast + 1):
+                        mctdh_file.write(f"0.50*C2_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{imode:>02d} |1 S{jst}&{ist} |{kmode_count} q^2\n")
+
+            # Write BILINEAR DIAGONAL VIBRONIC COUPLINGS
+            for kmode in range(1, nmodes + 1):
+                imode = modes_included[kmode]
+                kmode_count = kmode + 1
+                lmode_last = kmode - 1
+                for lmode in range(1, lmode_last + 1):
+                    jmode = modes_included[lmode]
+                    lmode_count = lmode + 1
+                    for ist in range(1, nstate + 1):
+                        mctdh_file.write(f"C1_s{ist:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d} |1 S{ist}&{ist} |{lmode_count} q |{kmode_count} q\n")
+
+            # Write BILINEAR OFF-DIAGONAL VIBRONIC COUPLINGS
+            for kmode in range(1, nmodes + 1):
+                imode = modes_included[kmode]
+                kmode_count = kmode + 1
+                lmode_last = kmode - 1
+                for lmode in range(1, lmode_last + 1):
+                    jmode = modes_included[lmode]
+                    lmode_count = lmode + 1
+                    for ist in range(1, nstate + 1):
+                        jlast = ist - 1
+                        for jst in range(1, jlast + 1):
+                            mctdh_file.write(f"C1_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d} |1 S{jst}&{ist} |{lmode_count} q |{kmode_count} q\n")
+
+
+            mctdh_file.write("-----------------------------------------\n")
+            mctdh_file.write("\nend-hamiltonian-section\n\n")
 
         if SOC_flag:  # all the code inside this IF should eventually move to a seperate function (like factored out)
 
@@ -1313,9 +1435,6 @@ def mctdh(**kwargs):
             make_line = functools.partial(format_string.format)
 
             # Write FULL HAMILTONIAN SOC OFF-DIAGONAL VIBRONIC COUPLINGS
-            mctdh_file.write("-----------------------------------------\n")
-            mctdh_file.write("# SOC FULL HAMILTONIAN SOC OFF-DIAGONAL VIBRONIC COUPLINGS\n")
-            mctdh_file.write("-----------------------------------------\n")
 
             """ there is ways to do this, but it may not be worth the effort right now
             for k, l, i, j in it.product():
@@ -1352,52 +1471,100 @@ def mctdh(**kwargs):
 
             for k in key_order:  # glue the blocks together
                 output_string += hamiltonian_blocks[k] + "\n"
+
             print("Hey check the output string, and the hamiltonian_blocks"); breakpoint()
             mctdh_file.write(output_string)
             del hamiltonian_blocks  # don't need anymore
 
-        # Close the file
-        mctdh_file.write("-----------------------------------------\n")
-        mctdh_file.write("\nend-hamiltonian-section\n\n")
+    # -------------------------------------------------------------------------
+    def _make_ETD_block():
 
-        # # Write TRANSITION DIPOLE HAMILTONIAN-SECTION_E*
-        # for idx in range(0, 3):
-        #     operate_lst = ["x", "y", "z"]
-        #     mctdh_file.write(f"HAMILTONIAN-SECTION_E{operate_lst[idx]}\n")
-        #     mctdh_file.write("\n")
+        block = ""
+        block += hfs.format("ELECTRONIC TRANSITION DIPOLES")
+        operate_lst = ["x", "y", "z"]
 
-        #     # Write modes and mode labels
-        #     mctdh_file.write(" modes | el")
-        #     for imode_include in range(1, nmodes + 1):
-        #         mctdh_file.write(f" | m{modes_included[imode_include]}")
-        #     mctdh_file.write("\n")
-        #     mctdh_file.write("-----------------------------------------\n")
+        for j in range(2, A+1):
 
-        #     for ist in range(2, nstate + 1):
-        #         mctdh_file.write(f"E{operate_lst[idx]}_1_{ist}         |1 S1&{ist}")
-        #         mctdh_file.write("\n")
-        #     mctdh_file.write("\n")
-        #     mctdh_file.write("\nend-hamiltonian-section\n\n")
+            block += "".join([
+                f"Ex_s00_s{j:>02d} = {dipoles[j][0]}\n"
+                f"Ey_s00_s{j:>02d} = {dipoles[j][1]}\n"
+                f"Ez_s00_s{j:>02d} = {dipoles[j][2]}\n"
+                "\n"
+            ])
+            """ if every you need more than 3 dimensions?
+            for xyz_idx, op in enumerate(operate_lst):
+                block += f"E{x}_s00_s{ist:>02d} = {dipoles[ist][xyz_idx]}\n"
+            """
+        return block
 
-        # Write HAMILTONIAN-SECTION_IO
-        mctdh_file.write(f"HAMILTONIAN-SECTION_Ex\n")
-        mctdh_file.write("\n")
+    def _make_Hamiltonian_operate_Ex_section():
+        """ x """
+        block = f"HAMILTONIAN-SECTION_Ex\n\n"
 
         # Write modes and mode labels
-        mctdh_file.write(" modes | el")
-        for imode_include in range(1, nmodes + 1):
-            mctdh_file.write(f" | v{modes_included[imode_include]:>02d}")
-        mctdh_file.write("\n")
-        mctdh_file.write("-----------------------------------------\n")
+        mode_number_key = [modes_included[i] for i in range(N)]
+        h_labels = ["modes", "el", ] + [
+            f"v{s:>02d}"
+            for s in mode_number_key
+        ]
 
-        for ist in range(1, nstate + 1):
-            mctdh_file.write(f"1.0         |1 S{nstate + 1}&{ist}")
-            mctdh_file.write("\n")
-        mctdh_file.write("\n")
-        mctdh_file.write("\nend-hamiltonian-section\n\n")
+        block += " | ".join(h_labels) + "\n"
+        block += f"{'-':47}\n"
 
-        # Close the file
-        mctdh_file.write("end-operator\n")
+        for j in range(N):
+            block += f"1.0         |1 S{N+1}&{j+1}\n"
+
+        block += "\n\nend-hamiltonian-section\n\n"
+        return block
+
+    def _make_SOC_section():
+
+        spacer_format_string = f"# {'-':^60s} #\n"
+        hfs = header_format_string = "# {:^60s} #\n" + spacer_format_string
+        block = hfs.format("SOC FULL HAMILTONIAN SOC OFF-DIAGONAL VIBRONIC COUPLINGS")
+
+        # prepare `make_line`
+        format_string_1 = "{label:<25s}{link:<20s}\n"
+        format_string_2 = "{label:<25s}{link:<20s}\n"
+        format_string_3 = "{label:<25s}{link:<20s}\n"
+        format_string_4 = "{label:<25s}{link:<20s}\n"
+
+        make_line_1 = functools.partial(format_string_1.format)
+        make_line_2 = functools.partial(format_string_2.format)
+        make_line_3 = functools.partial(format_string_3.format)
+        make_line_4 = functools.partial(format_string_4.format)
+
+        for i, a in it.product(range(1,N+1), range(1,A+1)):
+            for j, b in it.product(range(1,i+1), range(1,a+1)):
+                i_label, j_label = modes_included[[i, j]]
+                print(f"{i=}, {j=}, {a=}, {b=}")
+
+                l1 = "C1_s{:>02d}_s{:>02d}_v{:>02d}".formmat(j, i, a)
+                make_line(label=f"I*{l1}r", link=f"|1 Z{b}&{a} | {j+1} q")
+                make_line(label=f"-I*{l1}i", link=f"|1 Z{a}&{b} | {j+1} q")
+
+                l2 = "C2_s{:>02d}_s{:>02d}_v{:>02d}".formmat(j, i, a)
+                make_line(label=f"I*{l2}r", link=f"|1 Z{b}&{a} | {j+1} q^2")
+                make_line(label=f"-I*{l2}i", link=f"|1 Z{a}&{b} | {j+1} q^2")
+
+                l3 = "C1_s{:>02d}_s{:>02d}_v{:>02d}_v{:>02d}".formmat(j, i, i_label, j_label)
+                make_line(label=f"I*{l3}r", link=f"|1 Z{b}&{a} | {j+1} q | {i+1} q")
+                make_line(label=f"-I*{l3}i", link=f"|1 Z{a}&{b} | {j+1} q | {i+1} q")
+
+                l4 = "SOC_s{:>02d}_s{:>02d}_v{:>02d}_v{:>02d}".formmat(j, i, i_label, j_label)
+                make_line(label=f"I*{l4}r", link=f"|1 Z{b}&{a} | {j+1} q")
+                make_line(label=f"-I*{l4}i", link=f"|1 Z{a}&{b} | {j+1} q")
+        return
+    # -------------------------------------------------------------------------
+
+    if SOC_flag:
+        file_contents += _make_SOC_section()
+
+    file_contents += _make_Hamiltonian_operate_Ex_section()
+    file_contents += "end-operator\n"
+
+    with open("mctdh.op", "w") as fp:
+        fp.write("".join(file_contents))
 
     return
 
@@ -1452,14 +1619,14 @@ def read_mode_values(hessout):
             # mode_value_set.append(selected_lines[idx][20:])
             # mode_value_set.append(selected_lines[idx+1][20:])
             # mode_value_set.append(selected_lines[idx+2][20:])
-            for i in range(3): # 3 for x,y,z
+            for i in range(3):  # 3 for x,y,z
                 mode_value_set.append(selected_lines[idx + i][20:])
 
     return mode_value_set
 
 
 def get_number_of_atoms(hessout):
-    """ Function to get the number of atoms from thFe hessout file """
+    """ Function to get the number of atoms from the hessout file """
 
     # would be good to replace this with memory mapping find or grep command?
     with open(hessout, 'r', errors='replace') as hess_file:
@@ -1518,7 +1685,7 @@ def process_mode_freq(ndim, nof_cols=5, float_length=12):
 
     # freqcm = {}
     # for i in range(len(frequences)):
-    #     key = project_parameters.modes_included[i]
+    #     key = pp.modes_included[i]
     #     freqcm[key] = frequences[i]
 
     # -------------------------------------------------------------------------
@@ -1530,23 +1697,38 @@ def process_mode_freq(ndim, nof_cols=5, float_length=12):
     return modes_array, freq_array
 
 
-def compose_ref_structure(hessout, natoms):
+def compose_ref_structure(ref_file, hessout, nof_atoms):
     coord_lines = extract_lines_between_patterns(hessout, 'EQUILIBRIUM GEOMETRY LOCATED', 'INTERNUCLEAR DISTANCES')
-    ref_file = 'ref_structure'
 
-    if len(coord_lines) > 2:
+    good_ref_structure = bool(len(coord_lines) > 2)
+
+    if not good_ref_structure:
+        print(f'Unsuccessful extraction of equilibrium geometry from {hessout}. Please prepare ref_structure manually.')
+        breakpoint()  # do we want to continue execution, or do we actually want to stop the program?
+        import sys; sys.exit()
+
+    if good_ref_structure:
+
+        """ we don't need to delete the file if we simply write a new file
         try:
-            subprocess.run(['rm', '-f', ref_file])
+            subprocess_run_wrapper(['rm', '-f', ref_file])
         except Exception as e:
             print(f"Error deleting {ref_file}: {str(e)}")
+        """
 
-        for atom_line in coord_lines[-natoms-1:-1]:
-            with open(ref_file, "a") as python_ref_file:
-                python_ref_file.write(atom_line)
+        # the last element of coord_lines is an empty line (`\n`)
+        assert coord_lines[-1] == '\n'
 
-        print(f'Sucessfully extracted equilibrium geometry from {hessout} and prepared ref_structure.')
-    else:
-        print(f'Unsucessful extraction of equilibrium geometry from {hessout}. Please prepare ref_structure manually.')
+        # remove empty lines
+        coord_lines = [l for l in coord_lines if l != '\n']
+
+        # we want the lines at the end of the file (the last nof_atoms/Z lines)
+        file_contents = "".join(coord_lines[-nof_atoms:])
+
+        with open(ref_file, 'w') as fp:
+            fp.write(file_contents)
+
+        print(f'Successfully extracted equilibrium geometry from {hessout} and prepared ref_structure.')
 
     return coord_lines
 
@@ -1602,7 +1784,7 @@ def refG_calc(refgeo, input_filename, output_filename):
     """
 
     # Check if the calculation has already been run
-    grace_exists = subprocess.call(["grep", "DONE WITH MP2 ENERGY", output_filename]) == 0
+    grace_exists = subprocess_call_wrapper(["grep", "DONE WITH MP2 ENERGY", output_filename]) == 0
 
     if grace_exists:
         print("Calculation at the reference structure has already been done.")
@@ -1611,18 +1793,19 @@ def refG_calc(refgeo, input_filename, output_filename):
     else:
         print("Run calculation at the undistorted reference structure")
 
-        shutil.copy("temp.inp", f"{filnam}_refG.inp")
+        shutil.copy("temp.inp", input_filename)
 
-        with open(input_filename, "a") as inp_file:
-            with open(refgeo, 'r', errors='replace') as ref_structure:
-                inp_file.write(ref_structure.read())
+        with open(refgeo, 'r', errors='replace') as ref_structure:
+            data = ref_structure.read()
 
-        with open(input_filename, "a") as inp_file:
-            inp_file.write(" $END\n")
+        # in this case we append the reference structure to file contents from "temp.inp"
+        with open(input_filename, "a") as fp:
+            fp.write(data)
+            fp.write(" $END\n")
 
         # Submit and run the refG calculation (you may need to customize this command based on your setup)
-        # refG_job_result = subprocess.run(["./subgam.diab", input_filename, "4", "0", "1"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        os.system("sbatch" + ' -W' + " " + my_subgam(input_filename, ncpus=2, ngb=1, nhour=1))  # the wait
+        # refG_job_result = subprocess_run_wrapper(["./subgam.diab", input_filename, "4", "0", "1"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        os_system_wrapper("sbatch" + ' -W' + " " + my_subgam(input_filename, ncpus=2, ngb=1, nhour=1))  # the wait
 
         # At this point, refG calculation has completed successfully.
         print("Calculation at the reference structure is done.")
@@ -1637,12 +1820,15 @@ def main(ref_file="ref_structure", ncols=5, **kwargs):
     hessian_filename = kwargs['hessian_filename']
     _extract_freq_and_mode_from_hessian(hessian_filename)
 
-    natoms = get_number_of_atoms(hessian_filename)
+    nof_atoms = natoms = get_number_of_atoms(hessian_filename)
+    ndim = nof_atoms * 3
 
-    ndim = natoms * 3
-    nrmmod, freqcm = process_mode_freq(ndim, ncols)
+    assert Z == nof_atoms, f"{Z=} is not {nof_atoms=}!?"
+    assert N_tot == ndim, f"{N_tot=} is not {ndim=}!?"
 
-    compose_ref_structure(hessian_filename, natoms)
+    nrmmod, freqcm = process_mode_freq(N_tot, ncols)
+
+    compose_ref_structure(ref_file, hessian_filename, nof_atoms)
 
     atmlst, chrglst, refcoord = read_reference_structure(ref_file)
 
@@ -1658,14 +1844,14 @@ def main(ref_file="ref_structure", ncols=5, **kwargs):
         'natoms': natoms,
         'atmlst': atmlst,
         'chrglst': chrglst,
-        'qsize': project_parameters.qsize,
-        'ha2ev': project_parameters.ha2ev,
-        'wn2ev': project_parameters.wn2ev,
-        'wn2eh': project_parameters.wn2eh,
-        'ang2br': project_parameters.ang2br,
-        'amu2me': project_parameters.amu2me
+        'qsize': pp.qsize,
+        'ha2ev': pp.ha2ev,
+        'wn2ev': pp.wn2ev,
+        'wn2eh': pp.wn2eh,
+        'ang2br': pp.ang2br,
+        'amu2me': pp.amu2me
     })
-    # name, modes = project_parameters.filnam, project_parameters.modes_included
+    # name, modes = pp.filnam, pp.modes_included
     diabatize = diabatization(**diabatization_kwargs)
     print("Diabatization successfully modified"); return
 
@@ -1682,13 +1868,13 @@ def main(ref_file="ref_structure", ncols=5, **kwargs):
 
     mctdh_input_kwargs = kwargs.copy()
     mctdh_input_kwargs.update({
-        'qsize': project_parameters.qsize,
-        'ha2ev': project_parameters.ha2ev,
-        'wn2ev': project_parameters.wn2ev,
-        'wn2eh': project_parameters.wn2eh,
-        'ang2br': project_parameters.ang2br,
-        'amu2me': project_parameters.amu2me,
-        'nof_electronic_states': project_parameters.A,
+        'qsize': pp.qsize,
+        'ha2ev': pp.ha2ev,
+        'wn2ev': pp.wn2ev,
+        'wn2eh': pp.wn2eh,
+        'ang2br': pp.ang2br,
+        'amu2me': pp.amu2me,
+        'nof_electronic_states': pp.A,
         'ndim': ndim,
         'freqcm': freqcm,
         'dipoles': dipoles,
@@ -1696,7 +1882,7 @@ def main(ref_file="ref_structure", ncols=5, **kwargs):
         'hessout': kwargs['hessian_filename'],
     })
 
-    # name, modes = project_parameters.filnam, project_parameters.modes_included
+    # name, modes = pp.filnam, pp.modes_included
     mctdh(**mctdh_input_kwargs)
     print("mctdh successfully modified"); return
 
@@ -1740,10 +1926,10 @@ if __name__ == "__main__":
     # everything we add to `kwargs` is 'imported' from project parameters
 
     kwargs.update({
-        'project_filename': project_parameters.filnam,
-        'refG_in': f"{project_parameters.filnam}_refG.inp",  # reference geometry
-        'refG_out': f"{project_parameters.filnam}_refG.out",  # reference geometry
-        'modes_included': project_parameters.modes_included,
+        'project_filename': pp.filnam,
+        'refG_in': f"{pp.filnam}_refG.inp",  # reference geometry
+        'refG_out': f"{pp.filnam}_refG.out",  # reference geometry
+        # 'modes_included': pp.modes_included,
     })
 
     main(**kwargs)
