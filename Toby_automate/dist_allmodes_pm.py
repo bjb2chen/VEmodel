@@ -388,8 +388,8 @@ def diabatization(**kwargs):
 
             # write to file
             path = filename_list[key]
-            with open(path, 'a') as fp:
-                fp.write("".join(file_contents))
+            with open(path, 'w') as fp:
+                fp.write("\n".join(file_contents))
 
         return
 
@@ -1287,6 +1287,28 @@ def mctdh(**kwargs):
                 "|1 S{a:}&{a:} |{i:} q |{j:} q",
                 "|1 S{b:}&{a:} |{i:} q |{j:} q",
             ]
+
+        def label_linear_coupling(linear_terms, A, N, diagonal=False):
+            """Return a string containing the linear coupling constant labelling of a .op file."""
+            spacer = '|'
+            if diagonal:
+                return '\n'.join([
+                    f"C1_s{a:0>2d}_s{a:0>2d}_v{i:0>2d}{spacer:>11}1 S{a:d}&{a:d}{spacer:>4}{i+1}  q"
+                    for a, i in it.product(range(1, A+1), range(1, N+1))
+                    if not np.isclose(linear_terms[i-1, a-1], 0.0)
+                ]) + '\n'
+            else:
+                return '\n'.join([
+                    f"C1_s{a:0>2d}_s{a:0>2d}_v{i:0>2d}{spacer:>11}1 S{a:d}&{a:d}{spacer:>4}{i+1}  q"
+                    for a, i in it.product(range(1, A+1), range(1, N+1))
+                ] + [
+                    ''  # creates a blank line between the (surface) diagonal and off-diagaonl linear terms
+                ] + [
+                    f"C1_s{a2:0>2d}_s{a1:0>2d}_v{i:0>2d}{spacer:>11}1 S{a2:d}&{a1:d}{spacer:>4}{i+1}  q"
+                    for a1, a2, i in it.product(range(1, A+1), range(1, A+1), range(1, N+1))
+                    if (a1 != a2)
+                ]) + '\n'
+
 
             for a in range(1, A+1):
                 for b in range(1, a):
