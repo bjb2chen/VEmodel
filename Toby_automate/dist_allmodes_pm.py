@@ -759,8 +759,8 @@ def mctdh(**kwargs):
     # -------------------------------------------------------------------------
     # prepare various lists and dictionaries
 
-    Heading, Params = [], []
-    EH, SOC, Linear, Quadratic, Bilinear = [], [], [], [], []
+    heading, params = [], []
+    EH, SOC, linear, quadratic, bilinear = [], [], [], [], []
 
     # prepare filenames
     zeroth_filename = f'{filnam}_refG.out'
@@ -806,13 +806,13 @@ def mctdh(**kwargs):
     # -------------------------------------------------------------------------
     # preparing the header of the `mctdh.op`
 
-    Heading.append("OP_DEFINE-SECTION")
-    Heading.append("title")
+    heading.append("OP_DEFINE-SECTION")
+    heading.append("title")
 
-    Heading.append(f'{filnam} {nstate} states + ' + str(nmodes) + ' modes')
-    Heading.append("end-title ")
-    Heading.append("end-op_define-section\n")
-    Heading.append("PARAMETER-SECTION\n")
+    heading.append(f'{filnam} {nstate} states + ' + str(nmodes) + ' modes')
+    heading.append("end-title ")
+    heading.append("end-op_define-section\n")
+    heading.append("PARAMETER-SECTION\n")
 
     format_string = "{label:<25s}={value:>-15.9f}{units:>8s}\n"
     make_line = functools.partial(format_string.format, units=", ev")
@@ -861,7 +861,7 @@ def mctdh(**kwargs):
 
         with open('mctdh.op', 'w') as mctdh_file:
 
-            for idx in Heading:
+            for idx in heading:
                 mctdh_file.write(idx+'\n')
 
             for idx in EH:
@@ -882,7 +882,7 @@ def mctdh(**kwargs):
     coord_disp_mp = {}
     coord_disp_mm = {}
 
-    for icomp in range(1, ndim + 1):
+    for icomp in range(0, ndim):
         coord_disp_plus[icomp] = distcoord_plus[icomp]
         print(f'icomp: {icomp}, coord_disp_plus: {coord_disp_plus[icomp]}')
         coord_disp_minus[icomp] = distcoord_minus[icomp]
@@ -923,9 +923,9 @@ def mctdh(**kwargs):
             # "-2": f'{filnam}_mode{imode}_-{qsize}x2.out',
         }
 
-        vibron_ev = freqcm[imode] * wn2ev
-        Params.append(make_line(label=f"w{imode:>02d}", value=vibron_ev))
-        # Params.append("\n")
+        vibron_ev = freqcm[imode-1] * wn2ev
+        params.append(make_line(label=f"w{imode:>02d}", value=vibron_ev))
+        # params.append("\n")
         # Coupling.append("#Linear and quadratic diagonal and off-diagonal vibronic coupling constants:\n")
 
         grace_code = {}
@@ -938,7 +938,7 @@ def mctdh(**kwargs):
         """
 
         if not all(code == 0 for code in grace_code.values()):
-            Params.append(f"not good to extract. Skipping mode {imode} for extracting vibronic couplings\n")
+            params.append(f"not good to extract. Skipping mode {imode} for extracting vibronic couplings\n")
 
         else:  # otherwise we're good to extract
             print("\n good to extract\n")
@@ -972,8 +972,8 @@ def mctdh(**kwargs):
                     return s1, s2
 
                 s1, s2 = _make_diag_lin_quad(ist)
-                Linear.append(s1)
-                Quadratic.append(s2)
+                linear.append(s1)
+                quadratic.append(s2)
 
                 # # Loop over jst
                 jlast = ist - 1
@@ -1001,9 +1001,9 @@ def mctdh(**kwargs):
                         s2 = make_line(label=f"C2_s{j:>02d}s{i:>02d}_v{imode:>02d}v{imode:>02d}", value=quadratic_offdiag_ev)
                         return s1, s2
 
-                    s1, s2 = _make_diag_lin_quad(ist, jst)
-                    Linear.append(s1)
-                    Quadratic.append(s2)
+                    s1, s2 = _make_diag_lin_quad(ist)
+                    linear.append(s1)
+                    quadratic.append(s2)
 
                     """ this is just representative (you can delete - just for learning purposes)
                     if False: # don't actually try to do right now
@@ -1053,7 +1053,7 @@ def mctdh(**kwargs):
                     bilinear_diag_ev = (Ediab_au_pp + Ediab_au_mm - Ediab_au_pm - Ediab_au_mp ) * ha2ev / (4.0 * qsize * qsize )
 
                     print(f"State {ist} Bilinear Diagonal: {bilinear_diag_ev}\n")
-                    Bilinear.append(make_line(label=f"C1_s{ist:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}", value=bilinear_diag_ev))
+                    bilinear.append(make_line(label=f"C1_s{ist:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}", value=bilinear_diag_ev))
 
                     # # Loop over jst
                     jlast = ist - 1
@@ -1073,7 +1073,7 @@ def mctdh(**kwargs):
                         bilinear_offdiag_ev = ( Coup_ev_pp + Coup_ev_mm - Coup_ev_pm - Coup_ev_mp ) / (4.0 * qsize * qsize )
 
                         print(f"State {jst} & {ist} Bilinear Off-Diagonal: {bilinear_offdiag_ev}\n")
-                        Bilinear.append(make_line(label=f"C1_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}", value=bilinear_offdiag_ev))
+                        bilinear.append(make_line(label=f"C1_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}", value=bilinear_offdiag_ev))
 
                         if SOC_flag:
 
