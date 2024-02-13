@@ -736,7 +736,10 @@ def mctdh(**kwargs):
     # -------------------------------------------------------------------------
 
     filnam = filename = kwargs['project_filename']
-    modes_included = kwargs['modes_included']
+    #modes_included = kwargs['modes_included']
+    modes_included = {}
+    for idx in range(len(selected_mode_list)):
+        modes_included[idx+1] = selected_mode_list[idx]
 
     # extract necessary parameters
     nstate = kwargs['nof_electronic_states']
@@ -867,8 +870,8 @@ def mctdh(**kwargs):
     else:
         print(f"Skip extracting Hamiltonians from the non-existing {zeroth_filename}")
 
-    distcoord_plus, distcoord_minus, distcoord_plus_x2, distcoord_minus_x2 = diabatize[0], diabatize[1], diabatize[2], diabatize[3]
-    distcoord_pp, distcoord_pm, distcoord_mp, distcoord_mm = diabatize[4], diabatize[5], diabatize[6], diabatize[7]
+    distcoord_plus, distcoord_minus, distcoord_plus_x2, distcoord_minus_x2 = diabatize["+1"], diabatize["-1"], diabatize["+2"], diabatize["-2"]
+    distcoord_pp, distcoord_pm, distcoord_mp, distcoord_mm = diabatize["++"], diabatize["+-"], diabatize["-+"], diabatize["--"] 
 
     coord_disp_plus = {}
     coord_disp_minus = {}
@@ -1874,8 +1877,8 @@ def main(ref_file="ref_structure", ncols=5, **kwargs):
     })
     # name, modes = pp.filnam, pp.modes_included
     diabatize = diabatization(**diabatization_kwargs)
-    #pprint.pprint(diabatize)
-    print("Diabatization successfully modified"); return
+    pprint.pprint(diabatize)
+    print("Diabatization successfully modified")# return
 
     tdipole_block = extract_lines_between_patterns(
         kwargs['refG_out'],
@@ -1888,6 +1891,8 @@ def main(ref_file="ref_structure", ncols=5, **kwargs):
     pprint.pprint(tdipole_block)
     pprint.pprint(dipoles)
 
+    #breakpoint()
+
     mctdh_input_kwargs = kwargs.copy()
     mctdh_input_kwargs.update({
         'qsize': pp.qsize,
@@ -1898,6 +1903,7 @@ def main(ref_file="ref_structure", ncols=5, **kwargs):
         'amu2me': pp.amu2me,
         'nof_electronic_states': pp.A,
         'ndim': ndim,
+        'nrmmod': nrmmod,
         'freqcm': freqcm,
         'dipoles': dipoles,
         'diabatize': diabatize,
