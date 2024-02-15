@@ -637,7 +637,7 @@ def extract_diabatic_energy(file_path, pattern):
 def extract_coupling_energy(file_path, pattern):
     try:
         # Use subprocess.run with the direct command
-        command = f'grep "{pattern}" "{file_path}" | tail -1 | cut -c62-'
+        command = f'grep "{pattern}" "{file_path}" | tail -1 | cut -c62-' # we insert different patterns into refG_extract and this function
         result = subprocess_run_wrapper(command, shell=True, text=True, capture_output=True)
 
         # If there is output, convert it to float
@@ -733,18 +733,18 @@ def extract_DSOME(filnam, nstate):
             except Exception as e:
                 print(f"Error processing line: {DSOMEline} - {e}")
 
-    for left_state_idx in range(1, int(nstate)):
-        for right_state_idx in range(left_state_idx+1, int(nstate)+1):
+    for l_idx in range(1, int(nstate)):
+        for r_idx in range(l_idx+1, int(nstate)+1):
             for level_idx in range(1, 3):
-                full_extracted_set[left_state_idx, right_state_idx, level_idx] = DSOME_set[f'{left_state_idx} & {right_state_idx}, {level_idx}']
+                full_extracted_set[l_idx, r_idx, level_idx] = DSOME_set[f'{l_idx} & {r_idx}, {level_idx}']
 
-            summed_set_real[left_state_idx, right_state_idx] = full_extracted_set[left_state_idx, right_state_idx, 1].real + \
-                                                               full_extracted_set[left_state_idx, right_state_idx, 2].real
+            summed_set_real[l_idx, r_idx] = full_extracted_set[l_idx, r_idx, 1].real + \
+                                                               full_extracted_set[l_idx, r_idx, 2].real
 
-            summed_set_imag[left_state_idx, right_state_idx] = full_extracted_set[left_state_idx, right_state_idx, 1].imag + \
-                                                               full_extracted_set[left_state_idx, right_state_idx, 2].imag
+            summed_set_imag[l_idx, r_idx] = full_extracted_set[l_idx, r_idx, 1].imag + \
+                                                               full_extracted_set[l_idx, r_idx, 2].imag
 
-            append_J[left_state_idx, right_state_idx] = complex(0,summed_set_imag[left_state_idx, right_state_idx])
+            append_J[l_idx, r_idx] = complex(0,summed_set_imag[l_idx, r_idx])
 
     #return full_extracted_set, summed_set_real, summed_set_imag, append_J
     return [summed_set_real, summed_set_imag]
