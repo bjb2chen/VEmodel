@@ -89,7 +89,9 @@ def subprocess_call_wrapper(*args, **kwargs):
 
 
 def os_system_wrapper(*args, **kwargs):
-    """  """
+    """ os.system is needed for submitting jobs on nlogn! 
+        sbatch on nlogn only works with os
+    """
     assert len(args) == 1
     command = args[0]
 
@@ -152,7 +154,8 @@ def _remove_existing_distorted_structure_files(filename_dict):
 
 
 def my_subgam(path, **kwargs):
-    """ x """
+    """ Create our own GAMESS job submission script 
+        Recording the script inside .slurm helps for recordkeeping """
 
     # if its easier to just change project parameters i would recommend doing
     # ncpus = pp.ncpus
@@ -777,9 +780,6 @@ def mctdh(**kwargs):
     qsize = kwargs.get('qsize', 0.05)
     ha2ev = kwargs.get('ha2ev', 27.2113961318)
     wn2ev = kwargs.get('wn2ev', 0.000123981)
-    # wn2eh = kwargs.get('wn2eh', 0.00000455633)
-    # ang2br = kwargs.get('ang2br', 1.889725989)
-    # amu2me = kwargs.get('amu2me', 1822.88839)
 
     # -------------------------------------------------------------------------
     # prepare various lists and dictionaries
@@ -2292,25 +2292,18 @@ def main(ref_file="ref_structure", ncols=5, **kwargs):
     shutil.copy("mctdh.op", kwargs['project_filename'] + '.op')
 
     if (extra_debug := False):
-        pprint.pprint(nrmmod)
         print('---------nrm mod done-----------')
-        pprint.pprint(freqcm)
+        pprint.pprint(nrmmod)
         print('---------freqcm done-----------')
-        pprint.pprint(selected_lines)
-        print('---------selected_lines done-----------')
-        pprint.pprint(filtered_set)
-        print('---------filtered_set done-----------')
-        pprint.pprint(freq_value_set)
-        print('---------freq_value_set done-----------')
-        pprint.pprint(atmlst)
+        pprint.pprint(freqcm)
+        print('---------selected_mode_list done-----------')
+        pprint.pprint(selected_mode_list)
         print('---------atmlst done-----------')
-        pprint.pprint(chrglst)
+        pprint.pprint(atmlst)
         print('---------chrglst done-----------')
-        pprint.pprint(refcoord)
+        pprint.pprint(chrglst)
         print('---------refcoord done-----------')
-        pprint.pprint(modes_included)
-        print('---------modes included done-----------')
-
+        pprint.pprint(refcoord)
     # ...
     return
 
