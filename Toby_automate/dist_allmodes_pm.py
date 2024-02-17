@@ -800,11 +800,10 @@ def mctdh(**kwargs):
         for i in range(N):
             for j in range(0, i):
                 q1_label, q2_label = pp.mode_map_dict[i], pp.mode_map_dict[j]
-                d1, d2 = key[0], key[1]  # ++/+-/-+/--
-                for key in bi_linear_disp_keys:
-                    bilinear_displacement_filenames[(key, i, j)] = str(
-                        f'{file_name}_mode{q1_label}_{d1}{qsize}_mode{q2_label}_{d2}{qsize}.out'
-                    )
+                for d1, d2 in it.product(['+', '-'], ['+', '-']):
+                        bilinear_displacement_filenames[(d1+d2, i, j)] = str(
+                           f'{file_name}_mode{q1_label}_{d1}{qsize}_mode{q2_label}_{d2}{qsize}.out'
+                        )
         return linear_displacement_filenames, bilinear_displacement_filenames
 
     linear_displacement_filenames, bilinear_displacement_filenames = _make_displacement_filenames()
@@ -827,8 +826,68 @@ def mctdh(**kwargs):
         ])
 
     # ---------------------------------------------
+    def confirm_necessary_files_exist():
 
-    def extract_energies(hessout):
+        def _confirm_linear_are_good(bad_mode=False):
+            """ confirm all displacement_input_files are good for all selected modes """
+            for i in range(N):
+                grace_code = {}
+                for key in linear_disp_keys:
+                    grace_code[key] = subprocess_call_wrapper([
+                        "grep", "DONE WITH MP2 ENERGY",
+                        linear_displacement_filenames[(key, i)]
+                    ])
+                    print(f" ..... in file {linear_displacement_filenames[(key, i)]}")
+
+                if not all(code == 0 for code in grace_code.values()):
+                    mode_label = pp.mode_map_dict[i]
+                    print("Linear/Quad mode {mode_label} not good to extract.\n")
+                    bad_mode = True
+
+            return bad_mode
+
+        def _confirm_bilinear_are_good(bad_mode=False):
+            """ confirm all displacement_input_files are good for all selected modes """
+            for i in range(N):
+                for j in range(0, i):
+                    grace_code = {}
+                    for key in bi_linear_disp_keys:
+                        grace_code[key] = subprocess_call_wrapper([
+                            "grep", "DONE WITH MP2 ENERGY",
+                            bilinear_displacement_filenames[(key, i, j)]
+                        ])
+                        print(f" ..... in file {bilinear_displacement_filenames[(key, i, j)]}")
+
+                    if not all(code == 0 for code in grace_code.values()):
+                        mode_label = (pp.mode_map_dict[i], pp.mode_map_dict[j])
+                        print("Bilinear mode {mode_label} not good to extract.\n")
+                        bad_mode = True
+
+            return bad_mode
+
+        def refG_file_exists():
+            refG_exists = bool(subprocess_call_wrapper(["ls", zeroth_filename]) == 0)
+            if not refG_exists:
+                """ If refG doesn't exist, then maybe we can find the .... from other files `blah.txt`
+                but also maybe they don't exist... need to check later
+                """
+                print(f"Skip extracting Hamiltonians from the non-existing {zeroth_filename}")
+                breakpoint()
+                raise Exception("need to add failback code if can't find refG")
+
+            return refG_exists
+
+        flag = bool(
+            _confirm_linear_are_good()
+            or _confirm_bilinear_are_good()
+            or refG_file_exists()
+        )
+        return flag
+
+    if not confirm_necessary_files_exist():
+        print("Bad input files detected, please fix.")
+
+    def extract_E0(hessout):
 
         # extract energy values
         a_pattern = 'STATE #.* {a}.S GMC-PT-LEVEL DIABATIC ENERGY='
@@ -844,30 +903,30 @@ def mctdh(**kwargs):
             f'Linear shift value: {linear_shift} eV\n'
         )
 
-        E_array = np.zeros((A+1,A+1)) # +1 for ground state's as fictitious first row/col
+        E0_array = np.zeros((A+1,A+1)) # +1 for ground state's as fictitious first row/col
  
         for a in range(1, A+1):
-            E_array[a,a] = refG_extract(zeroth_filename, a_pattern.format(a=a))
-            E_array[a,a] += linear_shift
-            print(f"Diabatic energy at state {a}: {E_array[a,a]}")
+            E0_array[a,a] = refG_extract(zeroth_filename, a_pattern.format(a=a))
+            E0_array[a,a] += linear_shift
+            print(f"Diabatic energy at state {a}: {E0_array[a,a]}")
             for b in range(1, a):
-                E_array[b,a] = refG_extract(zeroth_filename, ab_pattern.format(b=b, a=a))
-                print(f"Coupling energy at state {b} & {a}: {E_array[b,a]}")
+                E0_array[b,a] = refG_extract(zeroth_filename, ab_pattern.format(b=b, a=a))
+                print(f"Coupling energy at state {b} & {a}: {E0_array[b,a]}")
 
-        return E_array
+        return E0_array
 
-    def build_energies(E_array):
+    def build_E0(E0_array):
         """Return a string containing the energy information of a .op file."""
         # return ''.join([
-        #     make_line(label=f"EH_s{a+1:0>2d}_s{b+1:0>2d}", value=E_array[a,b])
+        #     make_line(label=f"EH_s{a+1:0>2d}_s{b+1:0>2d}", value=E0_array[a,b])
         #     for a, b in it.product(range(1, A+1), range(1, a))
         # ])
-        energies = ''
+        E0 = ''
         for a in range(1, A+1):
-            energies += make_line(label=f"EH_s{a:0>2d}_s{a:0>2d}", value=E_array[a,a])
+            E0 += make_line(label=f"EH_s{a:0>2d}_s{a:0>2d}", value=E0_array[a,a])
             for b in range(1, a):
-                energies += make_line(label=f"EH_s{b:0>2d}_s{a:0>2d}", value=E_array[b,a])
-        return energies
+                E0 += make_line(label=f"EH_s{b:0>2d}_s{a:0>2d}", value=E0_array[b,a])
+        return E0
 
     def build_frequencies(frequencies):
         """Return a string containing the frequency information of a .op file."""
@@ -980,73 +1039,223 @@ def mctdh(**kwargs):
     #         DSOME_cm_0_real, DSOME_cm_0_imag = DSOME_cm_0[0], DSOME_cm_0[1]
     #     # ------------------------------------------------------------
     #     return
+    heading, params = [], []
+    EH, SOC, linear, quadratic, bilinear = [], [], [], [], []
 
-    def extract_linear(linear_displacement_filenames):
+    displacement_keys = ["+1", "+2", "-1", "-2"]
 
-        # extract energy values
-        # i_pattern = f'STATE #.* {i}.S GMC-PT-LEVEL DIABATIC ENERGY='
-        # ji_pattern = f'STATE #.* {j} &.* {i}.S GMC-PT-LEVEL COUPLING'
+    format_string = "{label:<25s}={value:>-15.9f}{units:>8s}\n"
+    make_line = functools.partial(format_string.format, units=", ev")
 
-        E_diab_au = {}
-        Coup_ev = {}
-        grace_code = {}
-        linear_terms = []
+    spacer_format_string = f"# {'-':^60s} #\n"
+    hfs = header_format_string = "# {:^60s} #\n" + spacer_format_string
 
-        for key in linear_displacement_filenames:
-            grace_code[key] = subprocess_call_wrapper([
-                "grep", "DONE WITH MP2 ENERGY", linear_displacement_filenames[key]
-                ])
-            print(f" ..... in file {linear_displacement_filenames[key]}")
+    linear.append(hfs.format('Linear Coupling Constants'))
+    quadratic.append(hfs.format('Quadratic Coupling Constants'))
+    bilinear.append(hfs.format('Bilinear Coupling Constants'))
 
-            if grace_code[key] != 0:
-                print(f"not good to extract. Skipping mode {key} for extracting vibronic couplings\n")
-
-            else:
-                print("\n good to extract\n")
-                i_pattern = 'STATE #.* {i}.S GMC-PT-LEVEL DIABATIC ENERGY='
-                ji_pattern = 'STATE #.* {j} &.* {i}.S GMC-PT-LEVEL COUPLING'
+    def extract_energies():
         
-                for a in range(1, A+1):
-                    E_diab_au[key] = extract_diabatic_energy(
-                        linear_displacement_filenames[key], i_pattern.format(i=a)
-                    )
-                    linear_terms += make_line(
-                        label=f"C1_s{a+1:0>2d}_s{a+1:0>2d}_v{i+1:0>2d}",
-#                        value=linear_terms[i, a]
-                    )
-                    for b in range(1, a):
-                        Coup_ev[key] = extract_coupling_energy(
-                            linear_displacement_filenames[key], ji_pattern.format(j=b, i=a)
-                        )
-                        linear_terms += [Coup_ev[key]]
+        for kmode in range(N):  # kmode is array index of selected_mode_list
+            imode = pp.mode_map_dict[kmode] #
+    
+            displacement_filenames = {
+                "+1": f'{filnam}_mode{imode}_+{qsize}.out',
+                "+2": f'{filnam}_mode{imode}_+{qsize}x2.out',
+                "-1": f'{filnam}_mode{imode}_-{qsize}.out',
+                "-2": f'{filnam}_mode{imode}_-{qsize}x2.out',
+            }
+    
+            vibron_ev = freqcm[imode-1] * wn2ev
+            params.append(make_line(label=f"w{imode:>02d}", value=vibron_ev))
+            # params.append("\n")
+            # Coupling.append("#Linear and quadratic diagonal and off-diagonal vibronic coupling constants:\n")
+    
+            grace_code = {}
+            for key in displacement_keys:
+                grace_code[key] = subprocess_call_wrapper(["grep", "DONE WITH MP2 ENERGY", displacement_filenames[key]])
+    
+            """ either of these work (logic wise)
+                if any(code != 0 for code in grace_code.values()):
+                if not all(code == 0 for code in grace_code.values()):
+            """
+    
+            if not all(code == 0 for code in grace_code.values()):
+                params.append(f"not good to extract. Skipping mode {imode} for extracting vibronic couplings\n")
+    
+            else:  # otherwise we're good to extract
+                print("\n good to extract\n")
+                # Extract the diagonal and off-diagonal vibronic coupling
+                for ist in range(1, nstate + 1):
+    
+                    def _make_diag_lin_quad(i):
+                        pattern = f'STATE #.* {i}.S GMC-PT-LEVEL DIABATIC ENERGY='
+    
+                        # Ediab_au = [extract_diabatic_energy(displacement_filenames[kmode][k], pattern) for k in displacement keys]  $ one liner list comprehension
+                        # Ediab_au = {k: extract_diabatic_energy(displacement_filenames[kmode][k], pattern) for k in displacement keys}  # one liner dictionary comprehension
+                        Ediab_au = {}
+                        for key in displacement_keys:
+                            Ediab_au[key] = extract_diabatic_energy(displacement_filenames[key], pattern)
+    
+                        # Extract Ediab_au_0
+                        Ediab_au_0 = extract_diabatic_energy(zeroth_filename, pattern)
+                        linear_diag_ev = (Ediab_au["+1"] - Ediab_au["-1"]) * ha2ev / (2 * qsize)
+                        quadratic_diag_ev = (Ediab_au["+2"] + Ediab_au["-2"] - 2.0 * Ediab_au_0) * ha2ev / (4.0 * qsize * qsize)
+    
+                        # We only view the difference between the actual force constant and the vibron
+                        # as the quadratic diagonal coupling for the diabatic state.
+                        quadratic_diag_ev = quadratic_diag_ev - vibron_ev
+    
+                        # Print and store results
+                        print(f"State {i} Linear Diagonal: {linear_diag_ev} Quadratic Diagonal: {quadratic_diag_ev}, ev\n")
+    
+                        # machine accuracy is typically 16 digits
+                        s1 = make_line(label=f"C1_s{i:>02d}_s{i:>02d}_v{imode:>02d}", value=linear_diag_ev)
+                        s2 = make_line(label=f"C2_s{i:>02d}s{i:>02d}_v{imode:>02d}v{imode:>02d}", value=quadratic_diag_ev)
+                        return s1, s2
+    
+                    s1, s2 = _make_diag_lin_quad(ist)
+                    linear.append(s1)
+                    quadratic.append(s2)
+    
+                    # # Loop over jst
+                    jlast = ist - 1
+                    for jst in range(1, jlast + 1):
+    
+                        def _make_offdiag_lin_quad(i, j):
+                            pattern = f'STATE #.* {j} &.* {i}.S GMC-PT-LEVEL COUPLING'
+    
+                            # Extract Coup_ev_0
+                            Coup_ev_0 = extract_coupling_energy(zeroth_filename, pattern)
+    
+                            Coup_ev = {}
+                            for key in displacement_keys:
+                                Coup_ev[key] = extract_diabatic_energy(displacement_filenames[key], pattern)
+    
+                            # Compute linear off-diagonal coupling
+                            linear_offdiag_ev = (Coup_ev["+1"] - Coup_ev["-1"]) / (2 * qsize)
+                            # Compute quadratic off-diagonal coupling
+                            quadratic_offdiag_ev = (Coup_ev["+2"] + Coup_ev["-2"] - 2.0 * Coup_ev_0) / (4.0 * qsize * qsize)
+    
+                            # Print and store results
+                            print(f"State {j} & {i} Linear Off-Diagonal: {linear_offdiag_ev}\n")
+                            print(f"State {j} & {i} Quadratic Off-Diagonal: {quadratic_offdiag_ev}\n")
+                            s1 = make_line(label=f"C1_s{j:>02d}_s{i:>02d}_v{imode:>02d}", value=linear_offdiag_ev)
+                            s2 = make_line(label=f"C2_s{j:>02d}s{i:>02d}_v{imode:>02d}v{imode:>02d}", value=quadratic_offdiag_ev)
+                            return s1, s2
+    
+                        s1, s2 = _make_diag_lin_quad(ist)
+                        linear.append(s1)
+                        quadratic.append(s2)
+    
+                        """ this is just representative (you can delete - just for learning purposes)
+                        if False: # don't actually try to do right now
+                            order_name = {1: 'Linear', 2: 'Quadratic'}
+                            for i in [1, 2]:
+                                _number = [linear_offdiag_ev, quadratic_offdiag_ev][i]
+                                print(f"State {jst} & {ist} {order_name[i]} Off-Diagonal: {_number}\n")
+                                oprder_list[i].append(make_line(label=f"C{i}_s{jst:>02d}_s{ist:>02d}_v{imode:>02d}", value=_number))
+                        """
+    
+    
+            # Extracting bilinear vibronic coupling
+            # Coupling.append("#Bilinear diagonal and off-diagonal vibronic coupling constants:\n")
+    
+            for lmode in range(0, kmode):
+                jmode = pp.mode_map_dict[lmode]
+                breakpoint()
+    
+                bi_linear_displacement_filenames = {
+                    "++": f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out',
+                    "+-": f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out',
+                    "-+": f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out',
+                    "--": f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out',
+                }
+    
+                grace_code_pp = subprocess_call_wrapper(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out"])
+                grace_code_pm = subprocess_call_wrapper(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out"])
+                grace_code_mp = subprocess_call_wrapper(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out"])
+                grace_code_mm = subprocess_call_wrapper(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out"])
+    
+                if all(code == 0 for code in [grace_code_pp, grace_code_pm, grace_code_mp, grace_code_mm]):
+                    print(f"\n Good to extract bilinear for modes {imode} {jmode} \n")
+                    for ist in range(1, nstate + 1):
+                        pattern = f'STATE #.* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY='
+    
+                        # do this style again?
+                        # big_displacement_keys = ['++', '+-', '-+', '--']
+                        # Ediab_au = {}
+                        # for key in displacement_keys:
+                        #     Ediab_au[key] = extract_diabatic_energy(big_displacement_filenames[key], pattern)
+    
+    
+                        # Extract Ediab_au_pp
+                        Ediab_au_pp = extract_diabatic_energy(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out', pattern)
+    
+                        # Extract Ediab_au_pm
+                        Ediab_au_pm = extract_diabatic_energy(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out', pattern)
+    
+                        # Extract Ediab_au_mp
+                        Ediab_au_mp = extract_diabatic_energy(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out', pattern)
+    
+                        # Extract Ediab_au_mm
+                        Ediab_au_mm = extract_diabatic_energy(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out', pattern)
+    
+                        bilinear_diag_ev = (Ediab_au_pp + Ediab_au_mm - Ediab_au_pm - Ediab_au_mp ) * ha2ev / (4.0 * qsize * qsize )
+    
+                        print(f"State {ist} Bilinear Diagonal: {bilinear_diag_ev}\n")
+                        bilinear.append(make_line(label=f"C1_s{ist:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}", value=bilinear_diag_ev))
+    
+                        # # Loop over jst
+                        jlast = ist - 1
+                        for jst in range(1, jlast + 1):
+                            pattern = f'STATE #.* {jst} &.* {ist}.S GMC-PT-LEVEL COUPLING'
+                            # Extract Coup_ev_pp
+                            Coup_ev_pp = extract_coupling_energy(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out', pattern)
+                            # Extract Coup_ev_pm
+                            Coup_ev_pm = extract_coupling_energy(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out', pattern)
+    
+                            # Extract Coup_ev_mp
+                            Coup_ev_mp = extract_coupling_energy(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out', pattern)
+    
+                            # Extract Coup_ev_mm
+                            Coup_ev_mm = extract_coupling_energy(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out', pattern)
+    
+                            bilinear_offdiag_ev = ( Coup_ev_pp + Coup_ev_mm - Coup_ev_pm - Coup_ev_mp ) / (4.0 * qsize * qsize )
+    
+                            print(f"State {jst} & {ist} Bilinear Off-Diagonal: {bilinear_offdiag_ev}\n")
+                            bilinear.append(make_line(label=f"C1_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}", value=bilinear_offdiag_ev))
+    
+                            if SOC_flag:
+    
+                                try:
+    
+                                    # Extract DSOME_cm_pp
+                                    DSOME_cm_pp = extract_DSOME(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out', nstate)
+                                    DSOME_cm_pp_real, DSOME_cm_pp_imag = DSOME_cm_pp[0], DSOME_cm_pp[1]
+    
+                                    # Extract DSOME_cm_pm
+                                    DSOME_cm_pm = extract_DSOME(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out', nstate)
+                                    DSOME_cm_pm_real, DSOME_cm_pm_imag = DSOME_cm_pm[0], DSOME_cm_pm[1]
+    
+                                    # Extract DSOME_cm_mp
+                                    DSOME_cm_mp = extract_DSOME(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out', nstate)
+                                    DSOME_cm_mp_real, DSOME_cm_mp_imag = DSOME_cm_mp[0], DSOME_cm_mp[1]
+    
+                                    # Extract DSOME_cm_mm
+                                    DSOME_cm_mm = extract_DSOME(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out', nstate)
+                                    DSOME_cm_mm_real, DSOME_cm_mm_imag = DSOME_cm_mm[0], DSOME_cm_mm[1]
+    
+    
+                                except Exception as e:
+                                    print(f"Error in SOC: {str(e)}")
+                else:
+                    print(f"not good to extract. Skipping mode {imode} mode {jmode} for extracting bilinear vibronic couplings")
 
-        # for i in range(N):
-        #     for key in displacement_keys:
-        #         path = linear_displacement_filenames[(key, i)]
-        #         E_diab_au[(key, i)] = extract_diabatic_energy(path, i_pattern.format(i=i))
+    #    return linear_terms
 
-        # bob = np.zeroes((N,N))
-
-        # # ------------------------------------------------------------
-        # # try to only extract values and store inside a dict or array
-        # # each make line should end up being similarily reproduced in `build_energies`
-        # for a in range(1, nstate + 1):
-        #     Ediab = refG_extract(zeroth_filename, i_pattern.format(i=ist))
-        #     bob[a,a] += Ediab+linear_shift
-        #     bob[b,a] += Coup_ev
-        #     # EH.append(make_line(label=f"EH_s{ist:>02d}_s{ist:>02d}", value=Ediab+linear_shift))
-
-        #     # Extract coupling energy between state jst and ist
-        #     for b in range(1, a):
-        #         Coup_ev = refG_extract(zeroth_filename, ji_pattern.format(j=jst, i=ist))
-        #         # EH.append(make_line(label=f"EH_s{jst:>02d}_s{ist:>02d}", value=Coup_ev))
-        #     # EH.append("\n")
-        # # EH.append(make_line(label=f"EH_s{nstate+1:>02d}_s{nstate+1:>02d}", value=0.0))
-        # # EH.append("\n")
-
-        return linear_terms
-
-    lin_data = extract_linear(linear_displacement_filenames)
+    # lin_data = extract_linear(linear_displacement_filenames)
+    # pprint.pprint(lin_data)
 
     # def extract_etdm():
     #     return
@@ -1068,7 +1277,8 @@ def mctdh(**kwargs):
         # ----------------------------------------------------------
         # read in all the necessary parameters
         vibron_ev = freq_array * wn2ev  # fix later (uses global variables)
-        E_diab_au = extract_energies(hessout)
+        E_diab_au = extract_E0(hessout)
+        extract_energies()
         #E_moments = extract_etdm()
         # M_moments = extract_mtdm()
         #lin_data = extract_linear()
@@ -1080,10 +1290,10 @@ def mctdh(**kwargs):
         return_list = [
             start,
             make_header('Frequencies'), build_frequencies(vibron_ev),
-            make_header('Electronic Hamitonian'), build_energies(E_diab_au),
+            make_header('Electronic Hamitonian'), build_E0(E_diab_au),
             # make_header('Electronic transition moments'), build_electronic_moments(E_moments),
             # # make_header('Magnetic transition moments'), build_magnetic_moments(M_moments),
-            # make_header('Linear Coupling Constants'), build_linear_coupling(lin_data, nof_states, nof_modes),
+            make_header('Linear Coupling Constants'), #build_linear_coupling(lin_data, nof_states, nof_modes),
         ]
 
         if False:  # turn on once finished functions
@@ -1104,7 +1314,9 @@ def mctdh(**kwargs):
         #         make_header('SOC'),
         #         build_linear_coupling(X_lin, nof_states, nof_modes),
         #     ])
-
+        return_list.extend(linear)
+        return_list.extend(quadratic)
+        return_list.extend(bilinear)
         return_list.append(end)
 
         return '\n'.join(return_list)
@@ -1305,69 +1517,11 @@ def mctdh(**kwargs):
             fp.write(file_contents)
     
     _write_op()
-    
-    breakpoint()
+
     # ----------------------------------------------------------
 
     # ------------------------------------------------------------------------
-    def confirm_necessary_files_exist():
-
-        def _confirm_linear_are_good(bad_mode=False):
-            """ confirm all displacement_input_files are good for all selected modes """
-            for i in range(N):
-                grace_code = {}
-                for key in linear_disp_keys:
-                    grace_code[key] = subprocess_call_wrapper([
-                        "grep", "DONE WITH MP2 ENERGY",
-                        linear_displacement_filenames[(key, i)]
-                    ])
-
-                if not all(code == 0 for code in grace_code.values()):
-                    mode_label = pp.mode_map_dict[i]
-                    print("Linear/Quad mode {mode_label} not good to extract.\n")
-                    bad_mode = True
-
-            return bad_mode
-
-        def _confirm_bilinear_are_good(bad_mode=False):
-            """ confirm all displacement_input_files are good for all selected modes """
-            for i in range(N):
-                for j in range(0, i):
-                    grace_code = {}
-                    for key in bi_linear_disp_keys:
-                        grace_code[key] = subprocess_call_wrapper([
-                            "grep", "DONE WITH MP2 ENERGY",
-                            bilinear_displacement_filenames[(key, i, j)]
-                        ])
-                    if not all(code == 0 for code in grace_code.values()):
-                        mode_label = (pp.mode_map_dict[i], pp.mode_map_dict[j])
-                        print("Bilinear mode {mode_label} not good to extract.\n")
-                        bad_mode = True
-
-            return bad_mode
-
-        def refG_file_exists():
-            refG_exists = bool(subprocess_call_wrapper(["ls", zeroth_filename]) == 0)
-            if not refG_exists:
-                """ If refG doesn't exist, then maybe we can find the .... from other files `blah.txt`
-                but also maybe they don't exist... need to check later
-                """
-                print(f"Skip extracting Hamiltonians from the non-existing {zeroth_filename}")
-                breakpoint()
-                raise Exception("need to add failback code if can't find refG")
-
-            return refG_exists
-
-        flag = bool(
-            _confirm_linear_are_good()
-            and _confirm_bilinear_are_good()
-            and refG_file_exists()
-        )
-        return flag
-
-    if not confirm_necessary_files_exist():
-        print("Bad input files detected, please fix.")
-        import sys; sys.exit()
+    import sys; sys.exit()
     # ------------------------------------------------------------------------
 
     # different header style
@@ -1449,7 +1603,7 @@ def mctdh(**kwargs):
         """
 
         if not all(code == 0 for code in grace_code.values()):
-            Params.append(f"not good to extract. Skipping mode {imode} for extracting vibronic couplings\n")
+            print(f"not good to extract. Skipping mode {imode} for extracting vibronic couplings\n")
 
         else:  # otherwise we're good to extract
             print("\n good to extract\n")
