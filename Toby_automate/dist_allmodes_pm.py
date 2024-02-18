@@ -174,6 +174,21 @@ def _remove_existing_distorted_structure_files(filename_dict):
 
 # ---------------------------------------------------------------------------------------
 
+def extract_lines_between_patterns(filename, start_pattern, end_pattern, collecting=False):
+    """ Function to extract lines between patterns in a file """
+    selected_lines = []
+    # would be good to replace this with memory mapping find or grep command?
+    with open(filename, 'r', errors='replace') as file:
+        for line in file:
+            if start_pattern in line:
+                collecting = True
+                selected_lines.append(line)
+            elif end_pattern in line:
+                collecting = False
+            elif collecting:
+                selected_lines.append(line)
+
+    return selected_lines
 
 def my_subgam(path, **kwargs):
     """ Create our own GAMESS job submission script
@@ -732,7 +747,7 @@ def extract_ground_to_excited_state_transition_dipoles(selected_lines):
                     z = float(TDIPOLEline[32:42].strip())
                     ground_to_excited_state_transition_dipoles[state1] = (f"{x:.6f}", f"{y:.6f}", f"{z:6f}")
         except Exception as e:
-            print(f"ERror processing line: {TDIPOLEline} - {e}")
+            print(f"Error processing line: {TDIPOLEline} - {e}")
 
     return ground_to_excited_state_transition_dipoles
 
@@ -977,7 +992,7 @@ def mctdh(**kwargs):
         ])
         return diag_block + "\n" + off_diag_block
 
-    def build_electronic_moments(model):
+    def neil_build_electronic_moments(model):
         """Return a string containing the electronic transition dipole moment information of a .op file."""
 
         # this is how many dimensions you have in your co-ordinate system to describe the dipole
@@ -1001,20 +1016,20 @@ def mctdh(**kwargs):
 
             return string
 
-    def benny_build_electronic_moments():
+    def build_electronic_moments(dipoles):
+        ''' Returns a string containing electronic transtiion dipole moments
+            that will be written to a .op file. Takes in dipoles from extract_etdm
+        '''
 
         block = ""
-        block += hfs.format("ELECTRONIC TRANSITION DIPOLES")
-        operate_lst = ["x", "y", "z"]
 
-        for j in range(2, A+1):
-
-            block += "".join([
-                f"Ex_s00_s{j:>02d} = {dipoles[j][0]}\n"
-                f"Ey_s00_s{j:>02d} = {dipoles[j][1]}\n"
-                f"Ez_s00_s{j:>02d} = {dipoles[j][2]}\n"
-                "\n"
-            ])
+        for j in range(2, A+1): # from diabat 2 onwards
+            block += "\n"
+            for idx in range(0, 3): # x,y,z of dipoles
+                operate_lst = ["x", "y", "z"]
+                block += "".join([
+                    make_line(label=f"E{operate_lst[idx]}_s01_s{j:>02d}", value=float(dipoles[j][idx]), units="")
+                ])
             """ if every you need more than 3 dimensions?
             for xyz_idx, op in enumerate(operate_lst):
                 block += f"E{x}_s00_s{ist:>02d} = {dipoles[ist][xyz_idx]}\n"
@@ -1062,7 +1077,7 @@ def mctdh(**kwargs):
 
     def build_diagonal_quadratic_coupling(quad_data, A, N):
         """Return a string containing the quadratic coupling constant information of a .op file."""
-        breakpoint()
+        #breakpoint()
 
         # make ordered-list of arrays stored in `lin_data`
         quad = [quad_data[mode_map_dict[i]] for i in range(N)]
@@ -1077,7 +1092,7 @@ def mctdh(**kwargs):
 
     def build_off_diagonal_quadratic_coupling(quadratic_terms, A, N):
         """Return a string containing the quadratic coupling constant information of a .op file."""
-        breakpoint()
+        #breakpoint()
         return ''.join([
             make_line(
                 label=f"C2_s{a2+1:0>2d}s{a1+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}",
@@ -1088,8 +1103,6 @@ def mctdh(**kwargs):
         ])
 
     """ You would put other functions here
-    def build_diagonal_linear_coupling()
-    def build_off_diagonal_linear_coupling()
 
     def build_diagonal_bilinear_coupling()
     def build_off_diagonal_bilinear_coupling()
@@ -1413,8 +1426,26 @@ def mctdh(**kwargs):
                 else:
                     print(f"not good to extract. Skipping mode {imode} mode {jmode} for extracting bilinear vibronic couplings")
 
-    def extract_etdm():
-        return
+    def extract_etdm(file_path):
+        ''' Extracts the electronic transition dipole moments from refG.out
+            It will extract tdm from diabat 1 -> diabat 2,3,...
+            Returns dipoles, a dictionary of tdm values, columns are x,y,z
+
+            e.g. {2: ('-0.000000', '0.182262', '0.000000'),
+                  3: ('-0.000000', '0.000000', '0.000000')}
+        '''
+
+        tdipole_block = extract_lines_between_patterns(file_path,
+            "TRANSITION DIPOLES BETWEEN DIABATS",
+            "TRANSITION DIPOLES BETWEEN DIRECT MAX. DIABATS"
+        )
+    
+        dipoles = extract_ground_to_excited_state_transition_dipoles(tdipole_block)
+    
+        pprint.pprint(tdipole_block)
+        pprint.pprint(dipoles)
+        
+        return dipoles
 
     def extract_linear(array_style=True):
         """
@@ -1563,7 +1594,7 @@ def mctdh(**kwargs):
         vibron_ev = freq_array * wn2ev  # fix later (uses global variables)
         E0_array_eV, E0_array_au = extract_E0(hessout)  # always in units of eV
         # extract_energies()
-        E_moments = extract_etdm()
+        dipoles = extract_etdm(zeroth_filename)
         # M_moments = extract_mtdm()
         lin_data = extract_linear()
         quad_data = extract_quadratic(E0_array_eV, E0_array_au, vibron_ev)
@@ -1575,7 +1606,7 @@ def mctdh(**kwargs):
             start,
             make_header('Frequencies'), build_frequencies(vibron_ev),
             make_header('Electronic Hamitonian'), build_E0(E0_array_eV),
-            # make_header('Electronic transition moments'), build_electronic_moments([0,1,2]),
+            make_header('Electronic transition moments'), build_electronic_moments(dipoles),
             # make_header('Magnetic transition moments'), build_magnetic_moments(M_moments),
         ]
 
@@ -1586,7 +1617,7 @@ def mctdh(**kwargs):
         ])
 
         print('\n'.join(return_list))
-        breakpoint()  # works up till here
+        #breakpoint()  # works up till here
 
         if False:  # turn on once finished functions
             return_list.extend([
@@ -1636,7 +1667,7 @@ def mctdh(**kwargs):
             for a in range(1, A+1)
         ]) + '\n'
 
-    def label_linear_coupling(lin_data, A, N):
+    def label_linear_coupling(linear_terms, A, N):
         """Return a string containing the linear coupling constant labelling of a .op file."""
         spacer = '|'
 
@@ -1723,7 +1754,7 @@ def mctdh(**kwargs):
             label_momentum(nof_modes),
             label_position(nof_modes),
             label_energies(nof_states),
-            label_linear_coupling(lin_data, nof_states, nof_modes),
+            #label_linear_coupling(lin_data, nof_states, nof_modes),
         ]
 
         # if highest_order > 1:
@@ -1810,11 +1841,12 @@ def mctdh(**kwargs):
             # # bilin_data = extract_bilinear()
         }
 
+        lin_data = extract_linear()
 
         file_contents = "\n".join([
             build_op_section(job_title),
             build_parameter_section(A, N),
-            build_hamiltonian_section(A, N),
+            build_hamiltonian_section(A, N, lin_data),
             # build_parameter_section(model, A, N),
             # build_hamiltonian_section(model, A, N),
             # build_dipole_moments_section(A, N),
@@ -2558,24 +2590,6 @@ def mctdh(**kwargs):
 # ---------------------------------------------------------------------------------------
 # helper functions for `main()`
 
-
-def extract_lines_between_patterns(filename, start_pattern, end_pattern, collecting=False):
-    """ Function to extract lines between patterns in a file """
-    selected_lines = []
-    # would be good to replace this with memory mapping find or grep command?
-    with open(filename, 'r', errors='replace') as file:
-        for line in file:
-            if start_pattern in line:
-                collecting = True
-                selected_lines.append(line)
-            elif end_pattern in line:
-                collecting = False
-            elif collecting:
-                selected_lines.append(line)
-
-    return selected_lines
-
-
 def read_freq_values(hessout):
     """ Function to read frequency values from selected lines """
     selected_lines = extract_lines_between_patterns(
@@ -2842,17 +2856,6 @@ def main(ref_file="ref_structure", ncols=5, **kwargs):
     diabatize = diabatization(**diabatization_kwargs)
     print("Diabatization successfully modified")
 
-    tdipole_block = extract_lines_between_patterns(
-        kwargs['refG_out'],
-        "TRANSITION DIPOLES BETWEEN DIABATS",
-        "TRANSITION DIPOLES BETWEEN DIRECT MAX. DIABATS"
-    )
-
-    dipoles = extract_ground_to_excited_state_transition_dipoles(tdipole_block)
-
-    pprint.pprint(tdipole_block)
-    pprint.pprint(dipoles)
-
     mctdh_input_kwargs = kwargs.copy()
     mctdh_input_kwargs.update({
         'qsize': pp.qsize,
@@ -2865,7 +2868,6 @@ def main(ref_file="ref_structure", ncols=5, **kwargs):
         'ndim': ndim,
         'freqcm': freqcm,
         'nrmmod': nrmmod,
-        'dipoles': dipoles,
         'diabatize': diabatize,
         'hessout': kwargs['hessian_filename'],
     })
