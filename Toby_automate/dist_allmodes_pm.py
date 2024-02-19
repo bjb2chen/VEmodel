@@ -1585,10 +1585,96 @@ def mctdh(**kwargs):
         ba_pattern = 'STATE #.* {row} &.* {col}.S GMC-PT-LEVEL COUPLING'
         shape = (A, A)
 
-        for i in range(N):
-            for j in range(N):
+        def extract_energy_at_displaced_geometry(path, key):
+            """ x """
+            array = np.zeros(shape)
+
+            for a in range(A):
+                array[a, a] = extract_in_Hartrees(path, a_pattern.format(col=a+1))
+
+            for b, a in it.combinations(range(A), 2):
+                array[b, a] = extract_in_eV(path, ba_pattern.format(row=b+1, col=a+1))
+
+            if False:  # debug printing
+                for a in range(A):
+                    print(f"Bilinear energy {key=} at state {a+1}: {array[a, a]}")
+                for b, a in it.combinations(range(A), 2):
+                    print(f"Bilinear energy {key=} at state {b+1} & {a+1}: {array[b, a]}")
+                print(path); print(array); breakpoint()  # debug
+
+            return array
+
+        for j, i in it.combinations(range(N), 2):
+            temp_dict = {}
+            for d1, d2 in it.product(['+', '-'], ['+', '-']):
+                key = d1+d2
                 path = bilinear_displacement_filenames[(key, i, j)]
-        return
+                temp_dict[key] = extract_energy_at_displaced_geometry(path, key)
+
+                print(f'TEMP DICT at mode {i} & {j}')
+                pprint.pprint(temp_dict)
+
+        # bilin_ev needs to run through all temp_dict[key], so beyond '++'. You only get '--'' after temp_dict fully built
+            bilin_ev = np.zeros(shape)
+            counter = 0
+            for a in range(A):
+                bilin_ev[a,a] = temp_dict['++'][a,a] + temp_dict['--'][a,a] - temp_dict['+-'][a,a] - temp_dict['-+'][a,a]
+                bilin_ev[a,a] *= ha2ev
+                bilin_ev[a,a] /= (4.0 * qsize * qsize)
+                for b in range(a):
+                    bilin_ev[b,a] = temp_dict['++'][b,a] + temp_dict['--'][b,a] - temp_dict['+-'][b,a] - temp_dict['-+'][b,a]
+                    bilin_ev[b,a] /= (4.0 * qsize * qsize)
+            
+                    counter += 1
+                    print(f'BILIN_EV at mode {i} & {j}, processing iteration #{counter}, states {b+1} & {a+1}')
+                    pprint.pprint(bilin_ev)
+                    breakpoint()
+
+            bilinear_dictionary[mode_map_dict[j], mode_map_dict[i]] = bilin_ev
+
+                
+        # for i in range(N):
+
+        #     temp_dict = {}  # stores temporary arrays (they are different every single i \in N loop)
+        #     for key in ["+2", "-2"]:
+        #         path = linear_displacement_filenames[(key, i)]
+        #         temp_dict[key] = extract_energy_at_displaced_geometry(path, key)
+
+        #     if False: print(temp_dict["+2"], '\n', temp_dict["-2"]); breakpoint()  # debug
+
+        #     if array_style:
+        #         # until we change the extraction
+        #         temp_fake_E0_array = np.copy(E0_array_eV)
+        #         for a in range(A):  # make sure the diagonal is in Hartrees
+        #             temp_fake_E0_array[a, a] = E0_array_au[a, a]
+        #         #
+        #         quad_ev = temp_dict["+2"] + temp_dict["-2"] - 2.0 * temp_fake_E0_array
+        #         for a in range(A):  # make sure we multiply the diagonal by ha2ev
+        #             quad_ev[a, a] *= ha2ev
+
+        #         quad_ev /= (2. * qsize) ** 2
+        #         for a in range(A):  # make sure we subtract the vibron_ev on the diagonal
+        #             quad_ev[a, a] -= vibron_ev[i]
+
+        #         if False: print(quad_ev); breakpoint()  # debug
+
+        #     else:  # do it with loops
+        #         quad_ev = np.zeros(shape)
+        #         for a in range(A):
+        #             quad_ev[a, a] = temp_dict["+2"][a, a] + temp_dict["-2"][a, a]
+        #             quad_ev[a, a] -= 2.0 * E0_array_au[a, a]
+        #             quad_ev[a, a] *= ha2ev  # convert back to eV's
+        #             quad_ev[a, a] /= (2. * qsize) ** 2  # or equivalently: (4.0 * qsize * qsize)
+        #             quad_ev[a, a] -= vibron_ev[i]
+        #             for b in range(a):
+        #                 quad_ev[b, a] = temp_dict["+2"][b, a] + temp_dict["-2"][b, a]
+        #                 quad_ev[b, a] -= 2.0 * E0_array_eV[b, a]
+        #                 quad_ev[b, a] /= (2. * qsize) ** 2   # or equivalently: (4.0 * qsize * qsize)
+        #         if True: print(i, quad_ev, vibron_ev); breakpoint()  # debug
+
+        #     quadratic_dictionary[mode_map_dict[i]] = quad_ev
+        print(f"FULL BILINEAR DICTIONARY! {bilinear_dictionary}")
+        return bilinear_dictionary
 
     def build_parameter_section(nof_states, nof_modes):
         """Returns a string which defines the `PARAMETER-SECTION` of an .op file"""
@@ -1604,7 +1690,7 @@ def mctdh(**kwargs):
         # M_moments = extract_mtdm()
         lin_data = extract_linear()
         quad_data = extract_quadratic(E0_array_eV, E0_array_au, vibron_ev)
-        # bilin_data = extract_bilinear()
+        bilin_data = extract_bilinear()
 
         # ----------------------------------------------------------
         # begin to assemble the parameter section
