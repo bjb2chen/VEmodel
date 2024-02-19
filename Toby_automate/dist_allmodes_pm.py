@@ -1020,7 +1020,6 @@ def mctdh(**kwargs):
         ''' Returns a string containing electronic transtiion dipole moments
             that will be written to a .op file. Takes in dipoles from extract_etdm
         '''
-
         block = ""
 
         for j in range(2, A+1): # from diabat 2 onwards
@@ -1579,6 +1578,13 @@ def mctdh(**kwargs):
 
     def extract_bilinear():
 
+        bilinear_dictionary = {}
+
+        # strings used by `grep` to locate values to extract
+        a_pattern = 'STATE #.* {col}.S GMC-PT-LEVEL DIABATIC ENERGY='
+        ba_pattern = 'STATE #.* {row} &.* {col}.S GMC-PT-LEVEL COUPLING'
+        shape = (A, A)
+
         for i in range(N):
             for j in range(N):
                 path = bilinear_displacement_filenames[(key, i, j)]
@@ -1775,7 +1781,7 @@ def mctdh(**kwargs):
         return '\n'.join(return_list)
     # # ----------------------------------------------------------
 
-    def build_dipole_moments_section(nof_states, nof_modes):
+    def neil_build_dipole_moments_section(nof_states, nof_modes):
         """Returns a string which defines the `HAMILTONIAN-SECTION_Ex` of an .op file"""
         start, end = "HAMILTONIAN-SECTION_Ex", "end-hamiltonian-section"
         spec = ''.join([
@@ -1800,24 +1806,25 @@ def mctdh(**kwargs):
         ])
         return string
 
-    def benny_build_dipole_moments_section():
-        """ x """
-        block = f"HAMILTONIAN-SECTION_Ex\n\n"
+    def build_operator_onto_dipole_moments_section(A, N):
+        """  """
+        block = f"\nHAMILTONIAN-SECTION_Ex\n"
 
         # Write modes and mode labels
-        mode_number_key = [modes_included[i] for i in range(N)]
+        mode_number_key = [selected_mode_list[i] for i in range(N)]
         h_labels = ["modes", "el", ] + [
             f"v{s:>02d}"
             for s in mode_number_key
         ]
 
         block += " | ".join(h_labels) + "\n"
-        block += f"{'-':47}\n"
+        block += f"{'-'*47}\n\n"
 
-        for j in range(N):
-            block += f"1.0         |1 S{N+1}&{j+1}\n"
+        for j in range(1, A+1):
+            block += f"1.0         |1 S{A+1}&{j}\n" # A+1, set ground state as fictitious +1 state
 
-        block += "\n\nend-hamiltonian-section\n\n"
+        block += "\nend-hamiltonian-section\n"
+
         return block
 
     # ----------------------------------------------------------
@@ -1847,9 +1854,9 @@ def mctdh(**kwargs):
             build_op_section(job_title),
             build_parameter_section(A, N),
             build_hamiltonian_section(A, N, lin_data),
+            build_operator_onto_dipole_moments_section(A, N),
             # build_parameter_section(model, A, N),
             # build_hamiltonian_section(model, A, N),
-            # build_dipole_moments_section(A, N),
             "end-operator\n"
         ])
 
