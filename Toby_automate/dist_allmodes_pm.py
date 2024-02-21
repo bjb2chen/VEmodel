@@ -1,25 +1,33 @@
 """ x """
 
+# -----------------------------------------------
 # system imports
 import os
-from os.path import splitext
+from os.path import splitext, join, basename, abspath
 import sys
-import types
 import subprocess
+from types import SimpleNamespace
 import shutil
 import re
-# import json
-import functools
 import itertools as it
+import functools
+import cProfile
+import pstats
 
+# -----------------------------------------------
 # third party imports
 import numpy as np
+# from numpy import float64 as F64
+from numpy import complex128 as C128
 import pprint
 
 
+# -----------------------------------------------
 # local packages
 import project_parameters as pp
 from project_parameters import *  # eventually remove this
+SOC_flag = pp.SOC_flag  # initialize globally
+# ---------------------------------------------------------------------------------------
 
 
 # ---------------------------------------------------------------------------------------
@@ -41,6 +49,61 @@ _possible_mctdh_headers = [
 ]
 
 # ---------------------------------------------------------------------------------------
+# functions used multiple times throughout the code
+
+
+def _reminder_produce_upper_triangle_indices(s):
+    """ Assume a square matrix of shape (s, s).
+    Prints the row, col indices that would index the upper triangle
+    Just reminder code in case the (i,j) (a,b) or (row, col) gets confusing.
+    """
+    print("Indices using it.combinations")
+    for row, col in it.combinations(range(s), 2):
+        print(f"{row=} {col=}")
+
+    # this is just a wrapper for it.combinations
+    for row, col in upper_triangle_loop_indices(s, 2):
+        print(f"{row=} {col=}")
+
+    print("Indices using nested loops")
+    for col in range(s):
+        for row in range(0, col):
+            print(f"{row=} {col=}")
+
+    print("Indices assuming we start at 1")
+    # assume indices start at 1
+    for col in range(1, s+1):
+        for row in range(1, col):
+            print(f"{row=} {col=}")
+    return
+
+
+def subprocess_call_wrapper(*args, **kwargs):
+    """ subprocess.call only returns 1/0  """
+
+    assert len(args) == 1
+    command = args[0]
+    assert isinstance(command, str) or isinstance(command, list), (
+        f"Bad arguments! First arg should only be str or list you provided {type(command)}"
+    )
+
+    if False and __debug__:  # for checking
+        print(args)
+        print(command)
+        print(kwargs)
+        breakpoint()
+
+    if pp.dry_run:
+        if isinstance(command, list):
+            command = " ".join(command)+'\n'
+        print(command)
+
+        # fake a return value
+        return_obj = SimpleNamespace()
+        return_obj.returncode = 0
+        return return_obj
+    else:
+        return subprocess.call(command, **kwargs)
 
 
 def subprocess_run_wrapper(*args, **kwargs):
@@ -65,39 +128,21 @@ def subprocess_run_wrapper(*args, **kwargs):
 
         print(command)
         # fake a return value
-        return_obj = types.SimpleNamespace()
+        return_obj = SimpleNamespace()
         return_obj.returncode = 0
         return return_obj
     else:
         return subprocess.run(command, **kwargs)
 
 
-def subprocess_call_wrapper(*args, **kwargs):
-    """ subprocess.call only returns 1/0  """
-
-    assert len(args) == 1
-    command = args[0]
-    assert isinstance(command, str) or isinstance(command, list), (
-        f"Bad arguments! First arg should only be str or list you provided {type(command)}"
-    )
-
-    if False and __debug__:  # for checking
-        print(args)
-        print(command)
-        print(kwargs)
+def _delete_file_using_rmrf(path):
+    """ x """
+    try:  # remove the previous file, as we are about to write to it
+        subprocess_run_wrapper(['rm', '-f', path])
+    except Exception as e:
+        print(f"Error deleting {path}: {str(e)}")
         breakpoint()
-
-    if pp.dry_run:
-        if isinstance(command, list):
-            command = " ".join(command)+'\n'
-        print(command)
-
-        # fake a return value
-        return_obj = types.SimpleNamespace()
-        return_obj.returncode = 0
-        return return_obj
-    else:
-        return subprocess.call(command, **kwargs)
+    return
 
 
 def os_system_wrapper(*args, **kwargs):
@@ -150,8 +195,45 @@ def upper_triangle_loop_indices(max_num, number_of_indicies=2):
         return indices
 
 
-# ---------------------------------------------------------------------------------------
+def my_subgam(path, **kwargs):
+    """ Create our own GAMESS job submission script
+        Recording the script inside .slurm helps for recordkeeping """
 
+    # if its easier to just change project parameters i would recommend doing
+    # ncpus = pp.ncpus
+    # nhour = pp.nhour
+    # ngb = pp.ngb
+
+    ncpus = kwargs.get('ncpus', 2)
+    nhour = kwargs.get('nhour', 1)
+    ngb = kwargs.get('ngb', 2)
+
+    # Remove the ".inp" extension from the filename
+    input_no_ext, extension = splitext(path)
+    print(f"running calculations for {input_no_ext}")
+
+
+def extract_lines_between_patterns(filename, start_pattern, end_pattern, collecting=False):
+    """ Function to extract lines between patterns in a file """
+    selected_lines = []
+    # would be good to replace this with memory mapping find or grep command?
+    with open(filename, 'r', errors='replace') as file:
+        for line in file:
+            if start_pattern in line:
+                collecting = True
+            if end_pattern in line:
+                collecting = False
+                # break  # pattern should only occur in file once
+            if collecting:
+                selected_lines.append(line)
+
+    # del selected_lines[slice(0, nof_line_skip)]
+
+    return selected_lines
+
+
+# ---------------------------------------------------------------------------------------
+# constants used throughout the code
 
 linear_disp_keys = ["+1", "+2", "-1", "-2"]
 bi_linear_disp_keys = ["++", "+-", "-+", "--"]
@@ -185,71 +267,273 @@ bi_linear_disp_filenames = {
 def _remove_existing_distorted_structure_files(filename_dict):
     """ Delete existing distorted structure files """
     for filename in filename_dict.values():
-        try:
-            subprocess_run_wrapper(['rm', '-f', filename])
-        except Exception as e:
-            print(f"Error deleting {filename}: {str(e)}")
+        _delete_file_using_rmrf(filename)
     return
+
+# ---------------------------------------------------------------------------------------
+# functions using grep to grab specific lines in files generated by GAMESS, Gaussian, MCTDH, etc.
+
+
+def _extract_energy_from_gamessoutput(file_path, pattern, column_specification_string, backup_line_idx):
+    try:
+        # Use subprocess.run with the direct command
+        command = f'grep "{pattern}" "{file_path}" | {column_specification_string}'
+        result = subprocess_run_wrapper(command, shell=True, text=True, capture_output=True)
+
+        # If there is output, convert it to float
+        try:
+            output = float(result.stdout.strip().replace(" ", ""))
+            return output
+        except Exception as e:
+            if True:  # try to find out reason for grep failing
+                print("Grep failed?!")
+                print(command)
+                print("Please try grep command manually before proceeding")
+                breakpoint()
+
+            with open(file_path, 'r', errors='replace') as file:
+                for line in reversed(file.readlines()):
+                    match = re.search(pattern, line)
+                    if match:
+                        return float(line[backup_line_idx].strip().replace(" ", ""))
+
+    except subprocess.CalledProcessError:
+        # Return None if there is an error
+        return None
+
+
+def extract_in_Hartrees(file_path, pattern):
+    """ This picks up the energy in Hartrees.
+
+    Lines in the file might look like this:
+
+        --- DIABATIC ENERGIES (DIAGONAL ELEMENT) ---       HARTREE            EV
+        STATE #  1'S GMC-PT-LEVEL DIABATIC ENERGY=     -75.798270171       0.000000000
+        STATE #  2'S GMC-PT-LEVEL DIABATIC ENERGY=     -75.708488402       2.443086361
+
+    This function gets the numbers from the HARTREE column
+    """
+    column_specification_string = "tail -1 | cut -c44-61"
+    backup_line_idx = slice(44, 62)  # equivalent to `array[62:]`
+    return _extract_energy_from_gamessoutput(
+        file_path, pattern,
+        column_specification_string,
+        backup_line_idx
+    )
+
+
+def extract_diabatic_energy(file_path, pattern):
+    """ This picks up the energy in Hartrees. """
+    return extract_in_Hartrees(file_path, pattern)
+
+
+def extract_in_eV(file_path, pattern):
+    """ This picks up the energy in eV.
+
+    Lines in the file might look like this:
+
+        --- DIABATIC ENERGIES (DIAGONAL ELEMENT) ---       HARTREE            EV
+        STATE #  1'S GMC-PT-LEVEL DIABATIC ENERGY=     -75.798270171       0.000000000
+        STATE #  2'S GMC-PT-LEVEL DIABATIC ENERGY=     -75.708488402       2.443086361
+
+    This function gets the numbers from the EV column
+    """
+    column_specification_string = "tail -1 | cut -c62-"
+    backup_line_idx = slice(62, None)  # equivalent to `array[62:]`
+    return _extract_energy_from_gamessoutput(
+        file_path, pattern,
+        column_specification_string,
+        backup_line_idx
+    )
+
+
+def refG_extract(file_path, pattern):
+    """ This picks up the energy in eV. """
+    return extract_in_eV(file_path, pattern)
+
+
+def extract_ground_state_energy(hessout_path, pattern):
+    """ This picks up the total ground-state-energy (GSE) in eV.
+    Relevant lines in the file look like this:
+
+             WAVEFUNCTION NORMALIZATION =       1.0000000000
+
+                    ONE ELECTRON ENERGY =    -122.8353239571
+                    TWO ELECTRON ENERGY =      37.4785649796
+               NUCLEAR REPULSION ENERGY =       9.1280924730
+                                          ------------------
+                           TOTAL ENERGY =     -76.2286665045
+
+     ELECTRON-ELECTRON POTENTIAL ENERGY =      37.4785649796
+      NUCLEUS-ELECTRON POTENTIAL ENERGY =    -198.9743416468
+       NUCLEUS-NUCLEUS POTENTIAL ENERGY =       9.1280924730
+                                          ------------------
+                 TOTAL POTENTIAL ENERGY =    -152.3676841942
+                   TOTAL KINETIC ENERGY =      76.1390176897
+                     VIRIAL RATIO (V/T) =       2.0011774359
+
+    This function gets the value from the `TOTAL ENERGY =` line.
+    """
+    column_specification_string = "tail -1 | cut -c40-"
+    backup_line_idx = slice(40, None)  # equivalent to `array[40:]`
+    return _extract_energy_from_gamessoutput(
+        hessout_path, pattern,
+        column_specification_string,
+        backup_line_idx
+    )
+
+
+def extract_DSOME(path, nof_states, nof_electron_couplings=2):
+    """ This extracts the off-diagonal spin-orbit-couplings.
+    Relevant lines in the file look like this:
+
+        HSO MATRIX IN DIABATIC REPRESENTATION (DIRECT MAXIMIZATION)
+
+         -------------------------------------------
+          -  DIABATIC SPIN-ORBIT MATRIX ELEMENTS -
+         -------------------------------------------
+
+         --- SOC COUPLINGS (OFF DIAGONAL ELEMENT) ---                  CM-1
+         STATE #  1 &  2'S GMC-PT-LEVEL 1-El COUPLING  =   -3.234551 +    -7.552143I
+         < ...... >
+         STATE #  5 &  6'S GMC-PT-LEVEL 2-El COUPLING  =    5.784123 +    -0.552264I
+
+        SOC EIG. VALUES and VECTORS IN DIABATS (DIRECT MAX.)
+
+    This picks up the two numbers after `=` (-3.234551, -7.552143I) and matches them with the numbers (1 & 2).
+
+    Since the couplings occur between electronic states then we know that there will be
+        1->2, 1->3, etc. till 5->6  (for A=6)
+    1->(2,3,4,5,6) 5 transitions
+    2->(3,4,5,6) 4 transitions
+    3->(4,5,6) 3 transitions
+    4->(5,6) 2 transitions
+    5->(6) 1 transitions
+    so therefore we will have 5+4+3+2+1 = 15 transitions  (this is know as the n-th triangular number)
+    BUT! since we have 1-electron and 2-electron couplings we end up with 15 * 2 = 30 transitions
+    """
+    max_nof_electron_couplings = 2  # FIXED VALUE, we can only have 1 or 2 electron couplings
+    nof_transitions = np.sum(range(A)) * max_nof_electron_couplings
+
+    def get_line_list():
+        start_pattern = "HSO MATRIX IN DIABATIC REPRESENTATION (DIRECT MAXIMIZATION)"
+        end_pattern = 'SOC EIG. VALUES and VECTORS IN DIABATS (DIRECT MAX.)'
+
+        sed_command = f"sed -n '/{start_pattern}/,/{end_pattern}/p' {path}"
+        result = subprocess_run_wrapper(sed_command, shell=True, text=True, capture_output=True)
+        # i believe there is another way to check if the result is empty?
+        # I think the `result` object has error codes or some such?
+
+        line_list = result.stdout.splitlines()
+
+        # check if extraction worked
+        if not (isinstance(line_list, list) and line_list != []):
+            print('Cannot use sed to extract')
+            line_list = extract_lines_between_patterns(  # fallback to slow pythonic extraction
+                f'{path}',
+                f'{start_pattern}',
+                f'{end_pattern}',
+            )
+            print(f'Using selected lines from {path}, opened via python')
+
+        if False and __debug__:
+            for i, l in enumerate(line_list): print(i, l); breakpoint()
+
+        # remove unnecessary headers (first 7 lines and last 2 lines)
+        s, e = 7, -2
+        reduced_line_list = line_list[s:e]
+
+        if True and __debug__:  # old style line list from sed
+            assert 'STATE #' not in line_list[s-1]  # lines we don't need
+            assert 'STATE #' in line_list[s]
+            assert 'STATE #' in line_list[e-1]
+            assert 'STATE #' not in line_list[e]  # lines we don't need
+
+        return reduced_line_list
+
+    selected_lines = get_line_list()
+    assert len(selected_lines) == nof_transitions, (
+        f"Why are there {len(selected_lines)} lines?"
+        f"There should be {nof_transitions}"
+        "Check\n" + "\n".join(selected_lines)
+    )
+
+    # check for stars in lines? this means Gamess calculation failed/is bad
+    for line in selected_lines:
+        assert '*' not in line, "You messed up! Gamess calculated failed?"
+
+    shape = (A, A)
+    spin_orbit_array = np.zeros(shape, dtype=C128)
+    # spin_orbit_dict = {}
+
+    def old_process_line(line):
+        """ """
+        ist = line[9:12].strip().replace(" ", "")
+        jst = line[14:16].strip().replace(" ", "")
+        real = line[48:61].strip().replace(" ", "")
+        if '*' in real:
+            real = 0
+
+        imaginary = line[63:75].strip().replace(" ", "")
+        if '*' in imaginary:
+            imaginary = 0
+
+        key = f"{ist} & {jst},{line[31:33]}"
+        spin_orbit_dict[key] = complex(float(real), float(imaginary))
+        return
+
+    def new_process_lines(spin_orbit_dict, line1, line2):
+        """
+        a line looks like
+            STATE #  5 &  6'S GMC-PT-LEVEL 2-El COUPLING  =    2.615044 +     0.462500I
+        line.strip().split() looks like
+            ['STATE', '#', '5', '&', "6'S", 'GMC-PT-LEVEL', '2-El', 'COUPLING', '=', '2.615044', '+', '0.462500I']
+        line.strip().split('=')
+            ["STATE #  5 &  6'S GMC-PT-LEVEL 2-El COUPLING  ", '    2.615044 +     0.462500I']
+        line.strip().replace(' ', '').split('=')
+            ["STATE#1&2'SGMC-PT-LEVEL1-ElCOUPLING", '-2.931761+-7.805363I']
+        """
+        label1, values1 = line1.strip().replace(' ', '').split('=')
+        label2, values2 = line2.strip().replace(' ', '').split('=')
+
+        # extract values ('-2.931761+-7.805363I')
+        # real1, imag1 = values1.replace('I', 'j').split('+')
+        # real2, imag2 = values2.replace('I', 'j').split('+')
+
+        """ python uses `j` instead of `i` or `I` to denote imaginary #
+        see https://stackoverflow.com/questions/40421736/python-numpy-convert-string-to-complex-number
+
+        If we have negative imagine number then we get +-7.805363I since there is ALWAYS a `+` in the middle column,
+        so replace it with just a `-` (since python's `complex()` can't handle `+-` )
+        """
+        # complex_string1 = values1.replace('I', 'j').replace('+-', '-')
+        # complex_string2 = values2.replace('I', 'j').replace('+-', '-')
+        number1 = complex(values1.replace('I', 'j').replace('+-', '-'))
+        number2 = complex(values2.replace('I', 'j').replace('+-', '-'))
+
+        # extract label ("STATE#1&2'SGMC-PT-LEVEL1-ElCOUPLING")
+        a, b = map(int, label1[6:].split("'S")[0].split('&'))
+        a2, b2 = map(int, label2[6:].split("'S")[0].split('&'))
+        assert (a == a2) and (b == b2), f"The two lines have different a's and b's"
+
+        spin_orbit_array[a-1, b-1] = number1 + number2
+        return
+
+    for i in range(0, nof_transitions, 2):
+        line1, line2 = selected_lines[i:i+2]  # pick up two lines (1 & 2 electron pairs)
+        try:
+            # old_process_line(line1)
+            # old_process_line(line2)
+            new_process_lines(spin_orbit_array, line1, line2)
+        except Exception as e:
+            print(f"Error processing lines: {str(e)}\n {line1}\n {line2}")
+            breakpoint()
+
+    return spin_orbit_array
 
 
 # ---------------------------------------------------------------------------------------
-
-def extract_lines_between_patterns(filename, start_pattern, end_pattern, collecting=False):
-    """ Function to extract lines between patterns in a file """
-    selected_lines = []
-    # would be good to replace this with memory mapping find or grep command?
-    with open(filename, 'r', errors='replace') as file:
-        for line in file:
-            if start_pattern in line:
-                collecting = True
-            if end_pattern in line:
-                collecting = False
-                # break  # pattern should only occur in file once
-            if collecting:
-                selected_lines.append(line)
-
-    # del selected_lines[slice(0, nof_line_skip)]
-
-    return selected_lines
-
-
-def my_subgam(path, **kwargs):
-    """ Create our own GAMESS job submission script
-        Recording the script inside .slurm helps for recordkeeping """
-
-    # if its easier to just change project parameters i would recommend doing
-    # ncpus = pp.ncpus
-    # nhour = pp.nhour
-    # ngb = pp.ngb
-
-    ncpus = kwargs.get('ncpus', 2)
-    nhour = kwargs.get('nhour', 1)
-    ngb = kwargs.get('ngb', 2)
-
-    # Remove the ".inp" extension from the filename
-    input_no_ext, extension = splitext(path)
-    print(f"running calculations for {input_no_ext}")
-
-    # wd = os.getcwd()
-
-    file_contents = "".join([
-        "#!/bin/bash\n",
-        "#SBATCH --nodes=1\n",
-        f"#SBATCH --ntasks={ncpus}\n",
-        f"#SBATCH --mem-per-cpu={ngb}G\n",
-        f"#SBATCH --time={nhour}:00:00\n",
-        "\n",
-        "cd $SLURM_SUBMIT_DIR\n",
-        "\n",
-        "export SLURM_CPUS_PER_TASK\n",
-        'mkdir -p /home/$USER/.gamess_ascii_files/$SLURM_JOBID\n',
-        f"/home/$USER/LOCAL/runG_diab {input_no_ext}.inp {ncpus} \n",
-    ])
-
-    with open(f"{input_no_ext}.slurm", "w") as slurm_file:
-        slurm_file.write(file_contents)
-
-    return f"{input_no_ext}.slurm"
+# ---------------------------------------------------------------------------------------
 
 
 def diabatization(**kwargs):
@@ -260,6 +544,8 @@ def diabatization(**kwargs):
     Each of those individual dictionaries store ( ... ?)
 
     (other info)
+
+    What is the ultimate goal of this function??
     """
 
     # -------------------------------------------------------------------------
@@ -276,8 +562,6 @@ def diabatization(**kwargs):
     atmlst = kwargs.get('atmlst')
     chrglst = kwargs.get('chrglst')
     qsize = kwargs.get('qsize', 0.05)
-    ha2ev = kwargs.get('ha2ev', 27.2113961318)
-    wn2ev = kwargs.get('wn2ev', 0.000123981)
     wn2eh = kwargs.get('wn2eh', 0.00000455633)
     ang2br = kwargs.get('ang2br', 1.889725989)
     amu2me = kwargs.get('amu2me', 1822.88839)
@@ -392,6 +676,8 @@ def diabatization(**kwargs):
             "+2": reference[:, NEW] + 2.0 * R_array[NEW, :] * mode_array[:, :],
             "-2": reference[:, NEW] - 2.0 * R_array[NEW, :] * mode_array[:, :],
             #              (Z*3, 1)                 (1,  N)            (Z*3, N)
+            #              (9, 1)                   (1,  3)             (9, 3)
+            #              (12, 1)                  (1,  6)            (12, 6)
         }
         assert set(displacements.keys()) == set(linear_disp_keys), f"{linear_disp_keys=} no longer agree!"
 
@@ -442,7 +728,7 @@ def diabatization(**kwargs):
 
     def _save_distorted_structure(mode_idx, displaced_q, charge_list, atom_list, filename_list, key_list):
         """ save the distorted structure to the `distored_structure_filenames`
-        `displaced_q` is an array of dimension (ndim, ndim)
+        `displaced_q` is an array of dimension (ndim, N)
 
         mode_idx can be (i, ) or (i, j, )
         so that
@@ -456,7 +742,7 @@ def diabatization(**kwargs):
         and the third index is the second modex xyz
         """
 
-        header, data = "{:<2s} {:} ", "{: .10f} " * 3
+        header, data = "{:<2s} {:} ", "{: .10f} " * 3  # x,y,z components
         template_string = header + data
 
         for key in key_list:
@@ -648,104 +934,14 @@ def diabatization(**kwargs):
 
 
 # ---------------------------------------------------------------------------------------
-# Now we move on to extract vibronic coupling constants using finite difference
-# and write the data in an mctdh operator file
 
-
-def extract_ground_state_energy(hessout, pattern):
-    try:
-        command = f'grep "{pattern}" {hessout} | tail -1 | cut -c40-'
-        result = subprocess_run_wrapper(command, shell=True, text=True, capture_output=True)
-        output = float(result.stdout.strip().replace(" ", ""))
-        return output
-    except Exception as e:
-        print("Cannot find ground state energy")
-        return None
-
-
-def _extract_energy_from_gamessoutput(file_path, pattern, column_specification_string, backup_line_idx):
-    try:
-        # Use subprocess.run with the direct command
-        command = f'grep "{pattern}" "{file_path}" | {column_specification_string}'
-        result = subprocess_run_wrapper(command, shell=True, text=True, capture_output=True)
-
-        # If there is output, convert it to float
-        try:
-            output = float(result.stdout.strip().replace(" ", ""))
-            return output
-        except Exception as e:
-            if False:  # try to find out reason for grep failing
-                print("Grep failed?!")
-                print(command)
-                print("Please try grep command manually before proceeding")
-                breakpoint()
-
-            with open(file_path, 'r', errors='replace') as file:
-                for line in reversed(file.readlines()):
-                    match = re.search(pattern, line)
-                    if match:
-                        return float(line[backup_line_idx].strip().replace(" ", ""))
-
-    except subprocess.CalledProcessError:
-        # Return None if there is an error
-        return None
-
-
-def extract_in_Hartrees(file_path, pattern):
-    """ This picks up the energy in Hartrees.
-
-    Lines in the file might look like this:
-
-        --- DIABATIC ENERGIES (DIAGONAL ELEMENT) ---       HARTREE            EV
-        STATE #  1'S GMC-PT-LEVEL DIABATIC ENERGY=     -75.798270171       0.000000000
-        STATE #  2'S GMC-PT-LEVEL DIABATIC ENERGY=     -75.708488402       2.443086361
-
-    This function gets the numbers from the HARTREE column
-    """
-    column_specification_string = "tail -1 | cut -c44-61"
-    backup_line_idx = slice(44, 62)  # equivalent to array[62:]
-    return _extract_energy_from_gamessoutput(
-        file_path, pattern,
-        column_specification_string,
-        backup_line_idx
-    )
-
-
-def extract_in_eV(file_path, pattern):
-    """ This picks up the energy in eV.
-
-    Lines in the file might look like this:
-
-        --- DIABATIC ENERGIES (DIAGONAL ELEMENT) ---       HARTREE            EV
-        STATE #  1'S GMC-PT-LEVEL DIABATIC ENERGY=     -75.798270171       0.000000000
-        STATE #  2'S GMC-PT-LEVEL DIABATIC ENERGY=     -75.708488402       2.443086361
-
-    This function gets the numbers from the EV column
-    """
-    column_specification_string = "tail -1 | cut -c62-"
-    backup_line_idx = slice(62, None)  # equivalent to array[62:]
-    return _extract_energy_from_gamessoutput(
-        file_path, pattern,
-        column_specification_string,
-        backup_line_idx
-    )
-
-
-def refG_extract(file_path, pattern):
-    """ This picks up the energy in eV. """
-    return extract_in_eV(file_path, pattern)
-
-
-def extract_diabatic_energy(file_path, pattern):
-    """ This picks up the energy in Hartrees. """
-    return extract_in_Hartrees(file_path, pattern)
-
-
+# this function is not used anywhere? can probably delete?
 def extract_coupling_energy(file_path, pattern):
     """ this picks up the energy in eV (same as refG_extract) """
     return extract_in_eV(file_path, pattern)
 
 
+# this function is not used anywhere? can probably delete?
 def find_nstate(file_path, pattern='# of states in CI      = '):
     with open(file_path, 'r', errors='replace') as file:
         for line in file:
@@ -753,99 +949,23 @@ def find_nstate(file_path, pattern='# of states in CI      = '):
                 return int(line.split('=')[1].strip())
     return None  # Return None if the pattern is not found
 
-
-def extract_DSOME(fname, nof_states):
-
-    start_pattern = "HSO MATRIX IN DIABATIC REPRESENTATION (DIRECT MAXIMIZATION)"
-    end_pattern = 'SOC EIG. VALUES and VECTORS IN DIABATS (DIRECT MAX.)'
-
-    sed_command = f"sed -n '/{start_pattern}/,/{end_pattern}/p' {fname}"
-    result = subprocess_run_wrapper(sed_command, shell=True, text=True, capture_output=True)
-
-    line_list = result.stdout.splitlines()
-    # i believe there is another way to check if the result is empty?
-    # I think the `result` object has error codes or some such?
-
-    if isinstance(line_list, list) and line_list != []:
-        selected_lines = result.stdout.splitlines()
-    else:
-        print('Cannot use sed to extract')
-        selected_lines = extract_lines_between_patterns(  # fallback to slow pythonic extraction
-            f'{fname}',
-            f'{start_pattern}',
-            f'{end_pattern}',
-        )
-        print(f'Using selected lines from {fname}, opened via python')
-
-    DSOME_set = {}
-    full_extracted_set = {}
-    summed_set_real = {}
-    summed_set_imag = {}
-    append_J = {}
-
-    for DSOMEline in selected_lines:
-        if "STATE #" in DSOMEline:
-            try:
-                ist = DSOMEline[9:12].strip().replace(" ", "")
-                jst = DSOMEline[14:16].strip().replace(" ", "")
-                kst = ist + ' & ' + jst + ',' + DSOMEline[31:33]
-                real = DSOMEline[48:61].strip().replace(" ", "")
-                imaginary = DSOMEline[63:75].strip().replace(" ", "")
-
-                if '*' in real:
-                    real = 0
-                if '*' in imaginary:
-                    imaginary = 0
-
-                DSOME_set[kst] = complex(float(real), float(imaginary))
-
-            except Exception as e:
-                print(f"Error processing line: {DSOMEline} - {e}")
-
-    assert isinstance(nof_states, int), "can be removed after code is fully updated"
-
-    # see hyperlink for a nice way to do combination loops
-    # https://stackoverflow.com/questions/69321896/how-to-do-dependent-nested-loop-using-itertools-product
-    # I also made the optional function `upper_triangle_loop_indices`
-    for l_idx, r_idx in upper_triangle_loop_indices(nof_states, 2):
-
-        for level_idx in range(1, 3):  # this should be replaced with array assignment
-            full_extracted_set[l_idx, r_idx, level_idx] = DSOME_set[f'{l_idx} & {r_idx}, {level_idx}']
-
-    if False:  # old approach
-        real_sum = full_extracted_set[l_idx, r_idx, 1].real + full_extracted_set[l_idx, r_idx, 2].real
-        summed_set_real[l_idx, r_idx] = real_sum
-
-        imag_sum = full_extracted_set[l_idx, r_idx, 1].imag + full_extracted_set[l_idx, r_idx, 2].imag
-        summed_set_imag[l_idx, r_idx] = imag_sum
-    else:
-        # can't we just add and then extract the real/imag components?
-        new_number = full_extracted_set[l_idx, r_idx, 1] + full_extracted_set[l_idx, r_idx, 2]
-        summed_set_real[l_idx, r_idx] = new_number.real
-        summed_set_imag[l_idx, r_idx] = new_number.imag
-
-    # how does this work??
-    append_J[l_idx, r_idx] = complex(0, summed_set_imag[l_idx, r_idx])
-
-    # return full_extracted_set, summed_set_real, summed_set_imag, append_J
-    return [summed_set_real, summed_set_imag]
+# ---------------------------------------------------------------------------------------
 
 
-def mctdh(**kwargs):
-    """ description of function """
+def mctdh(op_path, **kwargs):
+    """ This function creates an `*.op` which will be used by MCTDH.
 
-    try:  # remove the previous file, as we are about to write to it
-        subprocess_run_wrapper(['rm', '-f', 'mctdh.op'])
-    except Exception as e:
-        print(f"Error deleting {'mctdh.op'}: {str(e)}")
-        breakpoint()
+    It extracts necessary information from the various GAMESS output files.
+    It does some simple math (calculating products/sums).
+    It then writes all the vibronic model parameters in a formatted output to `*.op`
+    """
 
+    # remove the previous file, as we are about to write to it
+    _delete_file_using_rmrf(path='mctdh.op')
+
+    suppress_zeros = False
     # -------------------------------------------------------------------------
-    suppress_zeros = True
-    # extract necessary parameters
-    nstate, nmodes = A, N
 
-    ndim = kwargs.get('ndim')  # shouldn't need this anymore?
     freqcm = kwargs.get('freqcm')
     nrmmod = kwargs.get('nrmmod')
 
@@ -887,7 +1007,9 @@ def mctdh(**kwargs):
         # `_mode8_+0.05_mode7` (larger number on the left style)
         for i, j in upper_triangle_loop_indices(N, 2):
             # the labels are reversed because of the file names being lower triangle
-            q1_label, q2_label = pp.mode_map_dict[j], pp.mode_map_dict[i]
+            # q1 mapped to j NOT MISTAKE (matches toby gamess output naming scheme)
+            q1_label = pp.mode_map_dict[j]
+            q2_label = pp.mode_map_dict[i]
             for d1, d2 in it.product(['+', '-'], ['+', '-']):
 
                 key = d1+d2  # just in case
@@ -906,10 +1028,11 @@ def mctdh(**kwargs):
 
     # -------------------------------------------------------------------------
     # bad practice, works for now and we can refactor once we've finished figuring out the end product
-    format_string = "{label:<25s}={value:>-15.6f}{units:>8s}\n"
+    format_string = "{label:<25s}={value:>-15.9f}{units:>8s}\n"
     make_line = functools.partial(format_string.format, units=", ev")
+    make_line_cm = functools.partial(format_string.format, units=", cm-1")
 
-    def build_op_section(job_title):
+    def make_op_section(job_title):
         """Returns a string which defines the `OP_DEFINE-SECTION` of an .op file"""
         start_op, end_op = "OP_DEFINE-SECTION", "end-op_define-section"
         start_title, end_title = "title", "end-title"
@@ -921,13 +1044,13 @@ def mctdh(**kwargs):
             end_op,
         ])
 
-    # ---------------------------------------------
+    # -------------------------------------------------------------------------
+    # build functions (where we write the values of the terms)
 
     def build_frequencies(frequencies):
         """Return a string containing the frequency information of a .op file."""
         return ''.join([
             make_line(label=f"w{i+1:0>2d}", value=w)
-            # make_line(label=f"w{mode_map_dict[i]:0>2d}", value=w)
             for i, w in enumerate(frequencies)
         ])
 
@@ -999,7 +1122,14 @@ def mctdh(**kwargs):
             for row, col in upper_triangle_loop_indices(A, 2)
             if not suppress_zeros or not np.isclose(E0_array[row, col], 0.0)  # if you don't want to print the zeros;
         ])
-        return diag_block + "\n" + off_diag_block
+
+        string = diag_block + "\n" + off_diag_block
+
+        if True:  # add fictious surface
+            string += '\n'
+            string += make_line(label=f"EH_s{A+1:0>2d}_s{A+1:0>2d}", value=0.0)
+
+        return string
 
     def build_electronic_moments(dipoles_dict):
         """ Returns a string containing electronic transition dipole moments
@@ -1073,7 +1203,7 @@ def mctdh(**kwargs):
         return '\n'.join([
             ''.join([
                 make_line(
-                    label=f"C1_s{a+1:0>2d}_s{a+1:0>2d}_v{i+1:0>2d}",
+                    label=f"C1_s{a+1:0>2d}s{a+1:0>2d}_v{i+1:0>2d}",
                     value=linear[i][a, a]
                 )
                 for a, i in it.product(range(A), range(N))
@@ -1081,11 +1211,11 @@ def mctdh(**kwargs):
             ]),
             ''.join([
                 make_line(
-                    label=f"C1_s{a2+1:0>2d}_s{a1+1:0>2d}_v{i+1:0>2d}",
+                    label=f"C1_s{a2+1:0>2d}s{a1+1:0>2d}_v{i+1:0>2d}",
                     value=linear[i][a2, a1]
                 )
                 for a1, a2, i in it.product(range(A), range(A), range(N))
-                if a1 != a2
+                if (a1 < a2)
                 and (not suppress_zeros or not np.isclose(linear[i][a2, a1], 0.0))
             ]),
         ])
@@ -1104,7 +1234,7 @@ def mctdh(**kwargs):
                     value=quad[i][a, a]
                 )
                 for a, i in it.product(range(A), range(N))
-                if not np.isclose(quad[i][a, a], 0.0)
+                if not suppress_zeros or not np.isclose(quad[i][a, a], 0.0)
             ]),
             ''.join([
                 make_line(
@@ -1129,12 +1259,9 @@ def mctdh(**kwargs):
         """
 
         bi_lin = {}
-        for key in bi_lin_dict.keys():
-            new_key = (
-                selected_mode_list.index(key[0]),
-                selected_mode_list.index(key[1])
-            )
-            bi_lin[new_key] = bi_lin_dict[key]
+        for old_key in bi_lin_dict.keys():
+            new_key = reverse_ij_map[old_key]
+            bi_lin[new_key] = bi_lin_dict[old_key]
 
         return '\n'.join([
             ''.join([
@@ -1159,33 +1286,537 @@ def mctdh(**kwargs):
             ]),
         ])
 
-    def _SOC_Somehwere():
-        # ------------------------------------------------------------
-        # some SOC stuff that could be moved elsewhere?
-        SOC_check = subprocess_run_wrapper(['grep', "(DIRECT MAX.)", zeroth_filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        SOC_flag = SOC_check.returncode == 0
+    def build_spinorbit_coupling(soc_dict, A, N):
+        """ x """
 
-        if SOC_flag:
-            # Extract DSOME_cm_0
-            DSOME_cm_0 = extract_DSOME(zeroth_filename, nstate)
-            DSOME_cm_0_real, DSOME_cm_0_imag = DSOME_cm_0[0], DSOME_cm_0[1]
-        # ------------------------------------------------------------
-        return
+        def build_linear_SOC(lin_dict, A, N):
+            assert len(lin_dict.keys()) == N
+            linear_soc = [lin_dict[mode_map_dict[i]] for i in range(N)]
 
-    heading, params = [], []
-    EH, SOC, linear, quadratic, bilinear = [], [], [], [], []
+            return ''.join([
+                make_line_cm(
+                    label=f"C1_s{a1+1:0>2d}s{a2+1:0>2d}_v{i+1:0>2d}r",
+                    value=linear_soc[i][a1, a2].real
+                ) + make_line_cm(
+                    label=f"C1_s{a1+1:0>2d}s{a2+1:0>2d}_v{i+1:0>2d}i",
+                    value=linear_soc[i][a1, a2].imag
+                )
+                for a1, a2, i in it.product(range(A), range(A), range(N))
+                if (a1 < a2)
+                and (not suppress_zeros or not np.isclose(linear_soc[i][a1, a2], 0.0))
+            ]) + '\n'
 
-    displacement_keys = ["+1", "+2", "-1", "-2"]
+        def build_quadratic_SOC(quad_dict, A, N):
+            # make ordered-list of arrays stored in `lin_data`
+            assert len(quad_dict.keys()) == N
+            quad = [quad_dict[mode_map_dict[i]] for i in range(N)]
 
-    format_string = "{label:<25s}={value:>-15.9f}{units:>8s}\n"
-    make_line = functools.partial(format_string.format, units=", ev")
+            return ''.join([
+                make_line(
+                    label=f"C2_s{a1+1:0>2d}s{a2+1:0>2d}_v{i+1:0>2d}v{i+1:0>2d}r",
+                    value=quad[i][a1, a2].real
+                ) + make_line(
+                    label=f"C2_s{a1+1:0>2d}s{a2+1:0>2d}_v{i+1:0>2d}v{i+1:0>2d}i",
+                    value=quad[i][a1, a2].imag
+                )
+                for a1, a2, i in it.product(range(A), range(A), range(N))
+                if (a1 < a2)
+                and (not suppress_zeros or not np.isclose(quad[i][a1, a2], 0.0))
+            ]) + '\n'
 
-    spacer_format_string = f"# {'-':^60s} #\n"
-    hfs = header_format_string = "# {:^60s} #\n" + spacer_format_string
+        def build_BiLinear_SOC(bi_lin_dict, A, N):
 
-    linear.append(hfs.format('Linear Coupling Constants'))
-    quadratic.append(hfs.format('Quadratic Coupling Constants'))
-    bilinear.append(hfs.format('Bilinear Coupling Constants'))
+            bi_lin = {}
+            for old_key in bi_lin_dict.keys():
+                new_key = reverse_ij_map[old_key] # (0, 1) <- (7, 8) for NH3
+                bi_lin[new_key] = bi_lin_dict[old_key]
+
+            return ''.join([
+                make_line(
+                    label=f"C1_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}r",
+                    value=bi_lin[(j1, j2)][a1, a2].real
+                ) + make_line(
+                    label=f"C1_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}i",
+                    value=bi_lin[(j1, j2)][a1, a2].imag
+                )
+                for a1, a2, j1, j2 in it.product(range(A), range(A), range(N), range(N))
+                if (a1 < a2) and (j1 < j2)
+                and (not suppress_zeros or not np.isclose(bi_lin[(j1, j2)][a1, a2], 0.0))
+            ]) + '\n'
+
+        def build_Total_SOC(total_dict, A, N):
+
+            total = {}
+            for old_key in total_dict.keys():
+                new_key = reverse_ij_map[old_key] # (0, 1) <- (7, 8) for NH3
+                total[new_key] = total_dict[old_key]
+
+            return ''.join([
+                make_line(
+                    label=f"SOC_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}r",
+                    value=total[(j1, j2)][a1, a2].real
+                ) + make_line(
+                    label=f"SOC_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}i",
+                    value=total[(j1, j2)][a1, a2].imag
+                )
+                for a1, a2, j1, j2 in it.product(range(A), range(A), range(N), range(N))
+                if (a1 < a2) and (j1 < j2)
+                and (not suppress_zeros or not np.isclose(total[(j1, j2)][a1, a2], 0.0))
+            ]) + '\n'
+
+        return '\n'.join([
+            build_linear_SOC(soc_dict['Linear'], A, N),
+            build_quadratic_SOC(soc_dict['Quadratic'], A, N),
+            build_BiLinear_SOC(soc_dict['BiLinear'], A, N),
+            build_Total_SOC(soc_dict['Total'], A, N),
+        ]) + '\n'
+
+    def make_parameter_section(model, A, N):
+        """Returns a string which defines the `PARAMETER-SECTION` of an .op file"""
+        start, end = "PARAMETER-SECTION", "end-parameter-section"
+        # ----------------------------------------------------------
+        # this is what controls the look of the header strings
+        header_format_string = "#{0:^47}#\n#{spacer:^47}#\n"
+        make_header = functools.partial(header_format_string.format, spacer='-' * 45)
+        # ----------------------------------------------------------
+        # read in all the necessary parameters
+        dipoles = model['dipoles']
+        vibron_ev = model['vibron eV']
+        E0_array_eV = model['E0 eV']
+
+        # ----------------------------------------------------------
+        # begin to assemble the parameter section
+        return_list = [
+            start,
+            make_header('Frequencies'), build_frequencies(vibron_ev),
+            make_header('Electronic Hamitonian'), build_E0(E0_array_eV),
+            make_header('Electronic transition moments'), build_electronic_moments(dipoles),
+            # make_header('Magnetic transition moments'), build_magnetic_moments(M_moments),
+        ]
+
+        # -----------------------------------------------------------
+        # required elements of model (although for debugging we may want to disable for fast debug)
+        for key in ['Linear', 'Quadratic', 'BiLinear']:
+            if key not in model.keys():
+                print(f'NO {key} coupling found in {model.keys()}');
+                # breakpoint(); raise Exception()  # (temporarily) comment out if you don't need them
+
+        # soft fail, may not always want spin-orbit-coupling?
+        if 'SOC' not in model.keys():
+            print(f'NO spin orbit coupling found in {model.keys()}')
+
+        # -----------------------------------------------------------
+
+        headers = {
+            'Linear': 'Linear Coupling Constants',
+            'Quadratic': 'Quadratic Coupling Constants',
+            'BiLinear': 'Diagonal Bilinear Coupling Constants',
+            'SOC': 'SOC',
+        }
+
+        # add them if present
+        key = 'Linear'
+        if key in model.keys():
+            return_list += [make_header(headers[key]),  build_linear_coupling(model[key], A, N)]
+
+        key = 'Quadratic'
+        if key in model.keys():
+            return_list += [make_header(headers[key]),  build_quadratic_coupling(model[key], A, N)]
+
+        key = 'BiLinear'
+        if key in model.keys():
+            return_list += [make_header(headers[key]),  build_bilinear_coupling(model[key], A, N)]
+
+        key = 'SOC'
+        if key in model.keys():
+            return_list += [make_header(headers[key]),  build_spinorbit_coupling(model[key], A, N)]
+
+        return '\n'.join(return_list + [end, ])
+    # -------------------------------------------------------------------------
+    # labeling functions (where we label the Q.M. analog of the terms)
+
+    def label_momentum(N):
+        """Return a string containing the momentum labelling of a .op file."""
+        spacer = '|'
+        return '\n'.join([
+            f"1.00*w{i:0>2d}{spacer:>12}{i+1:<3d}KE"
+            for i in range(1, N+1)
+        ]) + '\n'
+
+    def label_position(N):
+        """Return a string containing the position labelling of a .op file."""
+        spacer = '|'
+        return '\n'.join([
+            f"0.50*w{i:0>2d}{spacer:>12}{i+1:<3d}q^2"
+            for i in range(1, N+1)
+        ]) + '\n'
+
+    def label_energies(energy, A):
+        """Return a string containing the energy labelling of a .op file."""
+        spacer = '|'
+
+        diag_block = '\n'.join([
+            f"EH_s{a:0>2d}_s{a:0>2d}{spacer:>15}1 S{a:d}&{a:d}"
+            for a in range(1, A+1)
+        ]) + '\n'
+
+        off_diag_block = '\n'.join([
+            f"EH_s{a1:0>2d}_s{a2:0>2d}{spacer:>15}1 S{a1:d}&{a2:d}"
+            for a1, a2 in it.product(range(1, A+1), range(1, A+1))
+            if (a1 < a2)
+            and (not suppress_zeros or not np.isclose(energy[a1-1, a2-1], 0.0))
+        ]) + '\n'
+
+        string = diag_block + "\n" + off_diag_block
+
+        if True:  # add fictious surface
+            string += '\n'
+            string += f"EH_s{A+1:0>2d}_s{A+1:0>2d}{spacer:>15}1 S{A+1:d}&{A+1:d}"
+
+        return string
+
+    def label_linear_coupling(lin_dict, A, N):
+        """Return a string containing the linear coupling constant labelling of a .op file."""
+        spacer = '|'
+
+        assert len(lin_dict.keys()) == N
+        linear_terms = [lin_dict[mode_map_dict[i]] for i in range(N)]
+
+        return '\n'.join([
+            (
+                f"C1_s{a:0>2d}s{a:0>2d}_v{i:0>2d}"
+                f"{spacer:>11}1 S{a:d}&{a:d}"
+                f"{spacer:>4}{i+1}  q"
+            )
+            for a, i in it.product(range(1, A+1), range(1, N+1))
+            if not suppress_zeros or not np.isclose(linear_terms[i-1][a-1, a-1], 0.0)
+        ] + [
+            ''  # creates a blank line between the (surface) diagonal and off-diagonal linear terms
+        ] + [
+            (
+                f"C1_s{a1:0>2d}s{a2:0>2d}_v{i:0>2d}"
+                f"{spacer:>11}1 S{a2:d}&{a1:d}"
+                f"{spacer:>4}{i+1}  q"
+            )
+            for a1, a2, i in it.product(range(1, A+1), range(1, A+1), range(1, N+1))
+            if (a1 < a2)
+            and (not suppress_zeros or not np.isclose(linear_terms[i-1][a1-1, a2-1], 0.0))
+        ]) + '\n'
+
+    def label_quadratic_coupling(quad_dict, A, N):
+        """Return a string containing the quadratic coupling constant labelling of a .op file."""
+        spacer = '|'
+
+        assert len(quad_dict.keys()) == N
+        quadratic_terms = [quad_dict[mode_map_dict[i]] for i in range(N)]
+
+        return '\n'.join([
+            (
+                f"0.50*C2_s{a:0>2d}s{a:0>2d}_v{i:0>2d}v{i:0>2d}"
+                f"{spacer:>9}1 S{a:d}&{a:d}"
+                f"{spacer:>4}{i+1}  q^2"
+            )
+            for a, i in it.product(range(1, A+1), range(1, N+1))
+            if not suppress_zeros or not np.isclose(quadratic_terms[i-1][a-1, a-1], 0.0)
+        ] + [
+                ''  # creates a blank line between the (surface) diagonal and off-diagonal linear terms
+        ] + [
+            (
+                f"0.50*C2_s{a1:0>2d}s{a2:0>2d}_v{i:0>2d}v{i:0>2d}"
+                f"{spacer:>9}1 S{a2:d}&{a1:d}"
+                f"{spacer:>4}{i+1}  q^2"
+            )
+            for a1, a2, i in it.product(range(1, A+1), range(1, A+1), range(1, N+1))
+            if (a1 < a2)
+            if not suppress_zeros or not np.isclose(quadratic_terms[i-1][a1-1, a2-1], 0.0)
+        ]) + '\n'
+
+    def label_bilinear_coupling(bi_lin_dict, A, N):
+        """Return a string containing the quadratic coupling constant labelling of a .op file."""
+        spacer = '|'
+
+        bilinear_terms = {}
+        for old_key in bi_lin_dict.keys():
+            new_key = reverse_ij_map[old_key]
+            bilinear_terms[new_key] = bi_lin_dict[old_key]
+
+        return '\n'.join([
+            (
+                f"C1_s{a:0>2d}s{a:0>2d}_v{j1:0>2d}v{j2:0>2d}"
+                f"{spacer:>9}1 S{a:d}&{a:d}"
+                f"{spacer:>4}{j1+1}  q{spacer:>6}{j2+1}  q"
+            )
+            for a, j1, j2 in it.product(range(1, A+1), range(1, N+1), range(1, N+1))
+            if (j1 < j2)
+            and (not suppress_zeros or not np.isclose(bilinear_terms[(j1-1, j2-1)][a-1, a-1], 0.0))
+        ] + [
+                ''  # creates a blank line between the (surface) diagonal and off-diagonal linear terms
+        ] + [
+            (
+                f"C1_s{a1:0>2d}s{a2:0>2d}_v{j1:0>2d}v{j2:0>2d}"
+                f"{spacer:>9}1 S{a1:d}&{a2:d}"
+                f"{spacer:>4}{j1+1}  q{spacer:>6}{j2+1}  q"
+            )
+            for a1, a2, j1, j2 in it.product(range(1, A+1), range(1, A+1), range(1, N+1), range(1, N+1))
+            if (a1 < a2) and (j1 < j2)
+            and (not suppress_zeros or not np.isclose(bilinear_terms[(j1-1, j2-1)][a1-1, a2-1], 0.0))
+        ]) + '\n'
+
+    def label_spinorbit_coupling(soc_dict, A, N):
+
+        spacer_format_string = f"# {'-':^60s} #\n"
+        hfs = header_format_string = "# {:^60s} #\n" + spacer_format_string
+        block = hfs.format("SOC FULL HAMILTONIAN SOC OFF-DIAGONAL VIBRONIC COUPLINGS")
+
+        """ Full lines look like this:
+         I*C1_s##_s##_v##r |1 Z#&# | # q
+        -I*C1_s##_s##_v##i |1 Z#&# | # q
+         I*C2_s##_s##_v##r |1 Z#&# | # q^2
+        -I*C2_s##_s##_v##i |1 Z#&# | # q^2
+         I*C1_s##_s##_v##_v##r |1 Z#&# | # q | # q
+        -I*C1_s##_s##_v##_v##i |1 Z#&# | # q | # q
+         I*SOC_s##_s##_v##_v##r |1 Z#&# | # q
+        -I*SOC_s##_s##_v##_v##i |1 Z#&# | # q
+        """
+
+        def label_linear_SOC(lin_dict, A, N):
+            """Return a string containing the linear spin orbit coupling (SOC) terms"""
+            spacer = '|'
+            assert len(lin_dict.keys()) == N
+            linear_terms = [lin_dict[mode_map_dict[i]] for i in range(N)]
+
+            return '\n'.join([
+                (
+                    f" I*C1_s{a1:0>2d}s{a2:0>2d}_v{i:0>2d}r"
+                    f"{spacer:>11}1 S{a1:d}&{a2:d}"
+                    f"{spacer:>4}{i+1}  q"
+                ) + '\n' + (
+                    f"-I*C1_s{a1:0>2d}s{a2:0>2d}_v{i:0>2d}i"
+                    f"{spacer:>11}1 S{a1:d}&{a2:d}"
+                    f"{spacer:>4}{i+1}  q"
+                )
+                for a1, a2, i in it.product(range(1, A+1), range(1, A+1), range(1, N+1))
+                if (a1 < a2)
+                and (not suppress_zeros or not np.isclose(linear_terms[i-1][a1-1, a2-1], 0.0))
+            ]) + '\n'
+
+        def label_quadratic_SOC(quad_dict, A, N):
+            """Return a string containing the quadratic spin orbit coupling (SOC) terms"""
+            spacer = '|'
+            assert len(quad_dict.keys()) == N
+            quadratic_terms = [quad_dict[mode_map_dict[i]] for i in range(N)]
+
+            return '\n'.join([
+                (
+                    f" I*C2_s{a1:0>2d}s{a2:0>2d}_v{i:0>2d}v{i:0>2d}r"
+                    f"{spacer:>9}1 S{a1:d}&{a2:d}"
+                    f"{spacer:>4}{i+1}  q^2"
+                ) + '\n' + (
+                    f"-I*C2_s{a1:0>2d}s{a2:0>2d}_v{i:0>2d}v{i:0>2d}i"
+                    f"{spacer:>9}1 S{a1:d}&{a2:d}"
+                    f"{spacer:>4}{i+1}  q^2"
+                )
+                for a1, a2, i in it.product(range(1, A+1), range(1, A+1), range(1, N+1))
+                if (a1 < a2)
+                if not suppress_zeros or not np.isclose(quadratic_terms[i-1][a1-1, a2-1], 0.0)
+            ]) + '\n'
+
+        def label_BiLinear_SOC(bi_lin_dict, A, N):
+            """Return a string containing the BiLinear spin orbit coupling (SOC) terms"""
+            spacer = '|'
+            bilinear_terms = {}
+            for old_key in bi_lin_dict.keys():  # i should make a backwards mapping dictionary
+                new_key = reverse_ij_map[old_key] # (0, 1) <- (7, 8) for NH3
+                bilinear_terms[new_key] = bi_lin_dict[old_key]
+
+            return '\n'.join([
+                (
+                    f" I*C1_s{a1:0>2d}s{a2:0>2d}_v{j1:0>2d}v{j2:0>2d}r"
+                    f"{spacer:>9}1 S{a1:d}&{a2:d}"
+                    f"{spacer:>4}{j1+1}  q{spacer:>6}{j2+1}  q"
+                ) + '\n' + (
+                    f"-I*C1_s{a1:0>2d}s{a2:0>2d}_v{j1:0>2d}v{j2:0>2d}i"
+                    f"{spacer:>9}1 S{a1:d}&{a2:d}"
+                    f"{spacer:>4}{j1+1}  q{spacer:>6}{j2+1}  q"
+                )
+                for a1, a2, j1, j2 in it.product(range(1, A+1), range(1, A+1), range(1, N+1), range(1, N+1))
+                if (a1 < a2) and (j1 < j2)
+                and (not suppress_zeros or not np.isclose(bilinear_terms[(j1-1, j2-1)][a1-1, a2-1], 0.0))
+            ]) + '\n'
+
+        def label_Total_SOC(total_dict, A, N):
+            """Return a string containing the BiLinear spin orbit coupling (SOC) terms"""
+            spacer = '|'
+            total_terms = {}
+            for old_key in total_dict.keys():  # i should make a backwards mapping dictionary
+                new_key = reverse_ij_map[old_key] # (0, 1) <- (7, 8) for NH3
+                total_terms[new_key] = total_dict[old_key]
+
+            return '\n'.join([
+                (
+                    f" I*SOC_s{a1:0>2d}s{a2:0>2d}_v{j1:0>2d}v{j2:0>2d}r"
+                    f"{spacer:>9}1 S{a1:d}&{a2:d}"
+                    f"{spacer:>4}{j1+1}  q{spacer:>6}{j2+1}  q"
+                ) + '\n' + (
+                    f"-I*SOC_s{a1:0>2d}s{a2:0>2d}_v{j1:0>2d}v{j2:0>2d}i"
+                    f"{spacer:>9}1 S{a1:d}&{a2:d}"
+                    f"{spacer:>4}{j1+1}  q{spacer:>6}{j2+1}  q"
+                )
+                for a1, a2, j1, j2 in it.product(range(1, A+1), range(1, A+1), range(1, N+1), range(1, N+1))
+                if (a1 < a2) and (j1 < j2)
+                and (not suppress_zeros or not np.isclose(total_terms[(j1-1, j2-1)][a1-1, a2-1], 0.0))
+            ]) + '\n'
+
+        def _toby_bash_style():
+            raise Exception('not implemented')
+
+            # prepare `make_line`
+            format_string_1 = "{label:<25s}{link:<20s}\n"
+            format_string_2 = "{label:<25s}{link:<20s}\n"
+            format_string_3 = "{label:<25s}{link:<20s}\n"
+            format_string_4 = "{label:<25s}{link:<20s}\n"
+
+            # make_line_1_real = functools.partial(format_string_1.format, link=)
+            # make_line_1_imag = functools.partial(format_string_1.format, link=)
+            # make_line_2 = functools.partial(format_string_2.format, link=)
+            # make_line_3 = functools.partial(format_string_3.format, link=)
+            # make_line_4 = functools.partial(format_string_4.format, link=)
+
+            for i, a in it.product(range(1, N+1), range(1, A+1)):
+                for j, b in it.product(range(1, i+1), range(1, a+1)):
+                    i_label, j_label = reverse_ij_map[i,j]
+                    print(f"{i=}, {j=}, {a=}, {b=}")
+
+                    l1 = "C1_s{:>02d}_s{:>02d}_v{:>02d}".format(j, i, a)
+                    make_line_1(label=f" I*{l1}r", link=f"|1 S{b}&{a} | {j+1} q")
+                    make_line_1(label=f"-I*{l1}i", link=f"|1 S{a}&{b} | {j+1} q")
+
+                    l2 = "C2_s{:>02d}_s{:>02d}_v{:>02d}".format(j, i, a)
+                    make_line_1(label=f" I*{l2}r", link=f"|1 S{b}&{a} | {j+1} q^2")
+                    make_line_1(label=f"-I*{l2}i", link=f"|1 S{a}&{b} | {j+1} q^2")
+
+                    l3 = "C1_s{:>02d}_s{:>02d}_v{:>02d}_v{:>02d}".format(j, i, i_label, j_label)
+                    make_line(label=f" I*{l3}r", link=f"|1 S{b}&{a} | {j+1} q | {i+1} q")
+                    make_line(label=f"-I*{l3}i", link=f"|1 S{a}&{b} | {j+1} q | {i+1} q")
+
+                    l4 = "SOC_s{:>02d}_s{:>02d}_v{:>02d}_v{:>02d}".format(j, i, i_label, j_label)
+                    make_line(label=f" I*{l4}r", link=f"|1 S{b}&{a} | {j+1} q")
+                    make_line(label=f"-I*{l4}i", link=f"|1 S{a}&{b} | {j+1} q")
+
+        if True:
+            string = "\n".join([
+                label_linear_SOC(soc_dict['Linear'], A, N),
+                label_quadratic_SOC(soc_dict['Quadratic'], A, N),
+                label_BiLinear_SOC(soc_dict['BiLinear'], A, N),
+                label_Total_SOC(soc_dict['Total'], A, N),
+            ]) + '\n'
+
+        else:  # not implemented
+            string = _toby_bash_style()
+
+        return string
+
+    def make_hamiltonian_section(model, A, N, SOC_flag=False):
+        """Returns a string which defines the `HAMILTONIAN-SECTION` of an .op file"""
+        start, end = "HAMILTONIAN-SECTION", "end-hamiltonian-section"
+        spec = ''.join([
+            ' modes   |  el  |',
+            ''.join([f" v{N+1:0>2d}|" for N in range(N)]),
+            '\n'
+        ])
+
+        # -----------------------------------------------------------
+        return_list = [
+            start,
+            spec,
+            label_momentum(N),
+            label_position(N),
+            label_energies(model['E0 eV'], A),
+        ]
+
+        # -----------------------------------------------------------
+        # required elements of model (although for debugging we may want to disable for fast debug)
+        for key in ['Linear', 'Quadratic', 'BiLinear']:
+            if key not in model.keys():
+                print(f'NO {key} coupling found in {model.keys()}');
+                # breakpoint(); raise Exception()  # (temporarily) comment out if you don't need them
+
+        # soft fail, may not always want spin-orbit-coupling?
+        if 'SOC' not in model.keys():
+            print(f'NO spin orbit coupling found in {model.keys()}')
+
+        # -----------------------------------------------------------
+        # add them if present
+        key = 'Linear'
+        if key in model.keys():
+            return_list += [label_linear_coupling(model[key], A, N),]
+
+        key = 'Quadratic'
+        if key in model.keys():
+            return_list += [label_quadratic_coupling(model[key], A, N)]
+
+        key = 'BiLinear'
+        if key in model.keys():
+            return_list += [label_bilinear_coupling(model[key], A, N)]
+
+        key = 'SOC'
+        if key in model.keys():
+            return_list += [label_spinorbit_coupling(model[key], A, N)]
+
+        # -----------------------------------------------------------
+        return_list.append(end)
+
+        return '\n'.join(return_list)
+    # -------------------------------------------------------------------------
+
+    def neil_build_dipole_moments_section(nof_states, nof_modes):
+        """Returns a string which defines the `HAMILTONIAN-SECTION_Ex` of an .op file"""
+        start, end = "HAMILTONIAN-SECTION_Ex", "end-hamiltonian-section"
+        spec = ''.join([
+            ' modes   |  el  |',
+            ''.join([f" v{n+1:0>2d}|" for n in range(nof_modes)]),
+            '\n'
+        ])
+
+        def label_dipole_moments_energies(A):
+            """Return a string containing the dipole moments energy labelling of a .op file."""
+            spacer = '|'
+            return '\n'.join([
+                f"Ex_s00_s{a:0>2d}{spacer:>15}1 S{A:d}&{a:d}"
+                for a in range(1, A)
+            ]) + '\n'
+
+        string = '\n'.join([
+            start,
+            spec,
+            label_dipole_moments_energies(nof_states),
+            end,
+        ])
+        return string
+
+    def make_operator_onto_dipole_moments_section(model, A, N):
+        """  """
+        block = f"\nHAMILTONIAN-SECTION_Ex\n"
+
+        # Write modes and mode labels
+        mode_number_key = [selected_mode_list[i] for i in range(N)]
+        h_labels = ["modes", "el", ] + [
+            f"v{s:>02d}"
+            for s in mode_number_key
+        ]
+
+        block += " | ".join(h_labels) + "\n"
+        block += f"{'-'*47}\n\n"
+
+        for j in range(1, A+1):
+            block += f"1.0         |1 S{A+1}&{j}\n"  # A+1, set ground state as fictitious +1 state
+
+        block += "\nend-hamiltonian-section\n"
+
+        return block
+
+    # -------------------------------------------------------------------------
+    # extraction functions
 
     def extract_E0(hessout, A=pp.A):
         """ The energy values associated with the reference geometry.
@@ -1198,7 +1829,13 @@ def mctdh(**kwargs):
 
         # ground state of the (optimized geometry?) (includes fictitious surface? no/yes?)
         GSE_pattern = 'TOTAL ENERGY ='
-        GSE = extract_ground_state_energy(hessout, GSE_pattern)
+        try:
+            GSE = extract_ground_state_energy(hessout, GSE_pattern)
+        except Exception as e:
+            print("Cannot find ground state energy! What to do?")
+            print(str(e))
+            print(f"{hessout=} {GSE_pattern=}")
+            breakpoint()
 
         # 1st diabat's energy
         D1E = extract_diabatic_energy(zeroth_filename, a_pattern.format(col=1))
@@ -1209,60 +1846,51 @@ def mctdh(**kwargs):
             f'Linear shift value: {linear_shift} eV\n'
         )
 
-        # A = pp.A + 1  # +1 for ground state's as fictitious first row/col
-        A = pp.A  #?
+        # HELLA SLOW RIGHT HERE
+
+        A = pp.A
         shape = (A, A)
         E0_array = np.zeros(shape)
 
-        if False:  # debug
-            def _reminder_produce_upper_triangle_indices(s):
-                """ Assume a square matrix of shape (s, s).
-                Prints the row, col indices that would index the upper triangle
-                Just reminder code.
-                """
-                print("Indices using it.combinations")
-                for row, col in it.combinations(range(s), 2):
-                    print(f"{row=} {col=}")
-
-                # this is just a wrapper for it.combinations
-                for row, col in upper_triangle_loop_indices(s, 2):
-                    print(f"{row=} {col=}")
-
-                print("Indices using nested loops")
-                for col in range(s):
-                    for row in range(0, col):
-                        print(f"{row=} {col=}")
-
-                print("Indices assuming we start at 1")
-                # assume indices start at 1
-                for col in range(1, s+1):
-                    for row in range(1, col):
-                        print(f"{row=} {col=}")
-                return
-
+        if False and __debug__:  # debug
+            # check this function to remind yourself how the indexing works
             _reminder_produce_upper_triangle_indices(A)
-            breakpoint()
 
-        if False:  # matches the bash style from Toby
+        def _toby_bash_style(E0_array):
+            """ This matches the bash script looping style used by Toby.
+            The outer loop is over the columns of the matrix a ~ col.
+            The inner loop is over the rows of the matrix b ~ row.
+            """
             for a in range(A):
                 E0_array[a, a] = refG_extract(zeroth_filename, a_pattern.format(col=a+1))
                 E0_array[a, a] += linear_shift
                 for b in range(a):
                     E0_array[b, a] = refG_extract(zeroth_filename, ba_pattern.format(row=b+1, col=a+1))
-            # print(E0_array)
+            return
 
-        if True:  # this makes more sense based on what I see in the file
+        def _row_first_style(E0_array):
+            """ x """
             for a in range(A):
                 E0_array[a, a] = extract_in_eV(zeroth_filename, a_pattern.format(col=a+1))
                 E0_array[a, a] += linear_shift
 
             for a, b in upper_triangle_loop_indices(A, 2):
                 E0_array[a, b] = extract_in_eV(zeroth_filename, ba_pattern.format(row=a+1, col=b+1))
+
             # for row, col in upper_triangle_loop_indices(A, 2):
             #     E0_array[row, col] = extract_in_eV(zeroth_filename, ba_pattern.format(row=row+1, col=col+1))
-            # print(E0_array)
 
-        if False:  # debug outputs (keep them out of the loops above for simplicity)
+            return
+
+        if True:  # this makes more sense based on what I see in the file
+            _row_first_style(E0_array)
+            # print("Row first", E0_array)
+
+        if False:  # matches the bash style from Toby
+            _toby_bash_style(E0_array)
+            # print("Column first / bash style", E0_array)
+
+        if False and __debug__:  # (keep them out of the loops above for simplicity)
             for a in range(A):
                 print(f"Diabatic energy at state {a+1}: {E0_array[a, a]}")
             for a, b in upper_triangle_loop_indices(A, 2):
@@ -1271,7 +1899,7 @@ def mctdh(**kwargs):
             #     print(f"Coupling energy at state {row+1} & {col+1}: {E0_array[row, col]}")
             print(E0_array)
 
-        # added at the last minute
+        # added at the last minute (change later)
         E0_array_ev = E0_array
         E0_array_au = np.zeros(shape)
 
@@ -1284,204 +1912,7 @@ def mctdh(**kwargs):
 
         return E0_array_ev, E0_array_au
 
-    def extract_energies_benny():
-
-        for kmode in range(N):  # kmode is array index of selected_mode_list
-            imode = pp.mode_map_dict[kmode] #
-
-            displacement_filenames = {
-                "+1": f'{filnam}_mode{imode}_+{qsize}.out',
-                "+2": f'{filnam}_mode{imode}_+{qsize}x2.out',
-                "-1": f'{filnam}_mode{imode}_-{qsize}.out',
-                "-2": f'{filnam}_mode{imode}_-{qsize}x2.out',
-            }
-
-            vibron_ev = freqcm[imode-1] * wn2ev
-            params.append(make_line(label=f"w{imode:>02d}", value=vibron_ev))
-            # params.append("\n")
-            # Coupling.append("#Linear and quadratic diagonal and off-diagonal vibronic coupling constants:\n")
-
-            grace_code = {}
-            for key in displacement_keys:
-                grace_code[key] = subprocess_call_wrapper(["grep", "DONE WITH MP2 ENERGY", displacement_filenames[key]])
-
-            """ either of these work (logic wise)
-                if any(code != 0 for code in grace_code.values()):
-                if not all(code == 0 for code in grace_code.values()):
-            """
-
-            if not all(code == 0 for code in grace_code.values()):
-                params.append(f"not good to extract. Skipping mode {imode} for extracting vibronic couplings\n")
-
-            else:  # otherwise we're good to extract
-                print("\n good to extract\n")
-                # Extract the diagonal and off-diagonal vibronic coupling
-                for ist in range(1, nstate + 1):
-
-                    def _make_diag_lin_quad(i):
-                        pattern = f'STATE #.* {i}.S GMC-PT-LEVEL DIABATIC ENERGY='
-
-                        # Ediab_au = [extract_diabatic_energy(displacement_filenames[kmode][k], pattern) for k in displacement keys]  $ one liner list comprehension
-                        # Ediab_au = {k: extract_diabatic_energy(displacement_filenames[kmode][k], pattern) for k in displacement keys}  # one liner dictionary comprehension
-                        Ediab_au = {}
-                        for key in displacement_keys:
-                            Ediab_au[key] = extract_diabatic_energy(displacement_filenames[key], pattern)
-
-                        # Extract Ediab_au_0
-                        Ediab_au_0 = extract_diabatic_energy(zeroth_filename, pattern)
-                        linear_diag_ev = (Ediab_au["+1"] - Ediab_au["-1"]) * ha2ev / (2 * qsize)
-                        quadratic_diag_ev = (Ediab_au["+2"] + Ediab_au["-2"] - 2.0 * Ediab_au_0) * ha2ev / (4.0 * qsize * qsize)
-
-                        # We only view the difference between the actual force constant and the vibron
-                        # as the quadratic diagonal coupling for the diabatic state.
-                        quadratic_diag_ev = quadratic_diag_ev - vibron_ev
-
-                        # Print and store results
-                        print(f"State {i} Linear Diagonal: {linear_diag_ev} Quadratic Diagonal: {quadratic_diag_ev}, ev\n")
-
-                        # machine accuracy is typically 16 digits
-                        s1 = make_line(label=f"C1_s{i:>02d}_s{i:>02d}_v{imode:>02d}", value=linear_diag_ev)
-                        s2 = make_line(label=f"C2_s{i:>02d}s{i:>02d}_v{imode:>02d}v{imode:>02d}", value=quadratic_diag_ev)
-                        return s1, s2
-
-                    s1, s2 = _make_diag_lin_quad(ist)
-                    linear.append(s1)
-                    quadratic.append(s2)
-
-                    # # Loop over jst
-                    jlast = ist - 1
-                    for jst in range(1, jlast + 1):
-
-                        def _make_offdiag_lin_quad(i, j):
-                            pattern = f'STATE #.* {j} &.* {i}.S GMC-PT-LEVEL COUPLING'
-
-                            # Extract Coup_ev_0
-                            Coup_ev_0 = extract_coupling_energy(zeroth_filename, pattern)
-
-                            Coup_ev = {}
-                            for key in displacement_keys:
-                                Coup_ev[key] = extract_diabatic_energy(displacement_filenames[key], pattern)
-
-                            # Compute linear off-diagonal coupling
-                            linear_offdiag_ev = (Coup_ev["+1"] - Coup_ev["-1"]) / (2 * qsize)
-                            # Compute quadratic off-diagonal coupling
-                            quadratic_offdiag_ev = (Coup_ev["+2"] + Coup_ev["-2"] - 2.0 * Coup_ev_0) / (4.0 * qsize * qsize)
-
-                            # Print and store results
-                            print(f"State {j} & {i} Linear Off-Diagonal: {linear_offdiag_ev}\n")
-                            print(f"State {j} & {i} Quadratic Off-Diagonal: {quadratic_offdiag_ev}\n")
-                            s1 = make_line(label=f"C1_s{j:>02d}_s{i:>02d}_v{imode:>02d}", value=linear_offdiag_ev)
-                            s2 = make_line(label=f"C2_s{j:>02d}s{i:>02d}_v{imode:>02d}v{imode:>02d}", value=quadratic_offdiag_ev)
-                            return s1, s2
-
-                        s1, s2 = _make_diag_lin_quad(ist)
-                        linear.append(s1)
-                        quadratic.append(s2)
-
-                        """ this is just representative (you can delete - just for learning purposes)
-                        if False: # don't actually try to do right now
-                            order_name = {1: 'Linear', 2: 'Quadratic'}
-                            for i in [1, 2]:
-                                _number = [linear_offdiag_ev, quadratic_offdiag_ev][i]
-                                print(f"State {jst} & {ist} {order_name[i]} Off-Diagonal: {_number}\n")
-                                oprder_list[i].append(make_line(label=f"C{i}_s{jst:>02d}_s{ist:>02d}_v{imode:>02d}", value=_number))
-                        """
-
-            # Extracting bilinear vibronic coupling
-            # Coupling.append("#Bilinear diagonal and off-diagonal vibronic coupling constants:\n")
-
-            for lmode in range(0, kmode):
-                jmode = pp.mode_map_dict[lmode]
-                breakpoint()
-
-                bi_linear_displacement_filenames = {
-                    "++": f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out',
-                    "+-": f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out',
-                    "-+": f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out',
-                    "--": f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out',
-                }
-
-                grace_code_pp = subprocess_call_wrapper(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out"])
-                grace_code_pm = subprocess_call_wrapper(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out"])
-                grace_code_mp = subprocess_call_wrapper(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out"])
-                grace_code_mm = subprocess_call_wrapper(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out"])
-
-                if all(code == 0 for code in [grace_code_pp, grace_code_pm, grace_code_mp, grace_code_mm]):
-                    print(f"\n Good to extract bilinear for modes {imode} {jmode} \n")
-                    for ist in range(1, nstate + 1):
-                        pattern = f'STATE #.* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY='
-
-                        # do this style again?
-                        # big_displacement_keys = ['++', '+-', '-+', '--']
-                        # Ediab_au = {}
-                        # for key in displacement_keys:
-                        #     Ediab_au[key] = extract_diabatic_energy(big_displacement_filenames[key], pattern)
-
-
-                        # Extract Ediab_au_pp
-                        Ediab_au_pp = extract_diabatic_energy(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out', pattern)
-
-                        # Extract Ediab_au_pm
-                        Ediab_au_pm = extract_diabatic_energy(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out', pattern)
-
-                        # Extract Ediab_au_mp
-                        Ediab_au_mp = extract_diabatic_energy(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out', pattern)
-
-                        # Extract Ediab_au_mm
-                        Ediab_au_mm = extract_diabatic_energy(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out', pattern)
-
-                        bilinear_diag_ev = (Ediab_au_pp + Ediab_au_mm - Ediab_au_pm - Ediab_au_mp ) * ha2ev / (4.0 * qsize * qsize )
-
-                        print(f"State {ist} Bilinear Diagonal: {bilinear_diag_ev}\n")
-                        bilinear.append(make_line(label=f"C1_s{ist:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}", value=bilinear_diag_ev))
-
-                        # # Loop over jst
-                        jlast = ist - 1
-                        for jst in range(1, jlast + 1):
-                            pattern = f'STATE #.* {jst} &.* {ist}.S GMC-PT-LEVEL COUPLING'
-                            # Extract Coup_ev_pp
-                            Coup_ev_pp = extract_coupling_energy(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out', pattern)
-                            # Extract Coup_ev_pm
-                            Coup_ev_pm = extract_coupling_energy(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out', pattern)
-
-                            # Extract Coup_ev_mp
-                            Coup_ev_mp = extract_coupling_energy(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out', pattern)
-
-                            # Extract Coup_ev_mm
-                            Coup_ev_mm = extract_coupling_energy(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out', pattern)
-
-                            bilinear_offdiag_ev = ( Coup_ev_pp + Coup_ev_mm - Coup_ev_pm - Coup_ev_mp ) / (4.0 * qsize * qsize )
-
-                            print(f"State {jst} & {ist} Bilinear Off-Diagonal: {bilinear_offdiag_ev}\n")
-                            bilinear.append(make_line(label=f"C1_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}", value=bilinear_offdiag_ev))
-
-                            if SOC_flag:
-
-                                try:
-
-                                    # Extract DSOME_cm_pp
-                                    DSOME_cm_pp = extract_DSOME(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out', nstate)
-                                    DSOME_cm_pp_real, DSOME_cm_pp_imag = DSOME_cm_pp[0], DSOME_cm_pp[1]
-
-                                    # Extract DSOME_cm_pm
-                                    DSOME_cm_pm = extract_DSOME(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out', nstate)
-                                    DSOME_cm_pm_real, DSOME_cm_pm_imag = DSOME_cm_pm[0], DSOME_cm_pm[1]
-
-                                    # Extract DSOME_cm_mp
-                                    DSOME_cm_mp = extract_DSOME(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out', nstate)
-                                    DSOME_cm_mp_real, DSOME_cm_mp_imag = DSOME_cm_mp[0], DSOME_cm_mp[1]
-
-                                    # Extract DSOME_cm_mm
-                                    DSOME_cm_mm = extract_DSOME(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out', nstate)
-                                    DSOME_cm_mm_real, DSOME_cm_mm_imag = DSOME_cm_mm[0], DSOME_cm_mm[1]
-
-
-                                except Exception as e:
-                                    print(f"Error in SOC: {str(e)}")
-                else:
-                    print(f"not good to extract. Skipping mode {imode} mode {jmode} for extracting bilinear vibronic couplings")
-
-    def extract_etdm(file_path, verbose=True):
+    def extract_etdm(file_path, verbose=False):
         """ Extracts the electronic transition dipole moments from refG.out
             It will extract tdm from diabat 1 -> diabat 2,3,...
             Returns dipoles, a dictionary of tdm values, columns are x,y,z
@@ -1534,9 +1965,7 @@ def mctdh(**kwargs):
         """
         For some reason the diagonal (of linear and quadratic) needs to be in Hartrees???
         and the off-diagaonal in eV??
-
         """
-        linear_dictionary = {}
 
         # strings used by `grep` to locate values to extract
         a_pattern = 'STATE #.* {col}.S GMC-PT-LEVEL DIABATIC ENERGY='
@@ -1545,7 +1974,9 @@ def mctdh(**kwargs):
         shape = (A, A)
 
         def extract_energy_at_displaced_geometry(path, key):
-            """ x """
+            """ Diagonal values are in Hartrees (atomic units - au)
+            Off-diagonal values are in electron Volts (eV)
+            """
             array = np.zeros(shape)
 
             for a in range(A):
@@ -1554,48 +1985,56 @@ def mctdh(**kwargs):
             for a, b in upper_triangle_loop_indices(A, 2):
                 array[a, b] = extract_in_eV(path, ba_pattern.format(row=a+1, col=b+1))
 
-            if False:  # debug printing
+            if False and __debug__:  # debug printing
                 for a in range(A):
                     print(f"Linear energy {key=} at state {a+1}: {array[a, a]}")
                 for a, b in upper_triangle_loop_indices(A, 2):
                     print(f"Linear energy {key=} at state {a+1} & {b+1}: {array[a, b]}")
-                print(path); print(array); breakpoint()  # debug
-
+                print(path); print(array); breakpoint()
             return array
-        #
+
+        def _compute_using_array_style(i, temp_dict):
+            linear_ev = (temp_dict["+1"] - temp_dict["-1"]) / (2*qsize)
+            for a in range(A):  # make sure we multiply the diagonal by ha2ev
+                linear_ev[a, a] *= ha2ev
+            return linear_ev
+
+        def _compute_using_forloop_style(i, temp_dict):
+            linear_ev = np.zeros(shape)
+            for a in range(A):
+                linear_ev[a, a] = (temp_dict["+1"][a, a] - temp_dict["-1"][a, a]) * ha2ev / (2 * qsize)
+                for b in range(a):
+                    linear_ev[b, a] = (temp_dict["+1"][b, a] - temp_dict["-1"][b, a]) / (2 * qsize)
+            return linear_ev
+
+        linear_dictionary = {}  # store return values in here
         for i in range(N):
-            temp_dict = {}  # stores temporary arrays (they are different every single i \in N loop)
+            # ----------------------------------------------------------
+            # extract values from GAMESS files
+            temp_dict = {}  # use new dictionary to store temporary arrays every single loop (i \in N)
             for key in ["+1", "-1"]:
+                assert key in linear_disp_keys, f"{key=} not in {linear_disp_keys=}"
                 path = linear_displacement_filenames[(key, i)]
                 temp_dict[key] = extract_energy_at_displaced_geometry(path, key)
 
-                # temp_dict[key] = np.random.rand(*shape)
-                # # set lower triangle to zero
-                # for i, j in upper_triangle_loop_indices(N, 2):
-                #     temp_dict[key][j, i] = 0.0
-
-                # breakpoint()
+            # ----------------------------------------------------------
+            # preform the math / calculation using the values we just extracted
             if array_style:
-                linear_ev = (temp_dict["+1"] - temp_dict["-1"]) / (2*qsize)
-                for a in range(A):  # make sure we multiply the diagonal by ha2ev
-                    linear_ev[a, a] *= ha2ev
-                if False: print(linear_ev); breakpoint()  # debug
+                linear_ev = _compute_using_array_style(i, temp_dict)
+                if False and __debug__: print(linear_ev); breakpoint()  # debug
 
             else:  # do it with loops
-                linear_ev = np.zeros(shape)
-                for a in range(A):
-                    linear_ev[a, a] = (temp_dict["+1"][a, a] - temp_dict["-1"][a, a]) * ha2ev / (2 * qsize)
-                    for b in range(a):
-                        linear_ev[b, a] = (temp_dict["+1"][b, a] - temp_dict["-1"][b, a]) / (2 * qsize)
-                if False: print(linear_ev); breakpoint()  # debug
+                linear_ev = _compute_using_forloop_style(i, temp_dict)
+                if False and __debug__: print(linear_ev); breakpoint()  # debug
 
+            # ----------------------------------------------------------
+            # store the value in the dictionary
             linear_dictionary[mode_map_dict[i]] = linear_ev
 
         return linear_dictionary
 
-    def extract_quadratic(E0_array_eV, E0_array_au, vibron_ev, array_style=False):
-
-        quadratic_dictionary = {}
+    def extract_quadratic(E0_array_eV, E0_array_au, vibron_ev, array_style=True):
+        """ x """
 
         # strings used by `grep` to locate values to extract
         a_pattern = 'STATE #.* {col}.S GMC-PT-LEVEL DIABATIC ENERGY='
@@ -1626,7 +2065,8 @@ def mctdh(**kwargs):
             temp_fake_E0_array = np.copy(E0_array_eV)
             for a in range(A):  # make sure the diagonal is in Hartrees
                 temp_fake_E0_array[a, a] = E0_array_au[a, a]
-            #
+
+            # have to because they have different E0's (their energy scales are all different)
             quad_ev = temp_dict["+2"] + temp_dict["-2"] - 2.0 * temp_fake_E0_array
             for a in range(A):  # make sure we multiply the diagonal by ha2ev
                 quad_ev[a, a] *= ha2ev
@@ -1652,32 +2092,39 @@ def mctdh(**kwargs):
 
             return quad_ev
 
+        quadratic_dictionary = {}  # store return values in here
         for i in range(N):
-
+            # ----------------------------------------------------------
+            # extract values from GAMESS files
             temp_dict = {}  # stores temporary arrays (they are different every single i \in N loop)
             for key in ["+2", "-2"]:
+                assert key in linear_disp_keys, f"{key=} not in {linear_disp_keys=}"
                 path = linear_displacement_filenames[(key, i)]
                 temp_dict[key] = extract_energy_at_displaced_geometry(path, key)
             if False and __debug__: print(temp_dict["+2"], '\n', temp_dict["-2"]); breakpoint()
 
-            if not array_style: # do it with for loops
+            # ----------------------------------------------------------
+            # preform the math / calculation using the values we just extracted
+            if not array_style:  # do it with for loops
                 quad_ev = _compute_using_forloop_style(i, temp_dict)
                 if False and __debug__: print(i, quad_ev, vibron_ev); breakpoint()
             else:
                 quad_ev = _compute_using_array_style(i, temp_dict)
                 if False and __debug__: print(quad_ev); breakpoint()
 
-            quadratic_dictionary[mode_map_dict[i]] = quad_ev
+            # ----------------------------------------------------------
+            # store the value in the dictionary
+            quadratic_dictionary[pp.mode_map_dict[i]] = quad_ev
 
         return quadratic_dictionary
 
-    def extract_bilinear(array_style=False):
-
-        bilinear_dictionary = {}
+    def extract_bilinear(array_style=True):
+        """ x """
 
         # strings used by `grep` to locate values to extract
         a_pattern = 'STATE #.* {col}.S GMC-PT-LEVEL DIABATIC ENERGY='
         ba_pattern = 'STATE #.* {row} &.* {col}.S GMC-PT-LEVEL COUPLING'
+
         A, N = pp.A, pp.N  # stop flake8 from complaining
         shape = (A, A)
 
@@ -1734,25 +2181,29 @@ def mctdh(**kwargs):
                     bilin_ev[b, a] += temp_dict['--'][b, a] - temp_dict['-+'][b, a]
                     bilin_ev[b, a] /= (4.0 * qsize * qsize)
 
-                    if True and __debug__:
+                    if False and __debug__:
                         counter += 1
                         print(f'BILIN_EV at mode {i} & {j}, processing iteration #{counter}, states {b+1} & {a+1}')
                         pprint.pprint(bilin_ev)
 
             return bilin_ev
 
+        bilinear_dictionary = {}  # store return values in here
         for i, j in upper_triangle_loop_indices(N, 2):
 
+            # ----------------------------------------------------------
+            # extract values from GAMESS files
             temp_dict = {}  # stores temporary arrays (different every single i,j \in N x N loop)
-            for d1, d2 in it.product(['+', '-'], ['+', '-']):
-                key = d1+d2
+            for key in bi_linear_disp_keys:
                 path = bilinear_displacement_filenames[(key, i, j)]
                 temp_dict[key] = extract_energy_at_displaced_geometry(path, key)
                 print(i, j, path)
 
-            if True and __debug__:
+            if False and __debug__:
                 print(f'TEMP DICT at mode {i} & {j}'); pprint.pprint(temp_dict)
 
+            # ----------------------------------------------------------
+            # preform the math / calculation using the values we just extracted
             if not array_style:  # do it with for loops
                 bilin_ev = _compute_using_forloop_style(i, j, temp_dict)
                 if False and __debug__: print(i, j, bilin_ev); breakpoint()
@@ -1763,286 +2214,195 @@ def mctdh(**kwargs):
                     pprint.pprint(bilin_ev);
                     breakpoint()
 
-            bilinear_dictionary[mode_map_dict[i], mode_map_dict[j]] = bilin_ev
+            # ----------------------------------------------------------
+            # store the value in the dictionary
+            key = ij_map[(i, j)]
+            bilinear_dictionary[key] = bilin_ev
 
-        print(f"FULL BILINEAR DICTIONARY! {bilinear_dictionary}")
+        if True and __debug__:  # optional printing of BiLinear dictionary
+            print(
+                '\n',
+                f"{'':-^25}{'FULL BILINEAR DICTIONARY!':^30}{'':-^25}",
+                '\n'.join([f"{k}\n{v}" for k, v in bilinear_dictionary.items()]),
+                f"{'':-^80}",
+                sep='\n'
+            )
+
         return bilinear_dictionary
 
-    def build_parameter_section(model, nof_states, nof_modes):
-        """Returns a string which defines the `PARAMETER-SECTION` of an .op file"""
-        start, end = "PARAMETER-SECTION", "end-parameter-section"
-        header_string = "#{0:^47}#\n#{spacer:^47}#\n"
-        make_header = functools.partial(header_string.format, spacer='-' * 45)
-        # ----------------------------------------------------------
-        # read in all the necessary parameters
-        dipoles = model['dipoles']
-        vibron_ev = model['vibron eV']
-        E0_array_eV = model['E0 eV']
+    def extract_soc(array_style=True):
+        """ x """
+        shape = (A, A)
 
-        lin_data, quad_data, bilin_data = model['Linear'], model['Quadratic'],  model['BiLinear']
-        # ----------------------------------------------------------
-        # begin to assemble the parameter section
-        return_list = [
-            start,
-            make_header('Frequencies'), build_frequencies(vibron_ev),
-            make_header('Electronic Hamitonian'), build_E0(E0_array_eV),
-            make_header('Electronic transition moments'), build_electronic_moments(dipoles),
-            # make_header('Magnetic transition moments'), build_magnetic_moments(M_moments),
-        ]
+        def _extract_linear_soc():
+            """ x """
+            def _compute_using_array_style(temp_dict):
+                return (temp_dict["+1"] - temp_dict["-1"]) / (2*qsize)
 
-        return_list.extend([
-            make_header('Linear Coupling Constants'),  build_linear_coupling(lin_data, nof_states, nof_modes),
-            make_header('Quadratic Coupling Constants'), build_quadratic_coupling(quad_data, nof_states, nof_modes),
-            make_header('Diagonal Bilinear Coupling Constants'), build_bilinear_coupling(bilin_data, nof_states, nof_modes),
-        ])
+            def _compute_using_forloop_style(i, temp_dict):
+                linear_ev = np.zeros(shape)
+                for a, b in upper_triangle_loop_indices(range(A), 2):
+                    linear_ev[b, a] = (temp_dict["+1"][b, a] - temp_dict["-1"][b, a]) / (2*qsize)
 
-        if False:  # SOC_flag
-            return_list.extend([
-                make_header('SOC'), build_linear_coupling(X_lin, nof_states, nof_modes),
-            ])
-        return_list.append(end)
+                return linear_ev
 
-        return '\n'.join(return_list)
-    # # ----------------------------------------------------------
+            lin_dict = {}  # store return values in here
+            for i in range(N):  # do the 1D spin_orbit_coupling terms
 
-    def label_momentum(N):
-        """Return a string containing the momentum labelling of a .op file."""
-        spacer = '|'
-        return '\n'.join([
-            f"1.00*w{i:0>2d}{spacer:>12}{i+1:<3d}KE"
-            for i in range(1, N+1)
-        ]) + '\n'
+                # ----------------------------------------------------------
+                # extract Linear from GAMESS files
+                temp_dict = {}  # stores temporary arrays (different every single i,j \in N x N loop)
+                for key in ['+1', '-1']:
+                    assert key in linear_disp_keys, f"{key=} not in {linear_disp_keys=}"
+                    path = linear_displacement_filenames[(key, i)]
+                    temp_dict[key] = extract_DSOME(path, A)
 
-    def label_position(N):
-        """Return a string containing the position labelling of a .op file."""
-        spacer = '|'
-        return '\n'.join([
-            f"0.50*w{i:0>2d}{spacer:>12}{i+1:<3d}q^2"
-            for i in range(1, N+1)
-        ]) + '\n'
+                # ----------------------------------------------------------
+                # preform the math / calculation using the values we just extracted
+                if not array_style:  # do it with for loops
+                    soc_ev = _compute_using_forloop_style(i, temp_dict)
+                else:
+                    soc_ev = _compute_using_array_style(temp_dict)
 
-    def label_energies(A):
-        """Return a string containing the energy labelling of a .op file."""
-        spacer = '|'
-        return '\n'.join([
-            f"EH_s{a:0>2d}_s{a:0>2d}{spacer:>15}1 S{a:d}&{a:d}"
-            for a in range(1, A+1)
-        ]) + '\n'
+                # ----------------------------------------------------------
+                # store the value in the dictionary
+                lin_dict[pp.mode_map_dict[i]] = soc_ev
 
-    def label_linear_coupling(lin_dict, A, N):
-        """Return a string containing the linear coupling constant labelling of a .op file."""
-        spacer = '|'
+            print("Finished extracting linear SOC")
+            return lin_dict
 
-        assert len(lin_dict.keys()) == N
-        linear_terms = [lin_dict[mode_map_dict[i]] for i in range(N)]
+        def _extract_quadratic_soc(SOC_E0):
+            """
+            `SOC_E0` is the SOC energy values extracted from `zeroth_filename` i.e. refG
+            """
+            def _compute_using_array_style(temp_dict):
+                quad_ev = temp_dict["+2"] + temp_dict["-2"] - 2.0 * SOC_E0
+                quad_ev /= (2. * qsize) ** 2
+                return quad_ev
 
-        return '\n'.join([
-            (
-                f"C1_s{a:0>2d}_s{a:0>2d}_v{i:0>2d}"
-                f"{spacer:>11}1 S{a:d}&{a:d}"
-                f"{spacer:>4}{i+1}  q"
-            )
-            for a, i in it.product(range(1, A+1), range(1, N+1))
-            if not suppress_zeros or not np.isclose(linear_terms[i-1][a-1, a-1], 0.0)
-        ] + [
-            ''  # creates a blank line between the (surface) diagonal and off-diagonal linear terms
-        ] + [
-            (
-                f"C1_s{a2:0>2d}_s{a1:0>2d}_v{i:0>2d}"
-                f"{spacer:>11}1 S{a2:d}&{a1:d}"
-                f"{spacer:>4}{i+1}  q"
-            )
-            for a1, a2, i in it.product(range(1, A+1), range(1, A+1), range(1, N+1))
-            if (a1 != a2)
-            and (not suppress_zeros or not np.isclose(linear_terms[i-1][a2-1, a1-1], 0.0))
-        ]) + '\n'
+            def _compute_using_forloop_style(i, j, temp_dict):
+                quad_ev = np.zeros(shape)
+                for a in range(A):
+                    quad_ev[a, a] = temp_dict["+2"][a, a] + temp_dict["-2"][a, a] - 2.0 * SOC_E0[a, a]
+                    quad_ev[a, a] /= (4.0 * qsize * qsize)
 
-    def label_quadratic_coupling(quad_dict, A, N, diagonal=False):
-        """Return a string containing the quadratic coupling constant labelling of a .op file."""
-        spacer = '|'
+                    for b in range(a):
+                        quad_ev[b, a] = temp_dict["+2"][b, a] + temp_dict["-2"][b, a] - 2.0 * SOC_E0[b, a]
+                        quad_ev[b, a] /= (4.0 * qsize * qsize)
+                return quad_ev
 
-        assert len(quad_dict.keys()) == N
-        quadratic_terms = [quad_dict[mode_map_dict[i]] for i in range(N)]
+            quad_dict = {}  # store return values in here
+            for i in range(N):
+                # ----------------------------------------------------------
+                # extract Quadratic SOC from GAMESS files
+                temp_dict = {}  # stores temporary arrays (different every single i \in N loop)
+                for key in ['+2', '-2']:
+                    assert key in linear_disp_keys, f"{key=} not in {linear_disp_keys=}"
+                    path = linear_displacement_filenames[(key, i)]
+                    temp_dict[key] = extract_DSOME(path, A)
+                    # the extracted value is a dictionary of complex numbers indexed by the surfaces
 
-        return '\n'.join([
-            (
-                f"C2_s{a:0>2d}s{a:0>2d}_v{i:0>2d}v{i:0>2d}"
-                f"{spacer:>9}1 S{a:d}&{a:d}"
-                f"{spacer:>4}{i+1}  q^2"
-            )
-            for a, i in it.product(range(1, A+1), range(1, N+1))
-            if not suppress_zeros or not np.isclose(quadratic_terms[i-1][a-1, a-1], 0.0)
-        ] + [
-                ''  # creates a blank line between the (surface) diagonal and off-diagonal linear terms
-        ] + [
-            (
-                f"C2_s{a2:0>2d}s{a1:0>2d}_v{i:0>2d}v{i:0>2d}"
-                f"{spacer:>9}1 S{a2:d}&{a1:d}"
-                f"{spacer:>4}{i+1}  q^2"
-            )
-            for a1, a2, i in it.product(range(1, A+1), range(1, A+1), range(1, N+1))
-            if (a1 < a2)
-            if not suppress_zeros or not np.isclose(quadratic_terms[i-1][a2-1, a1-1], 0.0)
-        ])
+                if False and __debug__: print(temp_dict["+2"], '\n', temp_dict["-2"]); breakpoint()
 
-    def label_BiLinear_coupling(bi_lin_dict, A, N, diagonal=False):
-        """Return a string containing the quadratic coupling constant labelling of a .op file."""
-        spacer = '|'
+                # ----------------------------------------------------------
+                # preform the math / calculation using the values we just extracted
+                if not array_style:  # do it with for loops
+                    soc_ev = _compute_using_forloop_style(i, temp_dict)
+                else:
+                    soc_ev = _compute_using_array_style(temp_dict)
 
-        bilinear_terms = {}
-        for key in bi_lin_dict.keys():
-            new_key = (
-                selected_mode_list.index(key[0]),
-                selected_mode_list.index(key[1])
-            )
-            bilinear_terms[new_key] = bi_lin_dict[key]
+                # ----------------------------------------------------------
+                # store the value in the dictionary
+                quad_dict[pp.mode_map_dict[i]] = soc_ev
 
-        return '\n'.join([
-            (
-                f"C1_s{a:0>2d}s{a:0>2d}_v{j1:0>2d}v{j2:0>2d}"
-                f"{spacer:>9}1 S{a:d}&{a:d}"
-                f"{spacer:>4}{j1+1}  q{spacer:>6}{j2+1}  q"
-            )
-            for a, j1, j2 in it.product(range(1, A+1), range(1, N+1), range(1, N+1))
-            if (j1 < j2)
-            and (not suppress_zeros or not np.isclose(bilinear_terms[(j1-1, j2-1)][a-1, a-1], 0.0))
-        ] + [
-                ''  # creates a blank line between the (surface) diagonal and off-diagonal linear terms
-        ] + [
-            (
-                f"C1_s{a1:0>2d}s{a2:0>2d}_v{j1:0>2d}v{j2:0>2d}"
-                f"{spacer:>9}1 S{a1:d}&{a2:d}"
-                f"{spacer:>4}{j1+1}  q{spacer:>6}{j2+1}  q"
-            )
-            for a1, a2, j1, j2 in it.product(range(1, A+1), range(1, A+1), range(1, N+1), range(1, N+1))
-            if (a1 < a2) and (j1 < j2)
-            and (not suppress_zeros or not np.isclose(bilinear_terms[(j1-1, j2-1)][a1-1, a2-1], 0.0))
-        ])
+            print("Finished extracting quadratic SOC")
+            return quad_dict
 
-    def benny_label_SOC_section():
+        def _extract_bilinear_soc():
+            """ x """
+            def _compute_using_array_style(temp_dict):
+                bilin_ev = np.zeros(shape, dtype=C128)
+                bilin_ev += temp_dict['++'] - temp_dict['+-']
+                bilin_ev += temp_dict['--'] - temp_dict['-+']
+                bilin_ev /= (2. * qsize) ** 2
+                return bilin_ev
 
-        spacer_format_string = f"# {'-':^60s} #\n"
-        hfs = header_format_string = "# {:^60s} #\n" + spacer_format_string
-        block = hfs.format("SOC FULL HAMILTONIAN SOC OFF-DIAGONAL VIBRONIC COUPLINGS")
+            def _compute_using_forloop_style(i, j, temp_dict):
+                """ only use i,j for debug print statements """
+                bilin_ev = np.zeros(shape, dtype=C128)
+                for a in range(A):
+                    bilin_ev[a, a] += temp_dict['++'][a, a] - temp_dict['+-'][a, a]
+                    bilin_ev[a, a] += temp_dict['--'][a, a] - temp_dict['-+'][a, a]
+                    bilin_ev[a, a] /= (4.0 * qsize * qsize)
+                    for b in range(a):
+                        bilin_ev[b, a] += temp_dict['++'][b, a] - temp_dict['+-'][b, a]
+                        bilin_ev[b, a] += temp_dict['--'][b, a] - temp_dict['-+'][b, a]
+                        bilin_ev[b, a] /= (4.0 * qsize * qsize)
+                return bilin_ev
 
-        # prepare `make_line`
-        format_string_1 = "{label:<25s}{link:<20s}\n"
-        format_string_2 = "{label:<25s}{link:<20s}\n"
-        format_string_3 = "{label:<25s}{link:<20s}\n"
-        format_string_4 = "{label:<25s}{link:<20s}\n"
+            bilin_dict = {}
+            for i, j in upper_triangle_loop_indices(N, 2):
 
-        make_line_1 = functools.partial(format_string_1.format)
-        make_line_2 = functools.partial(format_string_2.format)
-        make_line_3 = functools.partial(format_string_3.format)
-        make_line_4 = functools.partial(format_string_4.format)
+                # ----------------------------------------------------------
+                # extract BiLinear SOC from GAMESS files
+                temp_dict = {}  # stores temporary arrays (different every single i,j \in N x N loop)
+                for key in bi_linear_disp_keys:
+                    path = bilinear_displacement_filenames[(key, i, j)]
+                    temp_dict[key] = extract_DSOME(path, A)
+                    # the extracted value is a dictionary of complex numbers indexed by the surfaces
 
-        for i, a in it.product(range(1,N+1), range(1,A+1)):
-            for j, b in it.product(range(1,i+1), range(1,a+1)):
-                i_label, j_label = modes_included[[i, j]]
-                print(f"{i=}, {j=}, {a=}, {b=}")
+                # ----------------------------------------------------------
+                # preform the math / calculation using the values we just extracted
+                if not array_style:  # do it with for loops
+                    soc_ev = _compute_using_forloop_style(i, j, temp_dict)
+                else:
+                    soc_ev = _compute_using_array_style(temp_dict)
 
-                l1 = "C1_s{:>02d}_s{:>02d}_v{:>02d}".formmat(j, i, a)
-                make_line(label=f"I*{l1}r", link=f"|1 Z{b}&{a} | {j+1} q")
-                make_line(label=f"-I*{l1}i", link=f"|1 Z{a}&{b} | {j+1} q")
+                # ----------------------------------------------------------
+                # store the value in the dictionary
+                key = ij_map[(i, j)]
+                bilin_dict[key] = soc_ev
 
-                l2 = "C2_s{:>02d}_s{:>02d}_v{:>02d}".formmat(j, i, a)
-                make_line(label=f"I*{l2}r", link=f"|1 Z{b}&{a} | {j+1} q^2")
-                make_line(label=f"-I*{l2}i", link=f"|1 Z{a}&{b} | {j+1} q^2")
+            print("Finished extracting BiLinear SOC")
+            return bilin_dict
 
-                l3 = "C1_s{:>02d}_s{:>02d}_v{:>02d}_v{:>02d}".formmat(j, i, i_label, j_label)
-                make_line(label=f"I*{l3}r", link=f"|1 Z{b}&{a} | {j+1} q | {i+1} q")
-                make_line(label=f"-I*{l3}i", link=f"|1 Z{a}&{b} | {j+1} q | {i+1} q")
+        def compute_total_soc(soc_dict):
+            """ compute the full spin orbit couplings """
+            total_dict = {}
 
-                l4 = "SOC_s{:>02d}_s{:>02d}_v{:>02d}_v{:>02d}".formmat(j, i, i_label, j_label)
-                make_line(label=f"I*{l4}r", link=f"|1 Z{b}&{a} | {j+1} q")
-                make_line(label=f"-I*{l4}i", link=f"|1 Z{a}&{b} | {j+1} q")
-        return
+            # methods are just different syntax
 
-    def build_hamiltonian_section(model, nof_states, nof_modes, SOC_flag=False):
-        """Returns a string which defines the `HAMILTONIAN-SECTION` of an .op file"""
-        start, end = "HAMILTONIAN-SECTION", "end-hamiltonian-section"
-        spec = ''.join([
-            ' modes   |  el  |',
-            ''.join([f" v{N+1:0>2d}|" for N in range(nof_modes)]),
-            '\n'
-        ])
+            if True:  # method 1
+                C = soc_dict['constant']  # alias
+                Lin = soc_dict['Linear']  # alias
+                Quad = soc_dict['Quadratic']  # alias
+                BiLin = soc_dict['BiLinear']  # alias
 
-        return_list = [
-            start,
-            spec,
-            label_momentum(nof_modes),
-            label_position(nof_modes),
-            label_energies(nof_states),
-        ]
+                for i, j in upper_triangle_loop_indices(N, 2):
+                    i, j = ij_map[(i, j)]  # remap to 8,9 etc..
+                    # adding (A,A) shape arrays together element-wise
+                    total_dict[(i, j)] = C + Lin[i] + Quad[i] + BiLin[(i, j)]
+            else:  # method 1
+                for i, j in upper_triangle_loop_indices(N, 2):
+                    i, j = ij_map[(i, j)]  # remap to 8,9 etc..
+                    total_dict[(i, j)] = soc_dict['constant']
+                    total_dict[(i, j)] += soc_dict['Linear'][i]
+                    total_dict[(i, j)] += soc_dict['Quadratic'][i]
+                    total_dict[(i, j)] += soc_dict['BiLinear'][(i, j)]
 
-        if "Linear" in model.keys():
-            return_list.append(
-                label_linear_coupling(model['Linear'], nof_states, nof_modes)
-            )
-        if "Quadratic" in model.keys():
-            return_list.append(
-                label_quadratic_coupling(model['Quadratic'], nof_states, nof_modes)
-            )
-        if "BiLinear" in model.keys():
-            return_list.append(
-                label_BiLinear_coupling(model['BiLinear'], nof_states, nof_modes)
-            )
+            print("Finished calculating the Total SOC")
+            return total_dict
 
-        if "SOC" in model.keys():
-            return_list.append(
-                benny_label_SOC_section(model['SOC'], nof_states, nof_modes)
-            )
+        soc_dict = {}
+        soc_dict['constant'] = extract_DSOME(zeroth_filename, A)
+        soc_dict['Linear'] = _extract_linear_soc()
+        soc_dict['Quadratic'] = _extract_quadratic_soc(soc_dict['constant'])
+        soc_dict['BiLinear'] = _extract_bilinear_soc()
 
-        return_list.append(end)
+        # compute the total
+        soc_dict['Total'] = compute_total_soc(soc_dict)
 
-        return '\n'.join(return_list)
-    # # ----------------------------------------------------------
-
-    def neil_build_dipole_moments_section(nof_states, nof_modes):
-        """Returns a string which defines the `HAMILTONIAN-SECTION_Ex` of an .op file"""
-        start, end = "HAMILTONIAN-SECTION_Ex", "end-hamiltonian-section"
-        spec = ''.join([
-            ' modes   |  el  |',
-            ''.join([f" v{n+1:0>2d}|" for n in range(nof_modes)]),
-            '\n'
-        ])
-
-        def label_dipole_moments_energies(A):
-            """Return a string containing the dipole moments energy labelling of a .op file."""
-            spacer = '|'
-            return '\n'.join([
-                f"Ex_s00_s{a:0>2d}{spacer:>15}1 S{A:d}&{a:d}"
-                for a in range(1, A)
-            ]) + '\n'
-
-        string = '\n'.join([
-            start,
-            spec,
-            label_dipole_moments_energies(nof_states),
-            end,
-        ])
-        return string
-
-    def build_operator_onto_dipole_moments_section(model, A, N):
-        """  """
-        block = f"\nHAMILTONIAN-SECTION_Ex\n"
-
-        # Write modes and mode labels
-        mode_number_key = [selected_mode_list[i] for i in range(N)]
-        h_labels = ["modes", "el", ] + [
-            f"v{s:>02d}"
-            for s in mode_number_key
-        ]
-
-        block += " | ".join(h_labels) + "\n"
-        block += f"{'-'*47}\n\n"
-
-        for j in range(1, A+1):
-            block += f"1.0         |1 S{A+1}&{j}\n" # A+1, set ground state as fictitious +1 state
-
-        block += "\nend-hamiltonian-section\n"
-
-        return block
+        return soc_dict
 
     # ----------------------------------------------------------
 
@@ -2059,16 +2419,24 @@ def mctdh(**kwargs):
             "E0 eV": E0_array_eV,
             "E0 au": E0_array_au,
             "dipoles": extract_etdm(zeroth_filename),
-            "Linear": extract_linear(),
-            "Quadratic": extract_quadratic(E0_array_eV, E0_array_au, vibron_ev),
-            "BiLinear": extract_bilinear(),
         }
 
+        model["Linear"] = extract_linear()
+        model["Quadratic"] = extract_quadratic(E0_array_eV, E0_array_au, vibron_ev)
+        model["BiLinear"] = extract_bilinear()
+
+        if pp.SOC_flag:
+            try:
+                model['SOC'] = extract_soc()
+            except Exception as e:
+                print(str(e), "\nFailed to extract SOC! Continue?")
+                breakpoint()
+
         file_contents = "\n".join([
-            build_op_section(job_title),
-            build_parameter_section(model, A, N),
-            build_hamiltonian_section(model, A, N),
-            build_operator_onto_dipole_moments_section(model, A, N),
+            make_op_section(job_title),
+            make_parameter_section(model, A, N),
+            make_hamiltonian_section(model, A, N),
+            make_operator_onto_dipole_moments_section(model, A, N),
             "end-operator\n"
         ])
 
@@ -2145,663 +2513,6 @@ def mctdh(**kwargs):
         import sys; sys.exit()
 
     _write_op()
-
-    breakpoint()
-
-    # ------------------------------------------------------------------------
-    import sys; sys.exit()
-    # ------------------------------------------------------------------------
-
-    def old_code_block():
-        # different header style
-        hfs = header_format_string = spacer_format_string + "# {:^60s} #\n" + spacer_format_string
-
-        file_contents += _make_ETD_block(header_format_string)
-        file_contents += "end-parameter-section\n"
-
-        # ----------------------------------------------------------
-
-        format_string = "{label:<25s}={value:>-15.9f}{units:>8s}\n"
-        make_line = functools.partial(format_string.format, units=", ev")
-
-        distcoord_plus, distcoord_minus, distcoord_plus_x2, distcoord_minus_x2 = diabatize[0], diabatize[1], diabatize[2], diabatize[3]
-        distcoord_pp, distcoord_pm, distcoord_mp, distcoord_mm = diabatize[4], diabatize[5], diabatize[6], diabatize[7]
-
-        coord_disp_plus = {}
-        coord_disp_minus = {}
-        coord_disp_plusx2 = {}
-        coord_disp_minusx2 = {}
-        coord_disp_pp = {}
-        coord_disp_pm = {}
-        coord_disp_mp = {}
-        coord_disp_mm = {}
-
-        for icomp in range(1, ndim + 1):
-            coord_disp_plus[icomp] = distcoord_plus[icomp]
-            print(f'icomp: {icomp}, coord_disp_plus: {coord_disp_plus[icomp]}')
-            coord_disp_minus[icomp] = distcoord_minus[icomp]
-            print(f'icomp: {icomp}, coord_disp_minus: {coord_disp_minus[icomp]}')
-            coord_disp_plusx2[icomp] = distcoord_plus_x2[icomp]
-            print(f'icomp: {icomp}, coord_disp_plusx2: {coord_disp_plusx2[icomp]}')
-            coord_disp_minusx2[icomp] = distcoord_minus_x2[icomp]
-            print(f'icomp: {icomp}, coord_disp_minusx2: {coord_disp_minusx2[icomp]}')
-            coord_disp_pp[icomp] = distcoord_pp[icomp]
-            print(f'icomp: {icomp}, coord_disp_pp: {coord_disp_pp[icomp]}')
-            coord_disp_pm[icomp] = distcoord_pm[icomp]
-            print(f'icomp: {icomp}, coord_disp_pm: {coord_disp_pm[icomp]}')
-            coord_disp_mp[icomp] = distcoord_mp[icomp]
-            print(f'icomp: {icomp}, coord_disp_mp: {coord_disp_mp[icomp]}')
-            coord_disp_mm[icomp] = distcoord_mm[icomp]
-            print(f'icomp: {icomp}, coord_disp_mm: {coord_disp_mm[icomp]}')
-
-        spacer_format_string = f"# {'-':^60s} #\n"
-        hfs = header_format_string = "# {:^60s} #\n" + spacer_format_string
-
-        params.append(hfs.format('Frequencies'))
-        linear.append(hfs.format('Linear Coupling Constants'))
-        quadratic.append(hfs.format('Quadratic Coupling Constants'))
-        bilinear.append(hfs.format('Bilinear Coupling Constants'))
-
-        # Loop through modes
-        for kmode in range(1, nmodes + 1):
-            imode = modes_included[kmode]
-
-            displacement_filenames = {
-                "+1": f'{filnam}_mode{imode}_+{qsize}.out',
-                "+2": f'{filnam}_mode{imode}_+{qsize}x2.out',
-                "-1": f'{filnam}_mode{imode}_-{qsize}.out',
-                "-2": f'{filnam}_mode{imode}_-{qsize}x2.out',
-                # "-2": f'{filnam}_mode{imode}_-{qsize}x2.out',
-                # "-2": f'{filnam}_mode{imode}_-{qsize}x2.out',
-                # "-2": f'{filnam}_mode{imode}_-{qsize}x2.out',
-                # "-2": f'{filnam}_mode{imode}_-{qsize}x2.out',
-            }
-
-            vibron_ev = freqcm[imode] * wn2ev
-            Params.append(make_line(label=f"w{imode:>02d}", value=vibron_ev))
-            # Params.append("\n")
-            # Coupling.append("#Linear and quadratic diagonal and off-diagonal vibronic coupling constants:\n")
-
-            grace_code = {}
-            for key in displacement_keys:
-                grace_code[key] = subprocess_call_wrapper(["grep", "DONE WITH MP2 ENERGY", displacement_filenames[key]])
-
-            """ either of these work (logic wise)
-                if any(code != 0 for code in grace_code.values()):
-                if not all(code == 0 for code in grace_code.values()):
-            """
-
-            if not all(code == 0 for code in grace_code.values()):
-                print(f"not good to extract. Skipping mode {imode} for extracting vibronic couplings\n")
-
-            else:  # otherwise we're good to extract
-                print("\n good to extract\n")
-                # Extract the diagonal and off-diagonal vibronic coupling
-                for ist in range(1, nstate + 1):
-
-                    def _make_diag_lin_quad(i):
-                        pattern = f'STATE #.* {i}.S GMC-PT-LEVEL DIABATIC ENERGY='
-
-                        # Ediab_au = [extract_diabatic_energy(displacement_filenames[kmode][k], pattern) for k in displacement keys]  $ one liner list comprehension
-                        # Ediab_au = {k: extract_diabatic_energy(displacement_filenames[kmode][k], pattern) for k in displacement keys}  # one liner dictionary comprehension
-                        Ediab_au = {}
-                        for key in displacement_keys:
-                            Ediab_au[key] = extract_diabatic_energy(displacement_filenames[key], pattern)
-
-                        # Extract Ediab_au_0
-                        Ediab_au_0 = extract_diabatic_energy(zeroth_filename, pattern)
-                        linear_diag_ev = (Ediab_au["+1"] - Ediab_au["-1"]) * ha2ev / (2 * qsize)
-                        quadratic_diag_ev = (Ediab_au["+2"] + Ediab_au["-2"] - 2.0 * Ediab_au_0) * ha2ev / (4.0 * qsize * qsize)
-
-                        # We only view the difference between the actual force constant and the vibron
-                        # as the quadratic diagonal coupling for the diabatic state.
-                        quadratic_diag_ev = quadratic_diag_ev - vibron_ev
-
-                        # Print and store results
-                        print(f"State {i} Linear Diagonal: {linear_diag_ev} Quadratic Diagonal: {quadratic_diag_ev}, ev\n")
-
-                        # machine accuracy is typically 16 digits
-                        s1 = make_line(label=f"C1_s{i:>02d}_s{i:>02d}_v{imode:>02d}", value=linear_diag_ev)
-                        s2 = make_line(label=f"C2_s{i:>02d}s{i:>02d}_v{imode:>02d}v{imode:>02d}", value=quadratic_diag_ev)
-                        return s1, s2
-
-                    s1, s2 = _make_diag_lin_quad(ist)
-                    Linear.append(s1)
-                    Quadratic.append(s2)
-
-                    # # Loop over jst
-                    jlast = ist - 1
-                    for jst in range(1, jlast + 1):
-
-                        def _make_offdiag_lin_quad(i, j):
-                            pattern = f'STATE #.* {j} &.* {i}.S GMC-PT-LEVEL COUPLING'
-
-                            # Extract Coup_ev_0
-                            Coup_ev_0 = extract_coupling_energy(zeroth_filename, pattern)
-
-                            Coup_ev = {}
-                            for key in displacement_keys:
-                                Coup_ev[key] = extract_diabatic_energy(displacement_filenames[key], pattern)
-
-                            # Compute linear off-diagonal coupling
-                            linear_offdiag_ev = (Coup_ev["+1"] - Coup_ev["-1"]) / (2 * qsize)
-                            # Compute quadratic off-diagonal coupling
-                            quadratic_offdiag_ev = (Coup_ev["+2"] + Coup_ev["-2"] - 2.0 * Coup_ev_0) / (4.0 * qsize * qsize)
-
-                            # Print and store results
-                            print(f"State {j} & {i} Linear Off-Diagonal: {linear_offdiag_ev}\n")
-                            print(f"State {j} & {i} Quadratic Off-Diagonal: {quadratic_offdiag_ev}\n")
-                            s1 = make_line(label=f"C1_s{j:>02d}_s{i:>02d}_v{imode:>02d}", value=linear_offdiag_ev)
-                            s2 = make_line(label=f"C2_s{j:>02d}s{i:>02d}_v{imode:>02d}v{imode:>02d}", value=quadratic_offdiag_ev)
-                            return s1, s2
-
-                        s1, s2 = _make_diag_lin_quad(ist, jst)
-                        Linear.append(s1)
-                        Quadratic.append(s2)
-
-                        """ this is just representative (you can delete - just for learning purposes)
-                        if False: # don't actually try to do right now
-                            order_name = {1: 'Linear', 2: 'Quadratic'}
-                            for i in [1, 2]:
-                                _number = [linear_offdiag_ev, quadratic_offdiag_ev][i]
-                                print(f"State {jst} & {ist} {order_name[i]} Off-Diagonal: {_number}\n")
-                                oprder_list[i].append(make_line(label=f"C{i}_s{jst:>02d}_s{ist:>02d}_v{imode:>02d}", value=_number))
-                        """
-
-
-            # Extracting bilinear vibronic coupling
-            # Coupling.append("#Bilinear diagonal and off-diagonal vibronic coupling constants:\n")
-            lmode_last = kmode - 1
-            for lmode in range(1, lmode_last + 1):
-                jmode = modes_included[lmode]
-
-                grace_code_pp = subprocess_call_wrapper(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out"])
-                grace_code_pm = subprocess_call_wrapper(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out"])
-                grace_code_mp = subprocess_call_wrapper(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out"])
-                grace_code_mm = subprocess_call_wrapper(["grep", "DONE WITH MP2 ENERGY", f"{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out"])
-
-                if all(code == 0 for code in [grace_code_pp, grace_code_pm, grace_code_mp, grace_code_mm]):
-                    print(f"\n Good to extract bilinear for modes {imode} {jmode} \n")
-                    for ist in range(1, nstate + 1):
-                        pattern = f'STATE #.* {ist}.S GMC-PT-LEVEL DIABATIC ENERGY='
-
-                        # do this style again?
-                        # big_displacement_keys = ['++', '+-', '-+', '--']
-                        # Ediab_au = {}
-                        # for key in displacement_keys:
-                        #     Ediab_au[key] = extract_diabatic_energy(big_displacement_filenames[key], pattern)
-
-
-                        # Extract Ediab_au_pp
-                        Ediab_au_pp = extract_diabatic_energy(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out', pattern)
-
-                        # Extract Ediab_au_pm
-                        Ediab_au_pm = extract_diabatic_energy(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out', pattern)
-
-                        # Extract Ediab_au_mp
-                        Ediab_au_mp = extract_diabatic_energy(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out', pattern)
-
-                        # Extract Ediab_au_mm
-                        Ediab_au_mm = extract_diabatic_energy(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out', pattern)
-
-                        bilinear_diag_ev = (Ediab_au_pp + Ediab_au_mm - Ediab_au_pm - Ediab_au_mp ) * ha2ev / (4.0 * qsize * qsize )
-
-                        print(f"State {ist} Bilinear Diagonal: {bilinear_diag_ev}\n")
-                        Bilinear.append(make_line(label=f"C1_s{ist:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}", value=bilinear_diag_ev))
-
-                        # # Loop over jst
-                        jlast = ist - 1
-                        for jst in range(1, jlast + 1):
-                            pattern = f'STATE #.* {jst} &.* {ist}.S GMC-PT-LEVEL COUPLING'
-                            # Extract Coup_ev_pp
-                            Coup_ev_pp = extract_coupling_energy(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out', pattern)
-                            # Extract Coup_ev_pm
-                            Coup_ev_pm = extract_coupling_energy(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out', pattern)
-
-                            # Extract Coup_ev_mp
-                            Coup_ev_mp = extract_coupling_energy(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out', pattern)
-
-                            # Extract Coup_ev_mm
-                            Coup_ev_mm = extract_coupling_energy(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out', pattern)
-
-                            bilinear_offdiag_ev = ( Coup_ev_pp + Coup_ev_mm - Coup_ev_pm - Coup_ev_mp ) / (4.0 * qsize * qsize )
-
-                            print(f"State {jst} & {ist} Bilinear Off-Diagonal: {bilinear_offdiag_ev}\n")
-                            Bilinear.append(make_line(label=f"C1_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}", value=bilinear_offdiag_ev))
-
-                            if SOC_flag:
-
-                                try:
-
-                                    # Extract DSOME_cm_pp
-                                    DSOME_cm_pp = extract_DSOME(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_+{qsize}.out', nstate)
-                                    DSOME_cm_pp_real, DSOME_cm_pp_imag = DSOME_cm_pp[0], DSOME_cm_pp[1]
-
-                                    # Extract DSOME_cm_pm
-                                    DSOME_cm_pm = extract_DSOME(f'{filnam}_mode{imode}_+{qsize}_mode{jmode}_-{qsize}.out', nstate)
-                                    DSOME_cm_pm_real, DSOME_cm_pm_imag = DSOME_cm_pm[0], DSOME_cm_pm[1]
-
-                                    # Extract DSOME_cm_mp
-                                    DSOME_cm_mp = extract_DSOME(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_+{qsize}.out', nstate)
-                                    DSOME_cm_mp_real, DSOME_cm_mp_imag = DSOME_cm_mp[0], DSOME_cm_mp[1]
-
-                                    # Extract DSOME_cm_mm
-                                    DSOME_cm_mm = extract_DSOME(f'{filnam}_mode{imode}_-{qsize}_mode{jmode}_-{qsize}.out', nstate)
-                                    DSOME_cm_mm_real, DSOME_cm_mm_imag = DSOME_cm_mm[0], DSOME_cm_mm[1]
-
-
-                                except Exception as e:
-                                    print(f"Error in SOC: {str(e)}")
-                else:
-                    print(f"not good to extract. Skipping mode {imode} mode {jmode} for extracting bilinear vibronic couplings")
-
-        if SOC_flag:
-            for kmode in range(1, nmodes + 1):
-                imode = modes_included[kmode]
-
-                displacement_filenames = {
-                    "+1": f'{filnam}_mode{imode}_+{qsize}.out',
-                    "+2": f'{filnam}_mode{imode}_+{qsize}x2.out',
-                    "-1": f'{filnam}_mode{imode}_-{qsize}.out',
-                    "-2": f'{filnam}_mode{imode}_-{qsize}x2.out',
-                    # "-2": f'{filnam}_mode{imode}_-{qsize}x2.out',
-                    # "-2": f'{filnam}_mode{imode}_-{qsize}x2.out',
-                    # "-2": f'{filnam}_mode{imode}_-{qsize}x2.out',
-                    # "-2": f'{filnam}_mode{imode}_-{qsize}x2.out',
-                }
-
-                DSOME_cm = {}
-                for key in displacement_keys:
-                    try:
-                        dsome_real, dsome_imag = extract_DSOME(displacement_filenames[key], nstate)
-                        DSOME_cm[k] = {'real': dsome_real, 'imag': dsome_imag}
-                        # DSOME_cm[key] = [dsome_real, dsome_imag]
-                    except Exception as e:
-                        print(f"Error in SOC: {str(e)}")
-                        pass  # keep executing, we just needed to log that there was an error
-                        # breakpoint()  # if you needed to investigate the cause of the error
-
-                DSOME_cm_plus_real = DSOME_cm["+1"]['real']
-                DSOME_cm_plus_imag = DSOME_cm["+1"]['imag']
-                DSOME_cm_minus_real = DSOME_cm["-1"]['real']
-                DSOME_cm_minus_imag = DSOME_cm["-1"]['imag']
-                DSOME_cm_plusx2_real = DSOME_cm["+2"]['real']
-                DSOME_cm_plusx2_imag = DSOME_cm["+2"]['imag']
-                DSOME_cm_minusx2_real = DSOME_cm["+2"]['real']
-                DSOME_cm_minusx2_imag = DSOME_cm["+2"]['imag']
-
-
-                lmode_last = kmode - 1
-                for lmode in range(1, lmode_last + 1):
-                    jmode = modes_included[lmode]
-                    for ist in range(1, nstate + 1):
-                        jlast = ist - 1
-                        for jst in range(1, jlast + 1):
-
-                            # intialize dictionaries to contain
-                            linear_SOC_cm_real = {}
-                            linear_SOC_cm_imag = {}
-                            quadratic_SOC_cm_real = {}
-                            quadratic_SOC_cm_imag = {}
-                            bilinear_SOC_cm_real = {}
-                            bilinear_SOC_cm_imag = {}
-                            full_Ham_SOC_cm_real = {}
-                            full_Ham_SOC_cm_imag = {}
-
-                            # Set jst ist tuple as index
-                            idx = (jst, ist)
-
-                            # Compute linear SOC
-                            DSOME_cm_plus_real[idx] *= coord_disp_plus[imode]
-                            DSOME_cm_plus_imag[idx] *= coord_disp_plus[imode]
-                            DSOME_cm_minus_real[idx] *= coord_disp_minus[imode]
-                            DSOME_cm_minus_imag[idx] *= coord_disp_minus[imode]
-                            linear_SOC_cm_real[idx] = (DSOME_cm_plus_real[idx] - DSOME_cm_minus_real[idx]) / (2 * qsize)
-                            linear_SOC_cm_imag[idx] = (DSOME_cm_plus_imag[idx] - DSOME_cm_minus_imag[idx]) / (2 * qsize)
-
-                            # Compute quadratic SOC
-                            DSOME_cm_plusx2_real[idx] *= coord_disp_plusx2[imode] * coord_disp_plusx2[imode]
-                            DSOME_cm_plusx2_imag[idx] *= coord_disp_plusx2[imode] * coord_disp_plusx2[imode]
-                            DSOME_cm_minusx2_real[idx] *= coord_disp_minusx2[imode] * coord_disp_minusx2[imode]
-                            DSOME_cm_minusx2_imag[idx] *= coord_disp_minusx2[imode] * coord_disp_minusx2[imode]
-                            quadratic_SOC_cm_real[idx] = (DSOME_cm_plusx2_real[idx] + DSOME_cm_minusx2_real[idx] - 2.0 * DSOME_cm_0_real[idx]) / (4.0 * qsize * qsize)
-                            quadratic_SOC_cm_imag[idx] = (DSOME_cm_plusx2_imag[idx] + DSOME_cm_minusx2_imag[idx] - 2.0 * DSOME_cm_0_imag[idx]) / (4.0 * qsize * qsize)
-
-                            # Compute bilinear SOC
-                            DSOME_cm_pp_real[idx] *= coord_disp_pp[imode] * coord_disp_pp[jmode]
-                            DSOME_cm_pp_imag[idx] *= coord_disp_pp[imode] * coord_disp_pp[jmode]
-                            DSOME_cm_mm_real[idx] *= coord_disp_mm[imode] * coord_disp_mm[jmode]
-                            DSOME_cm_mm_imag[idx] *= coord_disp_mm[imode] * coord_disp_mm[jmode]
-                            DSOME_cm_pm_real[idx] *= coord_disp_pm[imode] * coord_disp_pm[jmode]
-                            DSOME_cm_pm_imag[idx] *= coord_disp_pm[imode] * coord_disp_pm[jmode]
-                            DSOME_cm_mp_real[idx] *= coord_disp_mp[imode] * coord_disp_mp[jmode]
-                            DSOME_cm_mp_imag[idx] *= coord_disp_mp[imode] * coord_disp_mp[jmode]
-                            bilinear_SOC_cm_real[idx] = (DSOME_cm_pp_real[idx] + DSOME_cm_mm_real[idx] - DSOME_cm_pm_real[idx] - DSOME_cm_mp_real[idx] ) / (4.0 * qsize * qsize )
-                            bilinear_SOC_cm_imag[idx] = (DSOME_cm_pp_imag[idx] + DSOME_cm_mm_imag[idx] - DSOME_cm_pm_imag[idx] - DSOME_cm_mp_imag[idx] ) / (4.0 * qsize * qsize )
-
-                            # Compute full SOC
-                            full_Ham_SOC_cm_real[idx] = (DSOME_cm_0_real[idx] + linear_SOC_cm_real[idx] + quadratic_SOC_cm_real[idx] + bilinear_SOC_cm_real[idx])
-                            full_Ham_SOC_cm_imag[idx] = (DSOME_cm_0_imag[idx] + linear_SOC_cm_imag[idx] + quadratic_SOC_cm_imag[idx] + bilinear_SOC_cm_imag[idx])
-
-                            # Hij^(0) + lij^(1)*x_1 + lij^(2)*x_2 + 0.5qij^(1)*x_1 ^ 2 + 0.5qij^(2)*x_2 ^ 2 + bij^(1,2) * x_1 x_2
-                            # Does this mean I have to extract the atom coordinates from every file too?
-                            # print(imode, icomp, refcoord[icomp], nrmmod[icomp, imode], coord_disp_plus, coord_disp_minus, distcoord_plus[icomp], distcoord_minus[icomp])
-                            # Probably is distcoord_plus and distcoord_minus for x1,x2 respectively
-
-                            # Print and store results
-                            SOC.append(make_line(label=f"C1_s{jst:>02d}_s{ist:>02d}_v{imode:>02d}r", value=linear_SOC_cm_real[idx], units=', cm-1'))
-                            SOC.append(make_line(label=f"C1_s{jst:>02d}_s{ist:>02d}_v{imode:>02d}i", value=linear_SOC_cm_imag[idx], units=', cm-1'))
-                            SOC.append("\n")
-
-                            SOC.append(make_line(label=f"C2_s{jst:>02d}s{ist:>02d}_v{imode:>02d}r", value=quadratic_SOC_cm_real[idx], units=', cm-1'))
-                            SOC.append(make_line(label=f"C2_s{jst:>02d}s{ist:>02d}_v{imode:>02d}i", value=quadratic_SOC_cm_imag[idx], units=', cm-1'))
-                            SOC.append("\n")
-
-                            SOC.append(make_line(label=f"C1_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}r", value=bilinear_SOC_cm_real[idx], units=', cm-1'))
-                            SOC.append(make_line(label=f"C1_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}i", value=bilinear_SOC_cm_imag[idx], units=', cm-1'))
-                            SOC.append("\n")
-
-                            print(f"State {jst:>02d} & {ist:>02d} SOC (real) at modes {imode:>02d} & {jmode:>02d} {full_Ham_SOC_cm_real[idx]}, cm-1\n")
-                            SOC.append(make_line(label=f"SOC_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}r", value=full_Ham_SOC_cm_real[idx], units=', cm-1'))
-
-                            print(f"State {jst:>02d} & {ist:>02d} SOC (imag) at modes {imode:>02d} & {jmode:>02d} {full_Ham_SOC_cm_imag[idx]}, cm-1\n")
-                            SOC.append(make_line(label=f"SOC_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}i", value=full_Ham_SOC_cm_imag[idx], units=', cm-1'))
-                            SOC.append("\n")
-
-        file_contents = params + ['\n',]
-        file_contents += linear + ['\n',]
-        file_contents += quadratic + ['\n',]
-        file_contents += bilinear + ['\n',]
-        file_contents += SOC + ['\n',]
-
-        # Params.append("\n")
-        # Params.extend(Linear)
-        # Params.append("\n")
-        # Params.extend(Quadratic)
-        # Params.append("\n")
-        # Params.extend(Bilinear)
-        # Params.append("\n")
-        # Params.extend(SOC)
-        # Params.append("\n")
-
-        # different header style
-        hfs = header_format_string = spacer_format_string + "# {:^60s} #\n" + spacer_format_string
-
-        file_contents += _make_ETD_block(header_format_string)
-        file_contents += "end-parameter-section\n"
-
-        header_name_list = [
-            "HAMILTONIAN-SECTION",
-            "KINETIC OPERATOR FOR NORMAL MODES",
-            "HARMONIC OSCILLATOR POTENTIALS FOR NORMAL MODES",
-            "ELECTRONIC COUPLING AT REFERENCE STRUCTURE",
-            "LINEAR DIAGONAL VIBRONIC COUPLINGS",
-            "LINEAR OFF-DIAGONAL VIBRONIC COUPLINGS",
-            "QUADRATIC DIAGONAL VIBRONIC COUPLINGS",
-            "QUADRATIC OFF-DIAGONAL VIBRONIC COUPLINGS",
-            "BILINEAR DIAGONAL VIBRONIC COUPLINGS",
-            "BILINEAR OFF-DIAGONAL VIBRONIC COUPLINGS",
-        ]
-
-        # Open mctdh.op file for writing
-        with open('mctdh.op', 'a') as mctdh_file:
-
-            labels = [
-
-            ]
-
-            # this part isn't done yet ---- IN PROGRESS
-
-            def _make_hamiltonian_section():
-
-                block = header_format_string.format(header_name_list[0])
-
-                # Write modes and mode labels
-                mode_labels = [f"v{n:>02d}" for n in pp.selected_mode_list]
-                block += "modes | el | " + " | ".join(mode_labels) + "\n"
-
-                for i, label in enumerate(pp.selected_mode_list):
-                    block += f"1.00*w{label:>02d}   |{i+2} KE\n"
-                    block += f"0.50*w{label:>02d}   |{i+2} q^2\n"
-
-                for a in range(1, A+2):
-                    block += f"EH_s{a:>02d}_s{a:>02d} |1 S{a}&{a}\n"
-
-                block += "\n"
-
-                _list1 = [
-                    "EH_s{}_s{}",
-                    "C1_s{}_s{}_v{}",
-                    "C1_s{}_s{}_v{}_v{}",
-                    "C2_s{}_s{}_v{}_v{}",
-                ]
-
-                _list2 = [
-                    "|1 S{a:}&{a:} |{i:} q",
-                    "|1 S{b:}&{a:} |{i:} q",
-                    "|1 S{a:}&{a:} |{i:} q^2",
-                    "|1 S{a:}&{a:} |{i:} q |{j:} q",
-                    "|1 S{b:}&{a:} |{i:} q |{j:} q",
-                ]
-
-            def label_linear_coupling(linear_terms, A, N):
-                """Return a string containing the linear coupling constant labelling of a .op file."""
-                spacer = '|'
-                if diagonal:
-                    return '\n'.join([
-                        f"C1_s{a:0>2d}_s{a:0>2d}_v{i:0>2d}{spacer:>11}1 S{a:d}&{a:d}{spacer:>4}{i+1}  q"
-                        for a, i in it.product(range(1, A+1), range(1, N+1))
-                        if not np.isclose(linear_terms[i-1, a-1], 0.0)
-                    ]) + '\n'
-                else:
-                    return '\n'.join([
-                        f"C1_s{a:0>2d}_s{a:0>2d}_v{i:0>2d}{spacer:>11}1 S{a:d}&{a:d}{spacer:>4}{i+1}  q"
-                        for a, i in it.product(range(1, A+1), range(1, N+1))
-                    ] + [
-                        ''  # creates a blank line between the (surface) diagonal and off-diagaonl linear terms
-                    ] + [
-                        f"C1_s{a2:0>2d}_s{a1:0>2d}_v{i:0>2d}{spacer:>11}1 S{a2:d}&{a1:d}{spacer:>4}{i+1}  q"
-                        for a1, a2, i in it.product(range(1, A+1), range(1, A+1), range(1, N+1))
-                        if (a1 != a2)
-                    ]) + '\n'
-
-
-                for a in range(1, A+1):
-                    for b in range(1, a):
-                        block += f"EH_s{b:>02d}_s{a:>02d}  |1 S{b}&{a}\n"
-
-                # Write LINEAR AND QUADRATIC DIAGONAL VIBRONIC COUPLINGS
-                for i, a in it.product(range(1, N+1), range(1, A+1)):
-                    i_label = mode_map_dict[i]
-                    block += f"C1_s{a:>02d}_s{a:>02d}_v{i_label:>02d} |1 S{a}&{a} |{i+1} q\n"
-
-                # Write LINEAR AND QUADRATIC OFF-DIAGONAL VIBRONIC COUPLINGS
-                for i, a in it.product(range(1, N+1), range(1, A+1)):
-                    i_label = mode_map_dict[i]
-                    for b in range(1, a):
-                        block += (
-                            f"C1_s{b:>02d}_s{a:>02d}_v{i_label:>02d}"
-                            f" |1 S{b}&{a} |{i+1} q\n"
-                        )
-
-                # Write LINEAR AND QUADRATIC DIAGONAL VIBRONIC COUPLINGS
-                for i, a in it.product(range(1, N+1), range(1, A+1)):
-                    i_label = mode_map_dict[i]
-                    block += (
-                        f"0.50*C2_s{a:>02d}s{a:>02d}_v{i_label:>02d}v{i_label:>02d}"
-                        f" |1 S{a}&{a} |{i+1} q^2\n"
-                    )
-
-                # Write BILINEAR DIAGONAL VIBRONIC COUPLINGS
-                for i, a in it.product(range(1, N+1), range(1, A+1)):
-                    for j in range(1, i):
-                        i_label, j_label = mode_map_dict[[i, j]]
-                        block += (
-                                f"C1_s{a:>02d}s{a:>02d}_v{i_label:>02d}v{j_label:>02d}"
-                                f" |1 S{a}&{a} |{i+1} q |{j+1} q\n"
-                            )
-
-                # Write BILINEAR OFF-DIAGONAL VIBRONIC COUPLINGS
-                for i, a in it.product(range(1, N+1), range(1, A+1)):
-                    for j, b in it.product(range(1, i), range(1, a)):
-                        i_label, j_label = mode_map_dict[[i, j]]
-                        block += (
-                                f"C1_s{b:>02d}s{a:>02d}_v{i_label:>02d}v{j_label:>02d}"
-                                f" |1 S{b}&{a} |{i+1} q |{j+1} q\n"
-                            )
-
-                # ------------------------------------------------------------
-                # Write KINETIC OPERATOR FOR NORMAL MODES (mostly fine)
-                for imode_include in range(1, nmodes + 1):
-                    mode_count = imode_include + 1
-                    mctdh_file.write(f"1.00*w{modes_included[imode_include]:>02d}   |{mode_count} KE\n")
-
-                # Write HARMONIC OSCILLATOR POTENTIALS FOR NORMAL MODES
-                for imode_include in range(1, nmodes + 1):
-                    mode_count = imode_include + 1
-                    mctdh_file.write(f"0.50*w{modes_included[imode_include]:>02d}   |{mode_count}  q^2\n")
-
-                # Write ELECTRONIC COUPLING AT REFERENCE STRUCTURE
-                for ist in range(1, nstate + 2):
-                    mctdh_file.write(f"EH_s{ist:>02d}_s{ist:>02d} |1 S{ist}&{ist}\n")
-
-                mctdh_file.write("\n")
-                for ist in range(1, nstate + 1):
-                    jlast = ist - 1
-                    for jst in range(1, jlast + 1):
-                        mctdh_file.write(f"EH_s{jst:>02d}_s{ist:>02d}  |1 S{jst}&{ist}\n")
-
-                # Write LINEAR AND QUADRATIC DIAGONAL VIBRONIC COUPLINGS
-                for kmode in range(1, nmodes + 1):
-                    imode = modes_included[kmode]
-                    kmode_count = kmode + 1
-                    for ist in range(1, nstate + 1):
-                        mctdh_file.write(f"C1_s{ist:>02d}_s{ist:>02d}_v{imode:>02d} |1 S{ist}&{ist} |{kmode_count} q\n")
-
-                # Write LINEAR AND QUADRATIC OFF-DIAGONAL VIBRONIC COUPLINGS
-                for kmode in range(1, nmodes + 1):
-                    imode = modes_included[kmode]
-                    kmode_count = kmode + 1
-                    for ist in range(1, nstate + 1):
-                        jlast = ist - 1
-                        for jst in range(1, jlast + 1):
-                            mctdh_file.write(f"C1_s{jst:>02d}_s{ist:>02d}_v{imode:>02d} |1 S{jst}&{ist} |{kmode_count} q\n")
-
-                # Write LINEAR AND QUADRATIC DIAGONAL VIBRONIC COUPLINGS
-                for kmode in range(1, nmodes + 1):
-                    imode = modes_included[kmode]
-                    kmode_count = kmode + 1
-                    for ist in range(1, nstate + 1):
-                        mctdh_file.write(f"0.50*C2_s{ist:>02d}s{ist:>02d}_v{imode:>02d}v{imode:>02d} |1 S{ist}&{ist} |{kmode_count} q^2\n")
-
-                # Write LINEAR AND QUADRATIC OFF-DIAGONAL VIBRONIC COUPLINGS
-                for kmode in range(1, nmodes + 1):
-                    imode = modes_included[kmode]
-                    kmode_count = kmode + 1
-                    for ist in range(1, nstate + 1):
-                        jlast = ist - 1
-                        for jst in range(1, jlast + 1):
-                            mctdh_file.write(f"0.50*C2_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{imode:>02d} |1 S{jst}&{ist} |{kmode_count} q^2\n")
-
-                # Write BILINEAR DIAGONAL VIBRONIC COUPLINGS
-                for kmode in range(1, nmodes + 1):
-                    imode = modes_included[kmode]
-                    kmode_count = kmode + 1
-                    lmode_last = kmode - 1
-                    for lmode in range(1, lmode_last + 1):
-                        jmode = modes_included[lmode]
-                        lmode_count = lmode + 1
-                        for ist in range(1, nstate + 1):
-                            mctdh_file.write(f"C1_s{ist:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d} |1 S{ist}&{ist} |{lmode_count} q |{kmode_count} q\n")
-
-                # Write BILINEAR OFF-DIAGONAL VIBRONIC COUPLINGS
-                for kmode in range(1, nmodes + 1):
-                    imode = modes_included[kmode]
-                    kmode_count = kmode + 1
-                    lmode_last = kmode - 1
-                    for lmode in range(1, lmode_last + 1):
-                        jmode = modes_included[lmode]
-                        lmode_count = lmode + 1
-                        for ist in range(1, nstate + 1):
-                            jlast = ist - 1
-                            for jst in range(1, jlast + 1):
-                                mctdh_file.write(f"C1_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d} |1 S{jst}&{ist} |{lmode_count} q |{kmode_count} q\n")
-
-
-                mctdh_file.write("-----------------------------------------\n")
-                mctdh_file.write("\nend-hamiltonian-section\n\n")
-
-            if SOC_flag:  # all the code inside this IF should eventually move to a seperate function (like factored out)
-
-                soc_extension_list_string = []
-
-                key_order = [  # (THE ORDER IS VERY IMPORTANT)
-                    'Linear-Real',
-                    'Linear-Imag',
-                    'Quadratic-Real',
-                    'Quadratic-Imag',
-                    'Bilinear-Real',
-                    'Bilinear-Imag',
-                    'SOC-Real',
-                    'SOC-Imag',
-                ]
-                hamiltonian_blocks = {k: "" for k in key_order}
-                # ----------------------------------------------------------------------
-
-                # prepare `make_line`
-                format_string = "{label:<25s}{link:<20s}\n"
-                make_line = functools.partial(format_string.format)
-
-                # Write FULL HAMILTONIAN SOC OFF-DIAGONAL VIBRONIC COUPLINGS
-
-                """ there is ways to do this, but it may not be worth the effort right now
-                for k, l, i, j in it.product():
-                    hamiltonian_blocks['Linear-Real'] += make_line(label=f"I*C1_s{jst:>02d}_s{ist:>02d}_v{imode:>02d}r", link=f"|1 Z{jst}&{ist} | {kmode_count} q")  # noqa: E501
-                    hamiltonian_blocks['Linear-Real'] += make_line(label=f"-I*C1_s{jst:>02d}_s{ist:>02d}_v{imode:>02d}i", link=f"|1 Z{ist}&{jst} | {kmode_count} q")  # noqa: E501
-                for k, l, i, j in it.product():
-                    hamiltonian_blocks['Quadratic-Real'] += make_line(label=f"I*C2_s{jst:>02d}s{ist:>02d}_v{imode:>02d}r", link=f"|1 Z{jst}&{ist} | {kmode_count} q^2")  # noqa: E501
-                    hamiltonian_blocks['Quadratic-Real'] += make_line(label=f"-I*C2_s{jst:>02d}s{ist:>02d}_v{imode:>02d}i", link=f"|1 Z{ist}&{jst} | {kmode_count} q^2")  # noqa: E501
-                <...> (and so forth)
-                """
-
-                # do the work
-                for kmode in range(1, nmodes + 1):
-                    imode = modes_included[kmode]
-                    lmode_last = kmode - 1
-                    for lmode in range(1, lmode_last + 1):
-                        jmode = modes_included[lmode]
-                        for ist in range(1, nstate + 1):
-                            jlast = (ist - 1)
-                            for jst in range(1, jlast + 1):
-
-                                # note to self: the I* is performing ARITHMETIC on SOr_{jst}_{ist} prepared earlier, does that mean we neeed to remove the l and _m{imode}
-                                hamiltonian_blocks['Linear-Real'] += make_line(label=f"I*C1_s{jst:>02d}_s{ist:>02d}_v{imode:>02d}r", link=f"|1 Z{jst}&{ist} | {kmode_count} q")  # noqa: E501
-                                hamiltonian_blocks['Linear-Imag'] += make_line(label=f"-I*C1_s{jst:>02d}_s{ist:>02d}_v{imode:>02d}i", link=f"|1 Z{ist}&{jst} | {kmode_count} q")  # noqa: E501
-
-                                hamiltonian_blocks['Quadratic-Real'] += make_line(label=f"I*C2_s{jst:>02d}s{ist:>02d}_v{imode:>02d}r", link=f"|1 Z{jst}&{ist} | {kmode_count} q^2")  # noqa: E501
-                                hamiltonian_blocks['Quadratic-Imag'] += make_line(label=f"-I*C2_s{jst:>02d}s{ist:>02d}_v{imode:>02d}i", link=f"|1 Z{ist}&{jst} | {kmode_count} q^2")  # noqa: E501
-
-                                hamiltonian_blocks['Bilinear-Real'] += make_line(label=f"I*C1_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}r", link=f"|1 Z{jst}&{ist} | {lmode_count} q |{kmode_count} q")  # noqa: E501
-                                hamiltonian_blocks['Bilinear-Imag'] += make_line(label=f"-I*C1_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}i", link=f"|1 Z{ist}&{jst} | {lmode_count} q |{kmode_count} q")  # noqa: E501
-
-                                hamiltonian_blocks['SOC-Real'] += make_line(label=f"I*SOC_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}r", link=f"|1 Z{jst}&{ist} | {kmode_count} q")  # noqa: E501
-                                hamiltonian_blocks['SOC-Imag'] += make_line(label=f"-I*SOC_s{jst:>02d}s{ist:>02d}_v{imode:>02d}v{jmode:>02d}i", link=f"|1 Z{ist}&{jst} | {kmode_count} q")  # noqa: E501
-
-                for k in key_order:  # glue the blocks together
-                    output_string += hamiltonian_blocks[k] + "\n"
-
-                print("Hey check the output string, and the hamiltonian_blocks"); breakpoint()
-                mctdh_file.write(output_string)
-                del hamiltonian_blocks  # don't need anymore
-
-        if SOC_flag:
-            file_contents += _make_SOC_section()
-
-        file_contents += _make_Hamiltonian_operate_Ex_section()
-        file_contents += "end-operator\n"
-
-        with open("mctdh.op", "w") as fp:
-            fp.write("".join(file_contents))
 
     return
 
@@ -2903,17 +2614,11 @@ def process_mode_freq(ndim, nof_cols=5, float_length=12):
     frequences = list(it.chain(*freq_list))  # single list
     freq_array = np.array(frequences)
 
-    # freqcm = {}
-    # for i in range(len(frequences)):
-    #     key = pp.modes_included[i]
-    #     freqcm[key] = frequences[i]
-
     # -------------------------------------------------------------------------
     if False and __debug__:   # print all frequencies
         string = "\n".join([f"frequency: {i} {freq_array[i]} CM-1" for i in range(ndim)])
         print(string)
 
-    # return mode_array, freqcm
     return modes_array, freq_array
 
 
@@ -2930,10 +2635,7 @@ def compose_ref_structure(ref_file, hessout, nof_atoms):
     if good_ref_structure:
 
         """ we don't need to delete the file if we simply write a new file
-        try:
-            subprocess_run_wrapper(['rm', '-f', ref_file])
-        except Exception as e:
-            print(f"Error deleting {ref_file}: {str(e)}")
+        _delete_file_using_rmrf(ref_file)
         """
 
         # the last element of coord_lines is an empty line (`\n`)
@@ -3033,8 +2735,58 @@ def refG_calc(refgeo, input_filename, output_filename):
     return
 
 # ---------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------
 
 
+def process_profiling_data(filename):
+    """ temporary formatted printing of profiling data """
+
+    p = pstats.Stats(filename)
+
+    # prints the 20 functions with the largest cumulative runtime
+    p.strip_dirs().sort_stats("cumulative").print_stats(20)
+
+    # prints the 20 functions with the largest total runtime
+    p.strip_dirs().sort_stats("tottime").print_stats(20)
+
+    if True:  # this section is for analyzing specific functions
+
+        # this sorts by cumulative runtime then only prints the stats for functions with the substring 'calculate' in their name
+        p.strip_dirs().sort_stats("cumulative").print_stats('extract', 15)
+
+        # `label` substring in their name
+        p.strip_dirs().sort_stats("cumulative").print_stats('label', 15)
+
+        # `build` substring in their name
+        p.strip_dirs().sort_stats("cumulative").print_stats('build', 15)
+
+        function_name = "_write_op"  # inside mctdh()
+        p.strip_dirs().print_stats(function_name)  # this prints the stats for the specific function `function_name`
+        p.strip_dirs().print_callers(function_name)  # this prints the functions that call `function_name`
+
+        # # the same as above but for a different function
+        function_name = "diabatization"
+        p.strip_dirs().print_stats(function_name)
+        p.strip_dirs().print_callers(function_name)  # `function_name` <== list of fxn
+
+        # these two functions are called a lot BY other functions
+        function_name = "_extract_energy_from_gamessoutput"
+        p.strip_dirs().print_stats(function_name)
+        p.strip_dirs().print_callees(function_name)  # `function_name` ==> list of fxn
+        function_name = "extract_DSOME"
+        p.strip_dirs().print_stats(function_name)
+        p.strip_dirs().print_callees(function_name)
+
+        function_name = "extract_DSOME"
+        p.strip_dirs().print_callees(function_name)
+
+        # # this does the same as above, but the callees are sorted by cumulative
+        # function_name = "d"
+        # p.strip_dirs().sort_stats("cumulative").print_callees(function_name)
+    return
+
+
+# ---------------------------------------------------------------------------------------
 def main(ref_file="ref_structure", ncols=5, **kwargs):
     """ x """
     hessian_filename = kwargs['hessian_filename']
@@ -3050,7 +2802,7 @@ def main(ref_file="ref_structure", ncols=5, **kwargs):
 
     compose_ref_structure(ref_file, hessian_filename, nof_atoms)
 
-    atmlst, chrglst, refcoord = read_reference_structure(ref_file)
+    atom_dict, charge_dict, ref_coords = read_reference_structure(ref_file)
 
     refG_calc(ref_file, kwargs['refG_in'], kwargs['refG_out'])
 
@@ -3059,11 +2811,11 @@ def main(ref_file="ref_structure", ncols=5, **kwargs):
     diabatization_kwargs.update({
         'ndim': ndim,
         'freqcm': freqcm,
-        'refcoord': refcoord,
+        'refcoord': ref_coords,
         'nrmmod': nrmmod,
         'natoms': natoms,
-        'atmlst': atmlst,
-        'chrglst': chrglst,
+        'atmlst': atom_dict,
+        'chrglst': charge_dict,
         'qsize': pp.qsize,
         'ha2ev': pp.ha2ev,
         'wn2ev': pp.wn2ev,
@@ -3072,10 +2824,13 @@ def main(ref_file="ref_structure", ncols=5, **kwargs):
         'amu2me': pp.amu2me
     })
     # name, modes = pp.filnam, pp.modes_included
-    diabatize = diabatization(**diabatization_kwargs)
-    print("Diabatization successfully modified")
+
+    disp_coord = diabatization(**diabatization_kwargs)
+
+    print("Diabatization successfully modified?")
 
     mctdh_input_kwargs = kwargs.copy()
+
     mctdh_input_kwargs.update({
         'qsize': pp.qsize,
         'ha2ev': pp.ha2ev,
@@ -3087,37 +2842,57 @@ def main(ref_file="ref_structure", ncols=5, **kwargs):
         'ndim': ndim,
         'freqcm': freqcm,
         'nrmmod': nrmmod,
-        'diabatize': diabatize,
         'hessout': kwargs['hessian_filename'],
     })
 
+    if pp.SOC_flag:  # only need the return values from `diabatization` if doing SOC
+        mctdh_input_kwargs['disp_coord'] = disp_coord
+
+    op_path = join("./", "mctdh.op")
     # name, modes = pp.filnam, pp.modes_included
-    mctdh(**mctdh_input_kwargs)
-    print("mctdh successfully modified"); return
+    mctdh(op_path, **mctdh_input_kwargs)
+    print(f"{op_path=} successfully modified\n")
 
-    print('The run was a success!')
+    # copy file to <specific_file_name.op>
+    src_path = op_path
+    dst_path = join("./", pp.file_name + '.op')
+    shutil.copy(src_path, dst_path)
+    print(" "*4 + src_path, "copied to", " "*4 +dst_path, sep='\n')
 
-    shutil.copy("mctdh.op", kwargs['project_filename'] + '.op')
+    if False and __debug__:
+        header = f"\n{'-'*20}{{}}{'-'*20}\n"
+        print_header = lambda s: print(header.format(s))
 
-    if (extra_debug := False):
-        print('---------nrm mod done-----------')
-        pprint.pprint(nrmmod)
-        print('---------freqcm done-----------')
-        pprint.pprint(freqcm)
-        print('---------selected_mode_list done-----------')
-        pprint.pprint(selected_mode_list)
-        print('---------atmlst done-----------')
-        pprint.pprint(atmlst)
-        print('---------chrglst done-----------')
-        pprint.pprint(chrglst)
-        print('---------refcoord done-----------')
-        pprint.pprint(refcoord)
-    # ...
+        print_header('Normal modes')
+        for i in range(nrmmod.shape[0]):
+            print(" "*4, i)
+            pprint.pprint(nrmmod[i, :])
+
+        print_header('Frequencies')
+        for i in range(freqcm.shape[0]):
+            print(" "*4, i, freqcm[i])
+
+        print_header('Execution Parameters')
+        print(f"Selected modes: {pp.selected_mode_list}")
+
+        print("List of atoms:")
+        for k, v in atom_dict.items():
+            print(" "*4, k, v)
+
+        print("List of charges:")
+        for k, v in charge_dict.items():
+            print(" "*4, k, v)
+
+        print("Reference co-ordinates")
+        for k, v in ref_coords.items():
+            print(" "*4, k, v)
+
     return
 
 
 # ---------------------------------------------------------------------------------------
-if __name__ == "__main__":
+if (__name__ == "__main__"):
+
     if len(sys.argv) != 2:
         print("Usage: python your_script.py <hessout_file>")
         sys.exit(1)
@@ -3134,4 +2909,31 @@ if __name__ == "__main__":
         # 'modes_included': pp.modes_included,
     })
 
-    main(**kwargs)
+    # ---------------------------------------------------------------
+    profiling = False  # just change this to enable profiling
+
+    if not profiling:
+        main(**kwargs)
+
+    else:
+        root = os.getcwd()
+        filename = join(root, "cProfile_dist_allmodes_pm")
+
+        if True:  # set this to false if you simply want to print out the profile stats again (without running all the code)
+            cProfile.runctx(
+                'main(**kwargs)',
+                globals(),
+                locals(),
+                filename
+            )
+
+        # print the results of profiling to stdout
+        # optional (can always be called by some other script)
+        process_profiling_data(filename)
+
+        if True:  # if you want to save the results to a file
+            from contextlib import redirect_stdout  # to send the prints to a file
+            with open(filename+'.txt', 'w') as f:
+                with redirect_stdout(f):
+                    process_profiling_data(filename)
+    # ---------------------------------------------------------------
