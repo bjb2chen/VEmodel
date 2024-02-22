@@ -39,7 +39,7 @@ eV_dict = {
     "vcm":       (18, 9.5),
     #
     "op_nh36Q_5st":  (11, 2),
-    f"{project_name}": (30, 11)
+    f"{project_name}": (21, 11)
 }
 
 y_dict = {
@@ -56,7 +56,7 @@ y_dict = {
     "vcm":       (-1.5, 34),
     #
     "op_nh36Q_5st":       (-1.5, 40),
-    f"{project_name}": (-1.5, 100)
+    f"{project_name}": (-1.5, 60)
 }
 
 left_eV, right_EV = eV_dict[project_name]
