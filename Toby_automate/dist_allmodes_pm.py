@@ -1123,11 +1123,13 @@ def mctdh(op_path, **kwargs):
             if not suppress_zeros or not np.isclose(E0_array[row, col], 0.0)  # if you don't want to print the zeros;
         ])
 
-        string = diag_block + "\n" + off_diag_block
+        string = diag_block
 
         if True:  # add fictious surface
             string += '\n'
             string += make_line(label=f"EH_s{A+1:0>2d}_s{A+1:0>2d}", value=0.0)
+
+        string += "\n" + off_diag_block
 
         return string
 
@@ -1211,7 +1213,7 @@ def mctdh(op_path, **kwargs):
             ]),
             ''.join([
                 make_line(
-                    label=f"C1_s{a2+1:0>2d}s{a1+1:0>2d}_v{i+1:0>2d}",
+                    label=f"C1_s{a1+1:0>2d}s{a2+1:0>2d}_v{i+1:0>2d}",
                     value=linear[i][a2, a1]
                 )
                 for a1, a2, i in it.product(range(A), range(A), range(N))
@@ -1266,7 +1268,7 @@ def mctdh(op_path, **kwargs):
         return '\n'.join([
             ''.join([
                 make_line(
-                    label=f"C1_s{a+1:0>2d}s{a+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}",
+                    label=f"C1_s{a+1:0>2d}s{a+1:0>2d}_v{j2+1:0>2d}v{j1+1:0>2d}",
                     # value=0.0
                     value=bi_lin[(j1, j2)][a, a]
                 )
@@ -1276,7 +1278,7 @@ def mctdh(op_path, **kwargs):
             ]),
             ''.join([
                 make_line(
-                    label=f"C1_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}",
+                    label=f"C1_s{a1+1:0>2d}s{a2+1:0>2d}_v{j2+1:0>2d}v{j1+1:0>2d}",
                     # value=0.0
                     value=bi_lin[(j1, j2)][a1, a2]
                 )
@@ -1333,10 +1335,10 @@ def mctdh(op_path, **kwargs):
 
             return ''.join([
                 make_line(
-                    label=f"C1_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}r",
+                    label=f"C1_s{a1+1:0>2d}s{a2+1:0>2d}_v{j2+1:0>2d}v{j1+1:0>2d}r",
                     value=bi_lin[(j1, j2)][a1, a2].real
                 ) + make_line(
-                    label=f"C1_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}i",
+                    label=f"C1_s{a1+1:0>2d}s{a2+1:0>2d}_v{j2+1:0>2d}v{j1+1:0>2d}i",
                     value=bi_lin[(j1, j2)][a1, a2].imag
                 )
                 for a1, a2, j1, j2 in it.product(range(A), range(A), range(N), range(N))
@@ -1467,11 +1469,13 @@ def mctdh(op_path, **kwargs):
             and (not suppress_zeros or not np.isclose(energy[a1-1, a2-1], 0.0))
         ]) + '\n'
 
-        string = diag_block + "\n" + off_diag_block
+        string = diag_block
 
         if True:  # add fictious surface
-            string += '\n'
             string += f"EH_s{A+1:0>2d}_s{A+1:0>2d}{spacer:>15}1 S{A+1:d}&{A+1:d}"
+            string += "\n"
+
+        string += "\n" + off_diag_block
 
         return string
 
@@ -1495,7 +1499,7 @@ def mctdh(op_path, **kwargs):
         ] + [
             (
                 f"C1_s{a1:0>2d}s{a2:0>2d}_v{i:0>2d}"
-                f"{spacer:>11}1 S{a2:d}&{a1:d}"
+                f"{spacer:>11}1 S{a1:d}&{a2:d}"
                 f"{spacer:>4}{i+1}  q"
             )
             for a1, a2, i in it.product(range(1, A+1), range(1, A+1), range(1, N+1))
@@ -1523,7 +1527,7 @@ def mctdh(op_path, **kwargs):
         ] + [
             (
                 f"0.50*C2_s{a1:0>2d}s{a2:0>2d}_v{i:0>2d}v{i:0>2d}"
-                f"{spacer:>9}1 S{a2:d}&{a1:d}"
+                f"{spacer:>9}1 S{a1:d}&{a2:d}"
                 f"{spacer:>4}{i+1}  q^2"
             )
             for a1, a2, i in it.product(range(1, A+1), range(1, A+1), range(1, N+1))
@@ -1542,7 +1546,7 @@ def mctdh(op_path, **kwargs):
 
         return '\n'.join([
             (
-                f"C1_s{a:0>2d}s{a:0>2d}_v{j1:0>2d}v{j2:0>2d}"
+                f"C1_s{a:0>2d}s{a:0>2d}_v{j2:0>2d}v{j1:0>2d}"
                 f"{spacer:>9}1 S{a:d}&{a:d}"
                 f"{spacer:>4}{j1+1}  q{spacer:>6}{j2+1}  q"
             )
@@ -1553,7 +1557,7 @@ def mctdh(op_path, **kwargs):
                 ''  # creates a blank line between the (surface) diagonal and off-diagonal linear terms
         ] + [
             (
-                f"C1_s{a1:0>2d}s{a2:0>2d}_v{j1:0>2d}v{j2:0>2d}"
+                f"C1_s{a1:0>2d}s{a2:0>2d}_v{j2:0>2d}v{j1:0>2d}"
                 f"{spacer:>9}1 S{a1:d}&{a2:d}"
                 f"{spacer:>4}{j1+1}  q{spacer:>6}{j2+1}  q"
             )
