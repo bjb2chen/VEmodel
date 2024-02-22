@@ -285,17 +285,17 @@ def _extract_energy_from_gamessoutput(file_path, pattern, column_specification_s
             output = float(result.stdout.strip().replace(" ", ""))
             return output
         except Exception as e:
-            if True:  # try to find out reason for grep failing
+            if False:  # try to find out reason for grep failing
                 print("Grep failed?!")
                 print(command)
                 print("Please try grep command manually before proceeding")
                 breakpoint()
 
-            with open(file_path, 'r', errors='replace') as file:
-                for line in reversed(file.readlines()):
-                    match = re.search(pattern, line)
-                    if match:
-                        return float(line[backup_line_idx].strip().replace(" ", ""))
+        with open(file_path, 'r', errors='replace') as file:
+            for line in reversed(file.readlines()):
+                match = re.search(pattern, line)
+                if match:
+                    return float(line[backup_line_idx].strip().replace(" ", ""))
 
     except subprocess.CalledProcessError:
         # Return None if there is an error
