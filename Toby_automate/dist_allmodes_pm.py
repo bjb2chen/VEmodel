@@ -198,19 +198,40 @@ def upper_triangle_loop_indices(max_num, number_of_indicies=2):
 def my_subgam(path, **kwargs):
     """ Create our own GAMESS job submission script
         Recording the script inside .slurm helps for recordkeeping """
-
+ 
     # if its easier to just change project parameters i would recommend doing
     # ncpus = pp.ncpus
     # nhour = pp.nhour
     # ngb = pp.ngb
-
+ 
     ncpus = kwargs.get('ncpus', 2)
     nhour = kwargs.get('nhour', 1)
     ngb = kwargs.get('ngb', 2)
-
+ 
     # Remove the ".inp" extension from the filename
     input_no_ext, extension = splitext(path)
     print(f"running calculations for {input_no_ext}")
+ 
+    # wd = os.getcwd()
+ 
+    file_contents = "".join([
+        "#!/bin/bash\n",
+        "#SBATCH --nodes=1\n",
+        f"#SBATCH --ntasks={ncpus}\n",
+        f"#SBATCH --mem-per-cpu={ngb}G\n",
+        f"#SBATCH --time={nhour}:00:00\n",
+        "\n",
+        "cd $SLURM_SUBMIT_DIR\n",
+        "\n",
+        "export SLURM_CPUS_PER_TASK\n",
+        'mkdir -p /home/$USER/.gamess_ascii_files/$SLURM_JOBID\n',
+        f"/home/$USER/LOCAL/runG_diab {input_no_ext}.inp {ncpus} \n",
+    ])
+ 
+    with open(f"{input_no_ext}.slurm", "w") as slurm_file:
+        slurm_file.write(file_contents)
+ 
+    return f"{input_no_ext}.slurm"
 
 
 def extract_lines_between_patterns(filename, start_pattern, end_pattern, collecting=False):
@@ -1022,10 +1043,6 @@ def mctdh(op_path, **kwargs):
 
     linear_displacement_filenames, bilinear_displacement_filenames = _make_displacement_filenames()
 
-    # for key, v in bilinear_displacement_filenames.items():
-    #     print(key,  v)
-    # breakpoint()
-
     # -------------------------------------------------------------------------
     # bad practice, works for now and we can refactor once we've finished figuring out the end product
     format_string = "{label:<25s}={value:>-15.9f}{units:>8s}\n"
@@ -1213,7 +1230,7 @@ def mctdh(op_path, **kwargs):
             ]),
             ''.join([
                 make_line(
-                    label=f"C1_s{a1+1:0>2d}s{a2+1:0>2d}_v{i+1:0>2d}",
+                    label=f"C1_s{a2+1:0>2d}s{a1+1:0>2d}_v{i+1:0>2d}",
                     value=linear[i][a2, a1]
                 )
                 for a1, a2, i in it.product(range(A), range(A), range(N))
@@ -1268,7 +1285,7 @@ def mctdh(op_path, **kwargs):
         return '\n'.join([
             ''.join([
                 make_line(
-                    label=f"C1_s{a+1:0>2d}s{a+1:0>2d}_v{j2+1:0>2d}v{j1+1:0>2d}",
+                    label=f"C1_s{a+1:0>2d}s{a+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}",
                     # value=0.0
                     value=bi_lin[(j1, j2)][a, a]
                 )
@@ -1278,7 +1295,7 @@ def mctdh(op_path, **kwargs):
             ]),
             ''.join([
                 make_line(
-                    label=f"C1_s{a1+1:0>2d}s{a2+1:0>2d}_v{j2+1:0>2d}v{j1+1:0>2d}",
+                    label=f"C1_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}",
                     # value=0.0
                     value=bi_lin[(j1, j2)][a1, a2]
                 )
@@ -1335,10 +1352,10 @@ def mctdh(op_path, **kwargs):
 
             return ''.join([
                 make_line(
-                    label=f"C1_s{a1+1:0>2d}s{a2+1:0>2d}_v{j2+1:0>2d}v{j1+1:0>2d}r",
+                    label=f"C1_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}r",
                     value=bi_lin[(j1, j2)][a1, a2].real
                 ) + make_line(
-                    label=f"C1_s{a1+1:0>2d}s{a2+1:0>2d}_v{j2+1:0>2d}v{j1+1:0>2d}i",
+                    label=f"C1_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}i",
                     value=bi_lin[(j1, j2)][a1, a2].imag
                 )
                 for a1, a2, j1, j2 in it.product(range(A), range(A), range(N), range(N))
@@ -1401,7 +1418,7 @@ def mctdh(op_path, **kwargs):
         for key in ['Linear', 'Quadratic', 'BiLinear']:
             if key not in model.keys():
                 print(f'NO {key} coupling found in {model.keys()}');
-                # breakpoint(); raise Exception()  # (temporarily) comment out if you don't need them
+                breakpoint(); raise Exception()  # (temporarily) comment out if you don't need them
 
         # soft fail, may not always want spin-orbit-coupling?
         if 'SOC' not in model.keys():
@@ -1499,7 +1516,7 @@ def mctdh(op_path, **kwargs):
         ] + [
             (
                 f"C1_s{a1:0>2d}s{a2:0>2d}_v{i:0>2d}"
-                f"{spacer:>11}1 S{a1:d}&{a2:d}"
+                f"{spacer:>11}1 S{a2:d}&{a1:d}"
                 f"{spacer:>4}{i+1}  q"
             )
             for a1, a2, i in it.product(range(1, A+1), range(1, A+1), range(1, N+1))
@@ -1527,7 +1544,7 @@ def mctdh(op_path, **kwargs):
         ] + [
             (
                 f"0.50*C2_s{a1:0>2d}s{a2:0>2d}_v{i:0>2d}v{i:0>2d}"
-                f"{spacer:>9}1 S{a1:d}&{a2:d}"
+                f"{spacer:>9}1 S{a2:d}&{a1:d}"
                 f"{spacer:>4}{i+1}  q^2"
             )
             for a1, a2, i in it.product(range(1, A+1), range(1, A+1), range(1, N+1))
@@ -1546,7 +1563,7 @@ def mctdh(op_path, **kwargs):
 
         return '\n'.join([
             (
-                f"C1_s{a:0>2d}s{a:0>2d}_v{j2:0>2d}v{j1:0>2d}"
+                f"C1_s{a:0>2d}s{a:0>2d}_v{j1:0>2d}v{j2:0>2d}"
                 f"{spacer:>9}1 S{a:d}&{a:d}"
                 f"{spacer:>4}{j1+1}  q{spacer:>6}{j2+1}  q"
             )
@@ -1557,7 +1574,7 @@ def mctdh(op_path, **kwargs):
                 ''  # creates a blank line between the (surface) diagonal and off-diagonal linear terms
         ] + [
             (
-                f"C1_s{a1:0>2d}s{a2:0>2d}_v{j2:0>2d}v{j1:0>2d}"
+                f"C1_s{a1:0>2d}s{a2:0>2d}_v{j1:0>2d}v{j2:0>2d}"
                 f"{spacer:>9}1 S{a1:d}&{a2:d}"
                 f"{spacer:>4}{j1+1}  q{spacer:>6}{j2+1}  q"
             )
@@ -1743,7 +1760,7 @@ def mctdh(op_path, **kwargs):
         for key in ['Linear', 'Quadratic', 'BiLinear']:
             if key not in model.keys():
                 print(f'NO {key} coupling found in {model.keys()}');
-                # breakpoint(); raise Exception()  # (temporarily) comment out if you don't need them
+                breakpoint(); raise Exception()  # (temporarily) comment out if you don't need them
 
         # soft fail, may not always want spin-orbit-coupling?
         if 'SOC' not in model.keys():
