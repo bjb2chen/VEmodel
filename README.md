@@ -14,9 +14,9 @@ D3H CoF3 diabatization - [https://www.youtube.com/watch?v=7tNUAFYKCQE&ab_channel
 
 ![Water_spectra](https://github.com/bjb2chen/vmodels/assets/51763900/4fb80100-99ca-4349-90be-90ca7f01cc85)
 
-![CH2O spectrum](https://github.com/bjb2chen/vmodels/assets/51763900/cb161a22-9a51-4e23-9883-e11b1d6bda69)
+![NH3 spectrum](https://github.com/bjb2chen/vmodels/assets/51763900/0e81a86d-81f6-4a82-a29a-85708265afb2)
 
-![NH3 spectrum](https://github.com/bjb2chen/vmodels/assets/51763900/f4a881bb-1cfb-4f90-9bc7-827652957700)
+![CH2O spectrum](https://github.com/bjb2chen/vmodels/assets/51763900/cb161a22-9a51-4e23-9883-e11b1d6bda69)
 
 ![PH3_spectrum](https://github.com/bjb2chen/vmodels/assets/51763900/932d8c1c-fe76-424a-9028-a53819d83681)
 
