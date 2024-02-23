@@ -1,5 +1,6 @@
 import socket
 import os
+import itertools as it
 from os.path import abspath, join
 
 # 30 pbf ~ 1GB
@@ -17,6 +18,16 @@ expression_list = [pbfs, tfinal, ]
 
 # root directory
 # parent_project = "ground_state_energies"
+# -------------------------------------------------------------------------
+#                       define all global flags
+# -------------------------------------------------------------------------
+SOC_flag = False
+
+# if True it doesn't run any subprocess.run() commands
+# instead it simply prints out what the commands would be to the terminal
+dry_run = False
+
+suppress_zeros = False
 
 # -------------------------------------------------------------------------
 # pick which molecule we're calculating
@@ -27,7 +38,7 @@ expression_list = [pbfs, tfinal, ]
 # project_name, A, Z = "formamide", 7, 6
 # project_name, A, Z = "vcm", 7, 6
 # project_name, A, Z = "op_water3Q_4st", 4, 3
-project_name, A, Z = "op_H2O3Q_3st", 3, 3       # A = number of states, Z = number of atoms
+project_name, A, Z = "op_NH36Q_3st", 3, 4       # A = number of states, Z = number of atoms
 
 # the total number of modes (including translational, rotational, vibrational)
 N_tot = 3 * Z
@@ -37,8 +48,8 @@ N_tot = 3 * Z
     {}_{}_{}_{}_{}st_diab
 """
 name, basis_set, calculation_type, point_group_symmetry, nof_excited_states = (
-    "H2Ocat", "cct", "gmcpt", "C1", 3
-    # "NH3anion", "cctzla", "rohf", "C2v", 4
+    #"H2Ocat", "ccd", "gmcpt", "C1", 3
+    "NH3cat", "ccd", "gmcpt", "C1", 3
     # "H2Ocat", "cct", "gmcpt", "C1", 3
     # "NH3anion", "cctzla", "rohf", "C2v", 4
     # "H2Ocat", "cct", "gmcpt", "C1", 3
@@ -58,6 +69,8 @@ filnam = file_name  # alias (remove later)
 
 if False:
     project_name = file_name
+
+SOC_flag = False
 # -------------------------------------------------------------------------
 
 # build mode label objects
@@ -74,7 +87,7 @@ if False:  # if needed in future
     selected_mode_list = sorted([*_selected_modes])
 
 else:
-    selected_mode_list = [7, 8, 9, ]
+    selected_mode_list = [7, 8, 9, 10, 11, 12, ]
 
 #  (ASSUMES YOUR MODES ARE IN INCREASING ORDER)
 assert sorted(selected_mode_list) == selected_mode_list, f"{selected_mode_list=} is not sorted"
@@ -91,14 +104,23 @@ assert sorted(selected_mode_list) == selected_mode_list, f"{selected_mode_list=}
 mode_map_dict = {k: v for k, v in enumerate(selected_mode_list)}
 N = len(selected_mode_list)  # the number of modes should be
 
+# map (i,j)-> numbers from selected_mode_list  (0, 1) -> (7,8)
+ij_map = {}
+for i, j in it.combinations(range(N), 2):
+    ij_map[(i, j)] = (mode_map_dict[i], mode_map_dict[j])
+
+# for giving back the (0, 1) from (7, 8) keys when accessing upper triangles
+reverse_ij_map = {}
+for key, value in ij_map.items():
+    reverse_ij_map[value] = key
 # -------------------------------------------------------------------------
 
 
 # Project Paths
 # user_root = abspath("/bjb2chen/gamess/vibronics/template_examples/")        # format is /user/.../*
-user_root = abspath("/bjb2chen/gamess/vibronics/template_examples/H2O")        # format is /user/.../*
-home_root = abspath(f"/home/{user_root}/home/{project_name}/")
-work_root = abspath(f"/home/{user_root}/work/mctdh/{project_name}/")
+user_root = abspath("/bjb2chen/gamess/vibronics/template_examples/NH3/feb23_testing")        # format is /user/.../*
+home_root = abspath(f"/home/{user_root}/{project_name}/")
+work_root = abspath(f"/work/{user_root}/mctdh/{project_name}/")
 
 # server_flag = (socket.gethostname() == "nlogn") or (socket.gethostname() == "feynman")
 # assert server_flag  # make sure we are on server
@@ -131,6 +153,6 @@ amu2me = 1822.888
 # -------------------------------------------------------------------------
 # if True it doesn't run any subprocess.run() commands
 # instead it simply prints out what the commands would be to the terminal
-dry_run = True
+dry_run = False
 
 # -------------------------------------------------------------------------

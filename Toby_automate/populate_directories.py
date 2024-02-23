@@ -42,10 +42,10 @@ def create_input_file(source_dir, *args):
         input_string = "\n\n".join([
             prop_input_template.run_section_propagation.format(tfinal=tf/2, tout=0.1, name=name),
             prop_input_template.operator_section.format(opfile_name=f"{xyz_name:}"),
-            prop_input_template.generate_basic_multi_set_spf_basis_section(nof_spf, N, A),
-            prop_input_template.generate_basic_harmonic_oscillator_primative_basis_section(nof_pbf, N, A),
+            prop_input_template.generate_basic_multi_set_spf_basis_section(nof_spf, selected_mode_list, A),
+            prop_input_template.generate_basic_harmonic_oscillator_primative_basis_section(nof_pbf, selected_mode_list, A),
             prop_input_template.propagation_integrator_section.format(),
-            prop_input_template.generate_basic_harmonic_oscillator_wavefunction_section(N, A, operate_string),
+            prop_input_template.generate_basic_harmonic_oscillator_wavefunction_section(selected_mode_list, A, operate_string),
 
             "end-input\n"
         ])

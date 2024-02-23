@@ -16,7 +16,7 @@ import numpy as np
 # local imports
 import prop_input_template
 from project_parameters import *
-from vibronic import vIO, VMK
+# from vibronic import vIO, VMK
 #
 # sys.path.insert(0, os.path.abspath("/home/ngraymon/public/songhao/t_amplitudes_project/t-amplitudes"))  # TEMPORARY
 # import project
@@ -39,7 +39,7 @@ eV_dict = {
     "vcm":       (18, 9.5),
     #
     "op_nh36Q_5st":  (11, 2),
-    f"{project_name}": (21, 11)
+    f"{project_name}": (8, 20)
 }
 
 y_dict = {
@@ -56,7 +56,7 @@ y_dict = {
     "vcm":       (-1.5, 34),
     #
     "op_nh36Q_5st":       (-1.5, 40),
-    f"{project_name}": (-1.5, 60)
+    f"{project_name}": (-1.5, 20)
 }
 
 left_eV, right_EV = eV_dict[project_name]
@@ -67,16 +67,16 @@ iexp = 1
 
 
 # -------------------------------------------------------------------------------------------------
-def calculate_harmonic_ground_state_of_model(model):
-    """Calculate the H.O. contribution to the electronic ground state"""
-    harmonic_ground_state = round(0.5 * np.sum(model[VMK.w]), ndigits=9)
-    return harmonic_ground_state
+# def calculate_harmonic_ground_state_of_model(model):
+#     """Calculate the H.O. contribution to the electronic ground state"""
+#     harmonic_ground_state = round(0.5 * np.sum(model[VMK.w]), ndigits=9)
+#     return harmonic_ground_state
 
 
-def calculate_harmonic_ground_state_of_op_file(path):
-    """Calculate the H.O. contribution to the electronic ground state of an '.op' file"""
-    model = vIO.extract_excited_state_model_op(f"./{model_name}.op")
-    return calculate_harmonic_ground_state_of_model(model)
+# def calculate_harmonic_ground_state_of_op_file(path):
+#     """Calculate the H.O. contribution to the electronic ground state of an '.op' file"""
+#     model = vIO.extract_excited_state_model_op(f"./{model_name}.op")
+#     return calculate_harmonic_ground_state_of_model(model)
 
 
 # -------------------------------------------------------------------------------------------------
@@ -188,9 +188,9 @@ def _generate_pl(nof_points, root_dir, output_filename, input_filename):
     return command
 
 
-def generate_cc_pl(nof_points, root_dir, output_filename, input_filename):
-    """Generate command string to call `autospec84` to generate spectrum data points for CC"""
-    return _generate_pl(nof_points, root_dir, output_filename, input_filename)
+# def generate_cc_pl(nof_points, root_dir, output_filename, input_filename):
+#     """Generate command string to call `autospec84` to generate spectrum data points for CC"""
+#     return _generate_pl(nof_points, root_dir, output_filename, input_filename)
 
 
 def generate_mctdh_pl(nof_points, root_dir, output_filename, input_filename):
