@@ -354,7 +354,7 @@ def _extract_energy_from_gamessoutput(file_path, pattern, column_specification_s
             output = float(result.stdout.strip().replace(" ", ""))
             return output
         except Exception as e:
-            if True:  # try to find out reason for grep failing
+            if False:  # try to find out reason for grep failing
                 print("Grep failed?!")
                 print("Command\n", command)
                 print("Result\n", result)

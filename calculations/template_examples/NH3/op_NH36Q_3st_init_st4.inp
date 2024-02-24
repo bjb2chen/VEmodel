@@ -1,0 +1,56 @@
+RUN-SECTION
+title = wavefunction propagation of op_NH36Q_3st
+name = op_NH36Q_3st
+propagation
+tout = 0.10 tfinal = 50.00 tpsi=1.0
+geninwf
+psi=single
+auto=once
+end-run-section
+
+OPERATOR-SECTION
+opname = op_NH36Q_3st_init_st4
+end-operator-section
+
+SPF-BASIS-SECTION
+multi-set
+      v07      =  4, 6, 4, 1
+      v08      =  6, 3, 6, 1
+      v09, v10      =  6, 3, 6, 1
+      v11, v12      =  4, 3, 4, 1
+end-spf-basis-section
+
+PRIMITIVE-BASIS-SECTION
+    v07    HO     30   0.0   1.0   1.0
+    v08    HO     30   0.0   1.0   1.0
+    v09    HO     30   0.0   1.0   1.0
+    v10    HO     30   0.0   1.0   1.0
+    v11    HO     30   0.0   1.0   1.0
+    v12    HO     30   0.0   1.0   1.0
+    el      el     4
+end-primitive-basis-section
+
+INTEGRATOR-SECTION
+CMF/var    =   0.5,    1.0d-05
+BS/spf     =     7,    1.0d-05,    2.5d-04
+SIL/A      =     5,    1.0d-05
+end-integrator-section
+
+INIT_WF-SECTION
+build
+   init_state=4
+-----------------------------------------------------------
+#  mode   type  center  moment.  freq.    mass
+-----------------------------------------------------------
+    v07    HO     0.0    0.0      1.0     1.0
+    v08    HO     0.0    0.0      1.0     1.0
+    v09    HO     0.0    0.0      1.0     1.0
+    v10    HO     0.0    0.0      1.0     1.0
+    v11    HO     0.0    0.0      1.0     1.0
+    v12    HO     0.0    0.0      1.0     1.0
+-----------------------------------------------------------
+end-build
+operate=Ex
+end-init_wf-section
+
+end-input
