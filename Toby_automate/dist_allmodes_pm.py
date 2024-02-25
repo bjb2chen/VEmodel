@@ -241,11 +241,11 @@ def my_subgam(path, **kwargs):
     return f"{input_no_ext}.slurm"
 
 
-def extract_lines_between_patterns(filename, start_pattern, end_pattern, collecting=False):
+def extract_lines_between_patterns(path, start_pattern, end_pattern, collecting=False):
     """ Function to extract lines between patterns in a file """
     selected_lines = []
     # would be good to replace this with memory mapping find or grep command?
-    with open(filename, 'r', errors='replace') as file:
+    with open(path, 'r', errors='replace') as file:
         for line in file:
             if start_pattern in line:
                 collecting = True
@@ -261,8 +261,13 @@ def extract_lines_between_patterns(filename, start_pattern, end_pattern, collect
 
 
 def _make_displacement_filenames():
+    """ x """
 
-    N = pp.N  # make explicit for linter
+    # import certain constants from project_parameters
+    from project_parameters import file_name, N
+    qsize = pp.gamess_const.qsize
+
+    # initialize dictionaries
     linear_displacement_filenames = {}
     bi_linear_displacement_filenames = {}
 
@@ -354,7 +359,7 @@ def _extract_energy_from_gamessoutput(file_path, pattern, column_specification_s
             output = float(result.stdout.strip().replace(" ", ""))
             return output
         except Exception as e:
-            if False:  # try to find out reason for grep failing
+            if True:  # try to find out reason for grep failing
                 print("Grep failed?!")
                 print("Command\n", command)
                 print("Result\n", result)
@@ -422,7 +427,7 @@ def refG_extract(file_path, pattern):
     return extract_in_eV(file_path, pattern)
 
 
-def extract_ground_state_energy(hessout_path, pattern):
+def extract_ground_state_energy(hessian_path, pattern):
     """ This picks up the total ground-state-energy (GSE) in eV.
     Relevant lines in the file look like this:
 
@@ -447,7 +452,7 @@ def extract_ground_state_energy(hessout_path, pattern):
     column_specification_string = "tail -1 | cut -c40-"
     backup_line_idx = slice(40, None)  # equivalent to `array[40:]`
     return _extract_energy_from_gamessoutput(
-        hessout_path, pattern,
+        hessian_path, pattern,
         column_specification_string,
         backup_line_idx
     )
@@ -614,84 +619,66 @@ def diabatization(**kwargs):
     Each of those individual dictionaries store ( ... ?)
 
     (other info)
-
-    What is the ultimate goal of this function??
     """
 
     # -------------------------------------------------------------------------
-    # unpacking (should get rid of these two lines eventually)
-    # modes_included = kwargs['modes_included']
-    filnam = filename = kwargs['project_filename']
+    # unpacking kwargs
+    all_frequencies_cm = kwargs['all_freq']  # N_tot
+    all_normal_modes = kwargs['normal_modes']  # Z*3 x N_tot
 
-    # kwargs has a bunch more items inside it
-    freqcm = kwargs.get('freqcm')
-    ndim = kwargs.get('ndim')
-    refcoord = kwargs.get('refcoord')
-    nrmmod = kwargs.get('nrmmod')
-    natoms = kwargs.get('natoms')
-    atmlst = kwargs.get('atmlst')
-    chrglst = kwargs.get('chrglst')
-    qsize = kwargs.get('qsize', 0.05)
-    wn2eh = kwargs.get('wn2eh', 0.00000455633)
-    ang2br = kwargs.get('ang2br', 1.889725989)
-    amu2me = kwargs.get('amu2me', 1822.88839)
+    refcoord = kwargs['reference_coordinates']  # Z*3
+    ref_coord_array = np.array([*refcoord.values()])
 
-    # if its easier to just change project parameters i would recommend doing
-    # amu2me = pp.amu2me
-    # <...> (etc.)
-    # since you have to use these values everywhere I take back what I said about using kwargs
-    # probably best to just use project parameters
-    # -------------------------------------------------------------------------
-    # Precomputed constants
+    atmlst = kwargs['atom_dict']
+    atom_list = [*atmlst.values()]
 
-    """
-    it might be worth while to precompute constants here?
-    for example in `_convert_qsize_to_rsize` we compute
-        q / (pow(amu2me, 0.5) * ang2br * pow(omega * wn2eh, 0.5))
-
-    this could be replace with
-        q / qsize_to_rsize_conversion_factor[i]
-
-    where we compute the factor for all modes included before hand
-        qsize_to_rsize_conversion_factor[i] = [
-            pow(amu2me, 0.5) * ang2br * pow(freqcm[i] * wn2eh, 0.5)
-            for i in modes_included
-        ]
-    """
+    chglst = kwargs['charge_dict']
+    charge_list = [*chglst.values()]
 
     # -------------------------------------------------------------------------
+    # extract only the frequencies of the modes we selected
+    s_idx = [i-1 for i in pp.selected_mode_list]  # need to shift by 1 for 0-indexed arrays
 
-    # prepare the displaced/distored co-ordinates (the object we return)
+    freq_array = all_frequencies_cm[s_idx]  # s_idx=[6,7,8] returns 7,8,9th freq values
+    mode_array = all_normal_modes[:, s_idx]  # return 7,8,9th columns of Z*3 x N_tot array, assume we return array
+
+    """ Note the indexing here!!
+        For a system with 9 modes (and therefore 3 atoms, since Z * 3 = 9 = N_tot)
+        there will be 9 frequencies `len(all_frequencies_cm)` = 9
+        So if `selected_mode_list` is [7, 8, 9]
+        then `s_idx` will be [6, 7, 8]
+        since `all_frequencies_cm` is a length 9 array indexed at 0, `[6, 7, 8]` will return the 7th, 8th, 9th elements
+    """
+    # -------------------------------------------------------------------------
+    # extract constants
+    wn2eh = pp.QM_const.wn2eh
+    ang2br = pp.QM_const.ang2br
+    amu2me = pp.QM_const.amu2me
+
+    qsize = pp.gamess_const.qsize
+
+    # -------------------------------------------------------------------------
+    # prepare various lists and dictionaries
+    file_name = pp.file_name  # this is the root file/calculation name for all files (displacements etc)
+
+    # -------------------------------------------------------------------------
+
+    # prepare the displaced/distorted co-ordinates (the object we return)
     disp_coord = {}
     disp_coord.update({k: {} for k in linear_disp_keys})
     disp_coord.update({k: {} for k in bi_linear_disp_keys})
 
     # -------------------------------------------------------------------------
-    # NEIL's mappings
-
-    """ Note the indexing here!!
-    For a system with 9 modes (and therefore 3 atoms, since Z * 3 = 9 = N_tot)
-    there will be 9 frequencies `len(freqcm)` = 9
-    So if `selected_mode_list` is [7, 8, 9]
-    then `s_idx` will be [6, 7, 8]
-    since `freqcm` is a length 9 array indexed at 0, `[6, 7, 8]` will return the 7th, 8th, 9th elements
-    """
-    s_idx = [i-1 for i in selected_mode_list]  # need to shift by 1 for 0-indexed arrays
-    freq_array = freqcm[s_idx]  # freqcm[[6,7,8]] returns 7,8,9th freq values
-    mode_array = nrmmod[:, s_idx]  # return 7,8,9th columns of Z*3 by Z*3 array, assume we return array
-    atom_list = [*atmlst.values()]
-    charge_list = [*chrglst.values()]
-
-    # make a list for easy calculations
-    ref_coord_array = np.array([*refcoord.values()])
-
+    # NEIL's mappings / definitions
+    from project_parameters import A, N, Z
     nof_surfaces = A  # alias
     nof_modes = N  # alias
     nof_atoms = Z  # alias
 
     NEW = np.newaxis  # alias
 
-    if ((Z*3)**2 > 1e4):
+    # -------------------------------------------------------------------------
+    if ((Z*3)**2 > 1e4):  # check in case precomputing will take too much memory
         print("Maybe think about not precomputing? Check with Neil again?")
         breakpoint()
         import sys; sys.exit()
@@ -699,7 +686,7 @@ def diabatization(**kwargs):
         # may want to consider indexing the array?
 
         # throw away the modes we don't need
-        column_index = [j-1 for j in selected_mode_list]
+        column_index = [j-1 for j in pp.selected_mode_list]
 
         # anything whose dimensionality was N_tot we need to reduce
         # (throw away everything except the columns you needed)
@@ -713,7 +700,7 @@ def diabatization(**kwargs):
     That might take too much memory... not sure?
     If it does then just disable this flag and compute the values inside the loop
     """
-    precompute_bilinear = True
+    # precompute_bilinear = True
     # -------------------------------------------------------------------------
 
     def _preconvert_qsize_to_rsize(omega, q):
@@ -811,6 +798,7 @@ def diabatization(**kwargs):
         and the second index is the first modes xyz
         and the third index is the second modex xyz
         """
+        Z = pp.Z  # number of atoms
 
         header, data = "{:<2s} {:} ", "{: .10g} " * 3  # x,y,z components
         template_string = header + data
@@ -818,7 +806,7 @@ def diabatization(**kwargs):
         for key in key_list:
             file_contents = []
             d = displaced_q[key]
-            for idx_atom in range(natoms):
+            for idx_atom in range(Z):
                 offset = 3*idx_atom  # 3 xyz-coordinates
 
                 if False and len(mode_idx) > 1:
@@ -969,7 +957,7 @@ def diabatization(**kwargs):
             linear_temp_struct_filenames,
             linear_disp_keys
         )
-        _create_linear_diabatization_input_files(i, filnam, qsize)
+        _create_linear_diabatization_input_files(i, file_name, qsize)
 
         # 2D distortion to get bilinear vibronic coupling
         for j in range(0, i):
@@ -985,7 +973,7 @@ def diabatization(**kwargs):
                 bi_linear_temp_struct_filenames,
                 bi_linear_disp_keys,
             )
-            _create_bilinear_diabatization_input_files(j, i, filnam, qsize)
+            _create_bilinear_diabatization_input_files(j, i, file_name, qsize)
 
     return disp_coord
 
@@ -1009,7 +997,7 @@ def find_nstate(file_path, pattern='# of states in CI      = '):
 # ---------------------------------------------------------------------------------------
 
 
-def mctdh(op_path, **kwargs):
+def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
     """ This function creates an `*.op` which will be used by MCTDH.
 
     It extracts necessary information from the various GAMESS output files.
@@ -1018,36 +1006,32 @@ def mctdh(op_path, **kwargs):
     """
 
     # remove the previous file, as we are about to write to it
-    _delete_file_using_rmrf(path='mctdh.op')
+    _delete_file_using_rmrf(path=op_path)
     # -------------------------------------------------------------------------
+    # extract only the frequencies of the modes we selected
+    s_idx = [i-1 for i in pp.selected_mode_list]  # need to shift by 1 for 0-indexed arrays
+    freq_array = all_frequencies_cm[s_idx]
 
-    freqcm = kwargs.get('freqcm')
-    nrmmod = kwargs.get('nrmmod')
-
-    s_idx = [i-1 for i in selected_mode_list]  # need to shift by 1 for 0-indexed arrays
-    freq_array = freqcm[s_idx]  # assume we return the array
-    # mode_array = nrmmod[:, s_idx]  # assume we return the array
-
-    dipoles = kwargs.get('dipoles')
-    diabatize = kwargs.get('diabatize')
-    hessout = kwargs.get('hessout')
-
-    # constants
-    qsize = kwargs.get('qsize', 0.05)
-    ha2ev = kwargs.get('ha2ev', 27.2113961318)
-    wn2ev = kwargs.get('wn2ev', 0.000123981)
+    # -------------------------------------------------------------------------
+    # extract constants
+    constants = pp.QM_const
+    ha2ev, wn2ev = constants.ha2ev, constants.wn2ev
+    qsize = pp.gamess_const.qsize
 
     # -------------------------------------------------------------------------
     # prepare various lists and dictionaries
+    file_name = pp.file_name  # this is the root file/calculation name for all files (displacements etc)
 
-    # prepare filenames
-    zeroth_filename = f'{file_name}_refG.out'
+    # path to the output of the GAMESS reference geometry calculation
+    ref_geom_path = f'{file_name}_refG.out'
 
+    hessout = hessian_path
     # -------------------------------------------------------------------------
     # bad practice, works for now and we can refactor once we've finished figuring out the end product
-    format_string = "{label:<25s}={value:>-15.9f}{units:>8s}\n"
-    make_line = functools.partial(format_string.format, units=", ev")
-    make_line_cm = functools.partial(format_string.format, units=", cm-1")
+    MCTDH_parameter_section_format_string = "{label:<25s}={value:>-15.9f}{units:>8s}\n"
+    make_line = functools.partial(MCTDH_parameter_section_format_string.format, units=", ev")
+    make_line_cm = functools.partial(MCTDH_parameter_section_format_string.format, units=", cm-1")
+    # -------------------------------------------------------------------------
 
     def make_op_section(job_title):
         """Returns a string which defines the `OP_DEFINE-SECTION` of an .op file"""
@@ -1604,13 +1588,13 @@ def mctdh(op_path, **kwargs):
 
             return '\n'.join([
                 (
-                    f" I*C1_s{a1:0>2d}s{a2:0>2d}_v{i:0>2d}r"
+                    f"C1_s{a1:0>2d}s{a2:0>2d}_v{i:0>2d}r"
                     f"{spacer:>11}1 S{a1:d}&{a2:d}"
-                    f"{spacer:>4}{i+1}  q"
+                    f"{spacer:>4}{i+1}  I*q"
                 ) + '\n' + (
-                    f"-I*C1_s{a1:0>2d}s{a2:0>2d}_v{i:0>2d}i"
+                    f"C1_s{a1:0>2d}s{a2:0>2d}_v{i:0>2d}i"
                     f"{spacer:>11}1 S{a1:d}&{a2:d}"
-                    f"{spacer:>4}{i+1}  q"
+                    f"{spacer:>4}{i+1}  -I*q"
                 )
                 for a1, a2, i in it.product(range(1, A+1), range(1, A+1), range(1, N+1))
                 if (a1 < a2)
@@ -1625,13 +1609,13 @@ def mctdh(op_path, **kwargs):
 
             return '\n'.join([
                 (
-                    f" I*C2_s{a1:0>2d}s{a2:0>2d}_v{i:0>2d}v{i:0>2d}r"
+                    f"C2_s{a1:0>2d}s{a2:0>2d}_v{i:0>2d}v{i:0>2d}r"
                     f"{spacer:>9}1 S{a1:d}&{a2:d}"
-                    f"{spacer:>4}{i+1}  q^2"
+                    f"{spacer:>4}{i+1}  I*q^2"
                 ) + '\n' + (
-                    f"-I*C2_s{a1:0>2d}s{a2:0>2d}_v{i:0>2d}v{i:0>2d}i"
+                    f"C2_s{a1:0>2d}s{a2:0>2d}_v{i:0>2d}v{i:0>2d}i"
                     f"{spacer:>9}1 S{a1:d}&{a2:d}"
-                    f"{spacer:>4}{i+1}  q^2"
+                    f"{spacer:>4}{i+1}  -I*q^2"
                 )
                 for a1, a2, i in it.product(range(1, A+1), range(1, A+1), range(1, N+1))
                 if (a1 < a2)
@@ -1643,7 +1627,7 @@ def mctdh(op_path, **kwargs):
             spacer = '|'
             bilinear_terms = {}
             for old_key in bi_lin_dict.keys():  # i should make a backwards mapping dictionary
-                new_key = reverse_ij_map[old_key] # (0, 1) <- (7, 8) for NH3
+                new_key = reverse_ij_map[old_key]  # (0, 1) <- (7, 8) for NH3
                 bilinear_terms[new_key] = bi_lin_dict[old_key]
 
             return '\n'.join([
@@ -1835,9 +1819,10 @@ def mctdh(op_path, **kwargs):
     # -------------------------------------------------------------------------
     # extraction functions
 
-    def extract_E0(hessout, A=pp.A):
+    def extract_E0(path, A=pp.A):
         """ The energy values associated with the reference geometry.
-        These energies don't depend on the modes
+        These energies don't depend on the modes.
+        Reads in the energies from the hessian file at `path`
         """
 
         # strings used by `grep` to locate values to extract
@@ -1847,15 +1832,15 @@ def mctdh(op_path, **kwargs):
         # ground state of the (optimized geometry?) (includes fictitious surface? no/yes?)
         GSE_pattern = 'TOTAL ENERGY ='
         try:
-            GSE = extract_ground_state_energy(hessout, GSE_pattern)
+            GSE = extract_ground_state_energy(path, GSE_pattern)
         except Exception as e:
             print("Cannot find ground state energy! What to do?")
             print(str(e))
-            print(f"{hessout=} {GSE_pattern=}")
+            print(f"{path=} {GSE_pattern=}")
             breakpoint()
 
         # 1st diabat's energy
-        D1E = extract_diabatic_energy(zeroth_filename, a_pattern.format(col=1))
+        D1E = extract_diabatic_energy(ref_geom_path, a_pattern.format(col=1))
         linear_shift = (D1E - GSE) * ha2ev
         print(
             f'The ground state energy is: {GSE} Hartree\n'
@@ -1879,23 +1864,23 @@ def mctdh(op_path, **kwargs):
             The inner loop is over the rows of the matrix b ~ row.
             """
             for a in range(A):
-                E0_array[a, a] = refG_extract(zeroth_filename, a_pattern.format(col=a+1))
+                E0_array[a, a] = refG_extract(ref_geom_path, a_pattern.format(col=a+1))
                 E0_array[a, a] += linear_shift
                 for b in range(a):
-                    E0_array[b, a] = refG_extract(zeroth_filename, ba_pattern.format(row=b+1, col=a+1))
+                    E0_array[b, a] = refG_extract(ref_geom_path, ba_pattern.format(row=b+1, col=a+1))
             return
 
         def _row_first_style(E0_array):
             """ x """
             for a in range(A):
-                E0_array[a, a] = extract_in_eV(zeroth_filename, a_pattern.format(col=a+1))
+                E0_array[a, a] = extract_in_eV(ref_geom_path, a_pattern.format(col=a+1))
                 E0_array[a, a] += linear_shift
 
             for a, b in upper_triangle_loop_indices(A, 2):
-                E0_array[a, b] = extract_in_eV(zeroth_filename, ba_pattern.format(row=a+1, col=b+1))
+                E0_array[a, b] = extract_in_eV(ref_geom_path, ba_pattern.format(row=a+1, col=b+1))
 
             # for row, col in upper_triangle_loop_indices(A, 2):
-            #     E0_array[row, col] = extract_in_eV(zeroth_filename, ba_pattern.format(row=row+1, col=col+1))
+            #     E0_array[row, col] = extract_in_eV(ref_geom_path, ba_pattern.format(row=row+1, col=col+1))
 
             return
 
@@ -1922,14 +1907,14 @@ def mctdh(op_path, **kwargs):
 
         # now also get the array in atomic units (Hartrees)
         for a in range(A):
-            E0_array_au[a, a] = extract_in_Hartrees(zeroth_filename, a_pattern.format(col=a+1))
+            E0_array_au[a, a] = extract_in_Hartrees(ref_geom_path, a_pattern.format(col=a+1))
 
         for a, b in upper_triangle_loop_indices(A, 2):
-            E0_array_au[a, b] = extract_in_Hartrees(zeroth_filename, ba_pattern.format(row=a+1, col=b+1))
+            E0_array_au[a, b] = extract_in_Hartrees(ref_geom_path, ba_pattern.format(row=a+1, col=b+1))
 
         return E0_array_ev, E0_array_au
 
-    def extract_etdm(file_path, verbose=False):
+    def extract_etdm(path, verbose=False):
         """ Extracts the electronic transition dipole moments from refG.out
             It will extract tdm from diabat 1 -> diabat 2,3,...
             Returns dipoles, a dictionary of tdm values, columns are x,y,z
@@ -1955,11 +1940,9 @@ def mctdh(op_path, **kwargs):
 
             return dipoles
 
-        tdipole_block = extract_lines_between_patterns(
-            file_path,
-            "TRANSITION DIPOLES BETWEEN DIABATS",
-            "TRANSITION DIPOLES BETWEEN DIRECT MAX. DIABATS"
-        )
+        start = "TRANSITION DIPOLES BETWEEN DIABATS"
+        end = "TRANSITION DIPOLES BETWEEN DIRECT MAX. DIABATS"
+        tdipole_block = extract_lines_between_patterns(path, start, end)
 
         selected_lines = [  # remove all '\n' and blank lines
             line.strip() for line in tdipole_block
@@ -2290,7 +2273,7 @@ def mctdh(op_path, **kwargs):
 
         def _extract_quadratic_soc(SOC_E0):
             """
-            `SOC_E0` is the SOC energy values extracted from `zeroth_filename` i.e. refG
+            `SOC_E0` is the SOC energy values extracted from `ref_geom_path` i.e. refG
             """
             def _compute_using_array_style(temp_dict):
                 quad_ev = temp_dict["+2"] + temp_dict["-2"] - 2.0 * SOC_E0
@@ -2411,7 +2394,7 @@ def mctdh(op_path, **kwargs):
             return total_dict
 
         soc_dict = {}
-        soc_dict['constant'] = extract_DSOME(zeroth_filename, A)
+        soc_dict['constant'] = extract_DSOME(ref_geom_path, A)
         soc_dict['Linear'] = _extract_linear_soc()
         soc_dict['Quadratic'] = _extract_quadratic_soc(soc_dict['constant'])
         soc_dict['BiLinear'] = _extract_bilinear_soc()
@@ -2430,12 +2413,12 @@ def mctdh(op_path, **kwargs):
         # do all the extraction first
 
         vibron_ev = freq_array * wn2ev
-        E0_array_eV, E0_array_au = extract_E0(hessout)
+        E0_array_eV, E0_array_au = extract_E0(hessian_path)
         model = {
             "vibron eV": vibron_ev,
             "E0 eV": E0_array_eV,
             "E0 au": E0_array_au,
-            "dipoles": extract_etdm(zeroth_filename),
+            "dipoles": extract_etdm(ref_geom_path),
         }
 
         model["Linear"] = extract_linear()
@@ -2505,12 +2488,12 @@ def mctdh(op_path, **kwargs):
             return bad_mode
 
         def refG_file_exists():
-            refG_exists = bool(subprocess_call_wrapper(["ls", zeroth_filename]) == 0)
+            refG_exists = bool(subprocess_call_wrapper(["ls", ref_geom_path]) == 0)
             if not refG_exists:
                 """ If refG doesn't exist, then maybe we can find the .... from other files `blah.txt`
                 but also maybe they don't exist... need to check later
                 """
-                print(f"Skip extracting Hamiltonians from the non-existing {zeroth_filename}")
+                print(f"Skip extracting Hamiltonians from the non-existing {ref_geom_path}")
                 breakpoint()
                 raise Exception("need to add failback code if can't find refG")
 
@@ -2537,10 +2520,12 @@ def mctdh(op_path, **kwargs):
 # helper functions for `main()`
 
 
-def read_freq_values(hessout):
-    """ Function to read frequency values from selected lines """
+def read_freq_values(path):
+    """ Extract frequency values from specific block of text inside file.
+    Assumes `path` points to hessian output file.
+    """
     selected_lines = extract_lines_between_patterns(
-        hessout,
+        path,
         "FREQUENCIES IN CM",
         "REFERENCE ON SAYVETZ CONDITIONS"
     )
@@ -2553,10 +2538,12 @@ def read_freq_values(hessout):
     return freq_value_set
 
 
-def read_mode_values(hessout):
-    """ Function to extract filtered set of lines """
+def read_mode_values(path):
+    """ Extract filtered set of lines from specific block of text inside file.
+    Assumes `path` points to hessian output file.
+    """
     selected_lines = extract_lines_between_patterns(
-        hessout,
+        path,
         "FREQUENCIES IN CM",
         "REFERENCE ON SAYVETZ CONDITIONS"
     )
@@ -2573,28 +2560,31 @@ def read_mode_values(hessout):
     return mode_value_set
 
 
-def get_number_of_atoms(hessout):
-    """ Function to get the number of atoms from the hessout file """
+def _extract_freq_and_mode_from_hessian(path):
+    """ Extracts the frequency and normal mode information from the Hessian.
+    Writes those values to two individual text files.
+    """
+    filtered_set = read_mode_values(path)
+    with open('mode.dat', 'w') as fp:
+        fp.writelines(filtered_set)
+
+    freq_value_set = read_freq_values(path)
+    with open('freq.dat', 'w') as fp:
+        fp.writelines(freq_value_set)
+    return
+
+
+def get_number_of_atoms(path):
+    """ Extract number of atoms from specific block of text inside file.
+    Assumes `path` points to hessian output file.
+    """
 
     # would be good to replace this with memory mapping find or grep command?
-    with open(hessout, 'r', errors='replace') as hess_file:
+    with open(path, 'r', errors='replace') as hess_file:
         for line in hess_file:
             if ' TOTAL NUMBER OF ATOMS' in line:
                 natoms = int(line.split('=')[1])
                 return natoms
-
-
-def _extract_freq_and_mode_from_hessian(path):
-    """ x """
-    freq_value_set, filtered_set = read_freq_values(path), read_mode_values(path)
-
-    with open('mode.dat', 'w') as fp:
-        fp.writelines(filtered_set)
-
-    with open('freq.dat', 'w') as fp:
-        fp.writelines(freq_value_set)
-
-    return
 
 
 def process_mode_freq(ndim, nof_cols=5, float_length=12):
@@ -2639,35 +2629,43 @@ def process_mode_freq(ndim, nof_cols=5, float_length=12):
     return modes_array, freq_array
 
 
-def compose_ref_structure(ref_file, hessout, nof_atoms):
-    coord_lines = extract_lines_between_patterns(hessout, 'EQUILIBRIUM GEOMETRY LOCATED', 'INTERNUCLEAR DISTANCES')
+def compose_ref_structure(ref_geom_path, hessian_path, nof_atoms):
+    """ x """
+
+    start = 'EQUILIBRIUM GEOMETRY LOCATED'
+    end = 'INTERNUCLEAR DISTANCES'
+    coord_lines = extract_lines_between_patterns(hessian_path, start, end)
 
     good_ref_structure = bool(len(coord_lines) > 2)
 
     if not good_ref_structure:
-        print(f'Unsuccessful extraction of equilibrium geometry from {hessout}. Please prepare ref_structure manually.')
+        print(
+            f'Unsuccessful extraction of equilibrium geometry from {hessian_path}.\n'
+            'Please prepare ref_structure manually.'
+        )
         breakpoint()  # do we want to continue execution, or do we actually want to stop the program?
         import sys; sys.exit()
 
-    if good_ref_structure:
+    """ we don't need to delete the file if we simply write a new file
+    _delete_file_using_rmrf(ref_geom_path)
+    """
 
-        """ we don't need to delete the file if we simply write a new file
-        _delete_file_using_rmrf(ref_file)
-        """
+    # the last element of coord_lines is an empty line (`\n`)
+    assert coord_lines[-1] == '\n'
 
-        # the last element of coord_lines is an empty line (`\n`)
-        assert coord_lines[-1] == '\n'
+    # remove empty lines
+    coord_lines = [l for l in coord_lines if l != '\n']
 
-        # remove empty lines
-        coord_lines = [l for l in coord_lines if l != '\n']
+    # we want the lines at the end of the file (the last nof_atoms/Z lines)
+    file_contents = "".join(coord_lines[-nof_atoms:])
 
-        # we want the lines at the end of the file (the last nof_atoms/Z lines)
-        file_contents = "".join(coord_lines[-nof_atoms:])
+    with open(ref_geom_path, 'w') as fp:
+        fp.write(file_contents)
 
-        with open(ref_file, 'w') as fp:
-            fp.write(file_contents)
-
-        print(f'Successfully extracted equilibrium geometry from {hessout} and prepared ref_structure.')
+    print(
+        f'Successfully extracted equilibrium geometry from\n {hessian_path=}\n'
+        f"And prepared reference structure at\n {ref_geom_path=}."
+    )
 
     return coord_lines
 
@@ -2716,39 +2714,41 @@ def read_reference_structure(file_path, verbose=True):
     return atom_dict, charge_dict, ref_coords
 
 
-def refG_calc(refgeo, input_filename, output_filename):
+def refG_calc(ref_geom_path, **kwargs):
     """
     Do diabatization calculation at the reference non-distorted structure.
     This calculation shall be a repetition of a calculation in preparing `temp.inp`.
     """
 
-    # Check if the calculation has already been run
-    grace_exists = subprocess_call_wrapper(["grep", "DONE WITH MP2 ENERGY", output_filename]) == 0
+    # input and output paths for the reference geometry calculation
+    input_path = kwargs['refG_in']
+    output_path = kwargs['refG_out']
 
+    # Check if the calculation has already been run
+    grace_exists = subprocess_call_wrapper(["grep", "DONE WITH MP2 ENERGY", output_path]) == 0
     if grace_exists:
         print("Calculation at the reference structure has already been done.")
         return
+    print("About to run calculation at the undistorted reference structure")
 
-    else:
-        print("Run calculation at the undistorted reference structure")
+    # create the input file for the reference geometry calculation
+    # the first part of the file comes from `temp.inp`
+    shutil.copy("temp.inp", input_path)
 
-        shutil.copy("temp.inp", input_filename)
+    # then we append the undistorted reference structure data onto the `input_path`
+    with open(ref_geom_path, 'r', errors='replace') as ref_structure:
+        data = ref_structure.read()
+    with open(input_path, "a") as fp:
+        fp.write(data)
+        fp.write(" $END\n")
 
-        with open(refgeo, 'r', errors='replace') as ref_structure:
-            data = ref_structure.read()
+    # Finally we submit and run the refG calculation (you may need to customize this command based on your setup)
+    # refG_job_result = subprocess_run_wrapper(["./subgam.diab", input_path, "4", "0", "1"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    job_path = my_subgam(input_path, ncpus=2, ngb=1, nhour=1)
+    os_system_wrapper(f"sbatch -W {job_path}")
 
-        # in this case we append the reference structure to file contents from "temp.inp"
-        with open(input_filename, "a") as fp:
-            fp.write(data)
-            fp.write(" $END\n")
-
-        # Submit and run the refG calculation (you may need to customize this command based on your setup)
-        # refG_job_result = subprocess_run_wrapper(["./subgam.diab", input_filename, "4", "0", "1"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        output_filename = my_subgam(input_filename, ncpus=2, ngb=1, nhour=1)
-        os_system_wrapper(f"sbatch -W {output_filename}")
-
-        # At this point, refG calculation has completed successfully.
-        print("Calculation at the reference structure is done.")
+    # At this point, refG calculation has completed successfully.
+    print("Calculation at the reference structure is done.")
 
     return
 
@@ -2805,78 +2805,64 @@ def process_profiling_data(filename):
 
 
 # ---------------------------------------------------------------------------------------
-def main(ref_file="ref_structure", ncols=5, **kwargs):
+def main(ref_geom_path="ref_structure", ncols=5, **kwargs):
     """ x """
+    from project_parameters import Z, N_tot
+
     hessian_filename = kwargs['hessian_filename']
     _extract_freq_and_mode_from_hessian(hessian_filename)
-
     nof_atoms = natoms = get_number_of_atoms(hessian_filename)
-    ndim = nof_atoms * 3
+    assert Z == nof_atoms, f"{Z=} is not {nof_atoms=}!? Check hessian and project_parameters!"
 
-    assert Z == nof_atoms, f"{Z=} is not {nof_atoms=}!?"
-    assert N_tot == ndim, f"{N_tot=} is not {ndim=}!?"
+    assert N_tot == (nof_atoms * 3), f"{N_tot=} is not {nof_atoms * 3=}!?  Check hessian and project_parameters!"
 
-    nrmmod, freqcm = process_mode_freq(N_tot, ncols)
+    normal_modes_array, frequencies_cm = process_mode_freq(N_tot, ncols)
 
-    compose_ref_structure(ref_file, hessian_filename, nof_atoms)
+    compose_ref_structure(ref_geom_path, hessian_filename, nof_atoms)
 
-    atom_dict, charge_dict, ref_coords = read_reference_structure(ref_file)
+    atom_dict, charge_dict, reference_coordinates = read_reference_structure(ref_geom_path)
 
-    refG_calc(ref_file, kwargs['refG_in'], kwargs['refG_out'])
+    refG_calc(ref_geom_path, **kwargs)
 
     # -------------------------------------------------------------------------
     diabatization_kwargs = kwargs.copy()
     diabatization_kwargs.update({
-        'ndim': ndim,
-        'freqcm': freqcm,
-        'refcoord': ref_coords,
-        'nrmmod': nrmmod,
-        'natoms': natoms,
-        'atmlst': atom_dict,
-        'chrglst': charge_dict,
-        'qsize': pp.qsize,
-        'ha2ev': pp.ha2ev,
-        'wn2ev': pp.wn2ev,
-        'wn2eh': pp.wn2eh,
-        'ang2br': pp.ang2br,
-        'amu2me': pp.amu2me
+        'all_freq': frequencies_cm,
+        'reference_coordinates': reference_coordinates,
+        'normal_modes': normal_modes_array,
+        'atom_dict': atom_dict,
+        'charge_dict': charge_dict,
     })
-    # name, modes = pp.filnam, pp.modes_included
 
     disp_coord = diabatization(**diabatization_kwargs)
+    # turns out we don't actually use the `disp_coord` for anything?
 
     print("Diabatization successfully modified?")
 
-    mctdh_input_kwargs = kwargs.copy()
+    # -------------------------------------------------------------------------
+    op_file_name = "mctdh.op"
+    op_path = join("./", op_file_name)
 
-    mctdh_input_kwargs.update({
-        'qsize': pp.qsize,
-        'ha2ev': pp.ha2ev,
-        'wn2ev': pp.wn2ev,
-        'wn2eh': pp.wn2eh,
-        'ang2br': pp.ang2br,
-        'amu2me': pp.amu2me,
-        'nof_electronic_states': pp.A,
-        'ndim': ndim,
-        'freqcm': freqcm,
-        'nrmmod': nrmmod,
-        'hessout': kwargs['hessian_filename'],
-    })
+    hessian_path = kwargs['hessian_filename']
 
-    if pp.SOC_flag:  # only need the return values from `diabatization` if doing SOC
-        mctdh_input_kwargs['disp_coord'] = disp_coord
+    mctdh(op_path, hessian_path, frequencies_cm, pp.A, pp.N, **kwargs)
 
-    op_path = join("./", "mctdh.op")
-    # name, modes = pp.filnam, pp.modes_included
-    mctdh(op_path, **mctdh_input_kwargs)
     print(f"{op_path=} successfully modified\n")
 
-    # copy file to <specific_file_name.op>
+    # -------------------------------------------------------------------------
+    # copy <mctdh.op> file to <specific_file_name.op>
     src_path = op_path
     dst_path = join("./", pp.file_name + '.op')
     shutil.copy(src_path, dst_path)
-    print(" "*4 + src_path, "copied to", " "*4 +dst_path, sep='\n')
 
+    print(
+        " "*4 + src_path,
+        "copied to",
+        " "*4 +dst_path,
+        sep='\n'
+    )
+
+    # -------------------------------------------------------------------------
     if False and __debug__:
         header = f"\n{'-'*20}{{}}{'-'*20}\n"
         print_header = lambda s: print(header.format(s))
@@ -2912,7 +2898,7 @@ def main(ref_file="ref_structure", ncols=5, **kwargs):
 if (__name__ == "__main__"):
 
     if len(sys.argv) != 2:
-        print("Usage: python your_script.py <hessout_file>")
+        print("Usage: python your_script.py <path_to_hessian_output>")
         sys.exit(1)
 
     hessian_filename = sys.argv[1]  # read in name of hessian file
@@ -2921,7 +2907,6 @@ if (__name__ == "__main__"):
     # everything we add to `kwargs` is 'imported' from project parameters
 
     kwargs.update({
-        'project_filename': pp.filnam,
         'refG_in': f"{pp.filnam}_refG.inp",  # reference geometry
         'refG_out': f"{pp.filnam}_refG.out",  # reference geometry
         # 'modes_included': pp.modes_included,
