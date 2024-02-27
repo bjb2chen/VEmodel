@@ -275,16 +275,13 @@ def _make_displacement_filenames():
         q1_label = pp.mode_map_dict[i]
         for key in linear_disp_keys:
             sign = key[0]  # select plus or minus
-            name = f'{file_name}'
 
             order = int(key[1])
-            #breakpoint()
             max_order = pp.highest_order_per_mode[i]
             if not (order <= max_order):
                 continue  # skip this combination
 
-            for o in range(order):
-                name += f'_mode{q1_label}_{sign}{qsize}'
+            name = f'{file_name}_{qsize}_{sign}{order}q{q1_label}'
 
             linear_displacement_filenames[(key, i)] = name + '.out'
 
@@ -300,9 +297,9 @@ def _make_displacement_filenames():
             key = d1+d2  # just in case
             assert key in bi_linear_disp_keys, f"{d1+d2=} is not in {bi_linear_disp_keys=}"
 
-            name = f'{file_name}'
-            name += f'_mode{q1_label}_{d1}{qsize}'
-            name += f'_mode{q2_label}_{d2}{qsize}'
+            name = f'{file_name}_{qsize}'
+            name += f'_{d1}{order}q{q1_label}'
+            name += f'_{d2}{order}q{q2_label}'
 
             bi_linear_displacement_filenames[(key, i, j)] = name + '.out'
 
@@ -311,21 +308,16 @@ def _make_displacement_filenames():
 
 # ---------------------------------------------------------------------------------------
 # constants used throughout the code
+highest_order = max(pp.highest_order_per_mode)
 
-linear_disp_keys = ["+1", "+2", "+3", "+4", "-1", "-2", "-3", "-4"]
+#linear_disp_keys = ["+1", "+2", "+3", "+4", "-1", "-2", "-3", "-4"]
+linear_disp_keys = [f"+{n+1}" for n in range(highest_order)]
+linear_disp_keys += [f"-{n+1}" for n in range(highest_order)]
+
 bi_linear_disp_keys = ["++", "+-", "-+", "--"]
 
-linear_temp_suffix = {
-    "+1": 'p',
-    "+2": 'pp',
-    "+3": 'ppp',
-    "+4": 'ppp',
-    "-1": 'm',
-    "-2": 'mm',
-    "-3": 'mmm',
-    "-4": 'mmmm',
-}
-
+linear_temp_suffix = {f"+{n+1}": 'p'*n for n in range(highest_order)}
+linear_temp_suffix.update({f"-{n+1}": 'm'*n for n in range(highest_order)})
 
 # these could be lists or dicts... for now I'm just making them dicts
 linear_temp_struct_filenames = {
@@ -839,23 +831,25 @@ def diabatization(**kwargs):
         #                  (9, 1)                   (1,  3)             (9, 3)
         #                  (12, 1)                  (1,  6)            (12, 6)
 
+        # Do a loop here so that it scales for 8 points, 10 points
+        # Change the filenames such that for 8 points, do x8 so that the filenames are not too long
+
         for i in range(N):
-            if pp.highest_order_per_mode[i] >= 3:
+            max_order_of_qi = pp.highest_order_per_mode[i]
+            for order in range(3, max_order_of_qi+1):
                 displacements.update({
-                    "+3": reference[:] + 3.0 * R_array[i] * mode_array[:, i],
-                    "-3": reference[:] - 3.0 * R_array[i] * mode_array[:, i],
+                    f"+{order}": reference[:] + order * R_array[i] * mode_array[:, i],
+                    f"-{order}": reference[:] - order * R_array[i] * mode_array[:, i],
                 })
-            if pp.highest_order_per_mode[i] >= 4:
-                displacements.update({
-                    "+4": reference[:] + 4.0 * R_array[i] * mode_array[:, i],
-                    "-4": reference[:] - 4.0 * R_array[i] * mode_array[:, i],
-                })
-        breakpoint()
-        assert set(displacements.keys()) == set(linear_disp_keys), f"{linear_disp_keys=} no longer agree!"
+        
+        assert set(displacements.keys()) == set(linear_disp_keys), (f"{displacements.keys()=}\nand\n{linear_disp_keys=}\n no longer agree!")
 
         shape = (Z*3, N)
+        # for k in linear_disp_keys:
+        #     print(k)
+        # breakpoint()
         for k in linear_disp_keys:
-            if k[1] in ['3', '4']:
+            if int(k[1]) > 2:
                 assert displacements[k].shape == (Z*3,),  f"{k=} {displacements[k].shape=} not {(Z*3,)=}?"
             else:
                 assert displacements[k].shape == shape, f"{k=} {displacements[k].shape=} not {shape=}?"
@@ -930,7 +924,15 @@ def diabatization(**kwargs):
                 if False and len(mode_idx) > 1:
                     print(*mode_idx, d.shape); breakpoint()
 
-                if key[1] in ['3', '4']:
+                # temporary, if we are doing extra displacements along 1 mode for linear
+                # then the dimensionality is different
+                if (d.ndim == 1) and ('+3' in key_list) and int(key[1]) > 2:
+                    string = template_string.format(
+                        atom_list[idx_atom], charge_list[idx_atom],
+                        d[offset+0],  # x componentmuc
+                        d[offset+1],  # y component
+                        d[offset+2],  # z component
+                    )
                     string = template_string.format(
                         atom_list[idx_atom], charge_list[idx_atom],
                         d[offset+0],  # x component
@@ -2231,6 +2233,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 assert key in linear_disp_keys, f"{key=} not in {linear_disp_keys=}"
                 path = linear_displacement_filenames[(key, i)]
                 temp_dict[key] = extract_energy_at_displaced_geometry(path, key)
+                print(i, path)
             if False and __debug__: print(temp_dict["+2"], '\n', temp_dict["-2"]); breakpoint()
 
             # ----------------------------------------------------------
