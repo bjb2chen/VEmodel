@@ -1,4 +1,4 @@
-# vmodels
+# VEmodel
 
 ### Repository for vibronic models construction.
 
