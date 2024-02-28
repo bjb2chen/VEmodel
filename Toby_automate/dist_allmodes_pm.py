@@ -297,6 +297,7 @@ def _make_displacement_filenames():
             key = d1+d2  # just in case
             assert key in bi_linear_disp_keys, f"{d1+d2=} is not in {bi_linear_disp_keys=}"
 
+            order = 1
             name = f'{file_name}_{qsize}'
             name += f'_{d1}{order}q{q1_label}'
             name += f'_{d2}{order}q{q2_label}'
@@ -2148,6 +2149,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 assert key in linear_disp_keys, f"{key=} not in {linear_disp_keys=}"
                 path = linear_displacement_filenames[(key, i)]
                 temp_dict[key] = extract_energy_at_displaced_geometry(path, key)
+                print(i, path)
 
             # ----------------------------------------------------------
             # preform the math / calculation using the values we just extracted
