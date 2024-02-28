@@ -281,7 +281,7 @@ def _make_displacement_filenames():
             if not (order <= max_order):
                 continue  # skip this combination
 
-            name = f'{file_name}_{qsize}_{sign}{order}q{q1_label}'
+            name = f'{file_name}_{qsize}_{sign}x{order}q{q1_label}'
 
             linear_displacement_filenames[(key, i)] = name + '.out'
 
@@ -299,8 +299,8 @@ def _make_displacement_filenames():
 
             order = 1
             name = f'{file_name}_{qsize}'
-            name += f'_{d1}{order}q{q1_label}'
-            name += f'_{d2}{order}q{q2_label}'
+            name += f'_{d1}x{order}q{q1_label}'
+            name += f'_{d2}x{order}q{q2_label}'
 
             bi_linear_displacement_filenames[(key, i, j)] = name + '.out'
 
@@ -1130,8 +1130,39 @@ def find_nstate(file_path, pattern='# of states in CI      = '):
     return None  # Return None if the pattern is not found
 
 # ---------------------------------------------------------------------------------------
+def fitting():
+    fitting_format_string = "{x_val:<15s}{y_val:>-10.9f}{units:>8s}\n"
+    make_line = functools.partial(fitting_format_string.format, units=", Hartree")
+    contents = make_line(x_val="qsize value", y_val="Ham_11", units="Units")
 
+    for i in range(N):
+        fitting = {}
 
+        for key in linear_disp_keys:
+            print(key)
+
+            sign = key[0]
+            order = int(key[1])
+            max_order = pp.highest_order_per_mode[i]
+
+            if not (order <= max_order):
+                continue  # skip this combination
+
+            if max_order > 2:
+                fitting[(key, i)] = extract_in_eV(
+                    linear_displacement_filenames[(key, i)], 'E(GMC',
+                )
+                print(f"Found E(GMC-PT2)={fitting[(key, i)]} in file {linear_displacement_filenames[(key, i)]}")
+
+                contents += make_line(x_val=f"{sign}{order*qsize}", y_val=fitting[(key, i)])
+            
+    with open(f'fitting_st1_mode{i+1}.dat', 'w') as fp:
+        fp.write(contents)
+
+    breakpoint()
+    return
+
+# ---------------------------------------------------------------------------------------
 def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
     """ This function creates an `*.op` which will be used by MCTDH.
 
@@ -2103,6 +2134,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         # strings used by `grep` to locate values to extract
         a_pattern = 'STATE #.* {col}.S GMC-PT-LEVEL DIABATIC ENERGY='
         ba_pattern = 'STATE #.* {row} &.* {col}.S GMC-PT-LEVEL COUPLING'
+        A1_pattern = 'E(GMC'
 
         shape = (A, A)
 
@@ -2164,6 +2196,16 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             # ----------------------------------------------------------
             # store the value in the dictionary
             linear_dictionary[mode_map_dict[i]] = linear_ev
+
+            # ----------------------------------------------------------
+                # order = int(key[1])
+                # max_order = pp.highest_order_per_mode[i]
+                # if not (order <= max_order):
+                #     continue  # skip this combination
+                # grace_code[key] = subprocess_call_wrapper([
+                #     "grep", A1_pattern,
+                #     linear_displacement_filenames[(key, i)]
+                # ])
 
         return linear_dictionary
 
@@ -2986,7 +3028,11 @@ def main(ref_geom_path="ref_structure", ncols=5, **kwargs):
 
     hessian_path = kwargs['hessian_filename']
 
-    mctdh(op_path, hessian_path, frequencies_cm, pp.A, pp.N, **kwargs)
+    if A != 1:
+        mctdh(op_path, hessian_path, frequencies_cm, pp.A, pp.N, **kwargs)
+    else:
+        fitting()
+        return
 
     print(f"{op_path=} successfully modified\n")
 
