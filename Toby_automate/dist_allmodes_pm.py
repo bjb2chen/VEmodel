@@ -317,8 +317,8 @@ linear_disp_keys += [f"-{n+1}" for n in range(highest_order)]
 
 bi_linear_disp_keys = ["++", "+-", "-+", "--"]
 
-linear_temp_suffix = {f"+{n+1}": 'p'*n for n in range(highest_order)}
-linear_temp_suffix.update({f"-{n+1}": 'm'*n for n in range(highest_order)})
+linear_temp_suffix = {f"+{n+1}": 'p'*(n+1) for n in range(highest_order)}
+linear_temp_suffix.update({f"-{n+1}": 'm'*(n+1) for n in range(highest_order)})
 
 # these could be lists or dicts... for now I'm just making them dicts
 linear_temp_struct_filenames = {
@@ -846,9 +846,7 @@ def diabatization(**kwargs):
         assert set(displacements.keys()) == set(linear_disp_keys), (f"{displacements.keys()=}\nand\n{linear_disp_keys=}\n no longer agree!")
 
         shape = (Z*3, N)
-        # for k in linear_disp_keys:
-        #     print(k)
-        # breakpoint()
+
         for k in linear_disp_keys:
             if int(k[1]) > 2:
                 assert displacements[k].shape == (Z*3,),  f"{k=} {displacements[k].shape=} not {(Z*3,)=}?"
@@ -928,12 +926,6 @@ def diabatization(**kwargs):
                 # temporary, if we are doing extra displacements along 1 mode for linear
                 # then the dimensionality is different
                 if (d.ndim == 1) and ('+3' in key_list) and int(key[1]) > 2:
-                    string = template_string.format(
-                        atom_list[idx_atom], charge_list[idx_atom],
-                        d[offset+0],  # x componentmuc
-                        d[offset+1],  # y component
-                        d[offset+2],  # z component
-                    )
                     string = template_string.format(
                         atom_list[idx_atom], charge_list[idx_atom],
                         d[offset+0],  # x component
@@ -1138,26 +1130,52 @@ def fitting():
 
          1     E(REF-CI)=      -56.2499276613     E(GMC-PT2)=      -56.3710474990
 
-    For A > 1:                                                 (extract this)
+    For A > 1:                                     (extract this)
 
-     2     E(REF-CI)=        5.4930366 eV   E(GMC-QDPT2)=        5.1665886 eV
-     3     E(REF-CI)=        5.4930571 eV   E(GMC-QDPT2)=        5.1666087 eV
+    --- DIABATIC ENERGIES (DIAGONAL ELEMENT) ---       HARTREE            EV
+    STATE #  1'S GMC-CI-LEVEL DIABATIC ENERGY=     -55.916713021       0.000000000
+    STATE #  2'S GMC-CI-LEVEL DIABATIC ENERGY=     -55.694114507       6.057214072
+    STATE #  3'S GMC-CI-LEVEL DIABATIC ENERGY=     -55.694113719       6.057235537
+
+        template_string = header + data
+
+        for key in key_list:
+            file_contents = []
+            d = displaced_q[key]
+            for idx_atom in range(Z):
+                offset = 3*idx_atom  # 3 xyz-coordinates
+
+                if False and len(mode_idx) > 1:
+                    print(*mode_idx, d.shape); breakpoint()
+
+                # temporary, if we are doing extra displacements along 1 mode for linear
+                # then the dimensionality is different
+                if (d.ndim == 1) and ('+3' in key_list) and int(key[1]) > 2:
+                    string = template_string.format(
+                        atom_list[idx_atom], charge_list[idx_atom],
+                        d[offset+0],  # x component
+                        d[offset+1],  # y component
+                        d[offset+2],  # z component
+                    )
+
     """
     format_string_ha = "{state:<8s}{x_val:<15s}{y_val:<-10.10f}{units:<15s}{file:<60s}\n" # truncated to 10 d.p.
     format_string_ev = "{state:<8s}{x_val:<15s}{y_val:<-10.7f}{units:<15s}{file:<60s}\n"  # truncated to 7 d.p.
     make_line_ha = functools.partial(format_string_ha.format, units=", Hartree")
     make_line_ev = functools.partial(format_string_ev.format, units=", eV")
 
+    shape = (A, A)
+
     for i in range(N):
         fitting = {}
-        contents = "state   qsize value    Ham Value       Units    file\n"
+        contents_1 = "state   qsize value    Ham Value       Units    file\n"
+        contents_2 = "qsize value    Ham Value (each column is one state, 1 2 -> A) eV \n"
 
         for key in linear_disp_keys:
 
             sign = key[0]
             order = int(key[1])
             max_order = pp.highest_order_per_mode[i]
-            print(f"i:{i}, key: {key}, order: {order}, max_order: {max_order}")
 
             if not (order <= max_order):  
                 continue  # skip this combination when order > max_order, as it does not exist e.g. [8, 3, 2 ...] means key('+4', 1) not exist
@@ -1174,28 +1192,36 @@ def fitting():
 
                 print(f"Found E(GMC-PT2) = {fitting[(key, i)]} in file {linear_displacement_filenames[(key, i)]}")
 
-                contents += make_line_ha(state=f"{A}", x_val=f"{sign}{order*qsize:.2f}", y_val=fitting[(key, i)], file=f"{linear_displacement_filenames[(key, i)]}")
+                contents_1 += make_line_ha(state=f"{A}", x_val=f"{sign}{order*qsize:.2f}", y_val=fitting[(key, i)], file=f"{linear_displacement_filenames[(key, i)]}")
 
                 with open(f'fitting_{A}st_mode{pp.mode_map_dict[i]}.dat', 'w') as fp:
-                    fp.write(contents)
+                    fp.write(contents_1)
 
-            elif (max_order > 2): # A > 1, E(GMC-QDPT2)
-                for a in range(2, A+1):
+            elif (max_order > 2): # A > 1
 
-                    column_specification_string = "tail -1 | cut -c62-75"  # this will not include 'eV'
-                    backup_line_idx = slice(62, 75)
-                    fitting[(key, i)] = _extract_energy_from_gamessoutput_grep( # cannot use extract_in_eV because the 'eV' ruins float()
-                        linear_displacement_filenames[(key, i)], f'{a} .*E(REF-CI)=.* E(GMC-QDPT2)',
-                        column_specification_string,
-                        backup_line_idx
-                    )
+                array = np.zeros(shape)
 
-                    print(f"Found State {a} E(GMC-QDT2) = {fitting[(key, i)]} in file {linear_displacement_filenames[(key, i)]}")
+                for a in range(A):
 
-                    contents += make_line_ev(state=f"{a}", x_val=f"{sign}{order*qsize:.2f}", y_val=fitting[(key, i)], file=f"{linear_displacement_filenames[(key, i)]}")
+                    a_pattern = 'STATE #.* {col}.S GMC-PT-LEVEL DIABATIC ENERGY='
+
+                    refG_fitting = extract_in_Hartrees(f'{file_name}_refG.out', a_pattern.format(col=a+1))
+                    fitting[(key, a+1)] = extract_in_Hartrees(linear_displacement_filenames[(key, i)], a_pattern.format(col=a+1))
+
+                    array[a, a] = (fitting[(key, a+1)] - refG_fitting) * ha2ev
+
+                    #print(f"Found State {a+1} DIABATIC ENERGY = refG: {refG_fitting} & fitting: {fitting[(key, a+1)]} array: {array[a, a]} eV in file {linear_displacement_filenames[(key, i)]}")
+
+                qlst = [f"{sign}{order*qsize:.2f}"]
+                ylst = [f"{array[a, a]:.10f}" for a in range(A)]
+                qlst.extend(ylst)
+                print(qlst)
+
+                contents_2 += "     ".join(qlst)
+                contents_2 += "\n"
 
                 with open(f'fitting_{A}st_mode{pp.mode_map_dict[i]}.dat', 'w') as fp:
-                    fp.write(contents)
+                      fp.write(contents_2)
 
     return
 
