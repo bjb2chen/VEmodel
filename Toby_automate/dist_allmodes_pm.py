@@ -1143,8 +1143,8 @@ def fitting():
      2     E(REF-CI)=        5.4930366 eV   E(GMC-QDPT2)=        5.1665886 eV
      3     E(REF-CI)=        5.4930571 eV   E(GMC-QDPT2)=        5.1666087 eV
     """
-    format_string_ha = "{state:<8s}{x_val:<15s}{y_val:<-10.10f}{units:<15s}{file:<60s}\n"
-    format_string_ev = "{state:<8s}{x_val:<15s}{y_val:<-10.7f}{units:<15s}{file:<60s}\n"
+    format_string_ha = "{state:<8s}{x_val:<15s}{y_val:<-10.10f}{units:<15s}{file:<60s}\n" # truncated to 10 d.p.
+    format_string_ev = "{state:<8s}{x_val:<15s}{y_val:<-10.7f}{units:<15s}{file:<60s}\n"  # truncated to 7 d.p.
     make_line_ha = functools.partial(format_string_ha.format, units=", Hartree")
     make_line_ev = functools.partial(format_string_ev.format, units=", eV")
 
@@ -1153,14 +1153,14 @@ def fitting():
         contents = "state   qsize value    Ham Value       Units    file\n"
 
         for key in linear_disp_keys:
-            print(key)
 
             sign = key[0]
             order = int(key[1])
             max_order = pp.highest_order_per_mode[i]
+            print(f"i:{i}, key: {key}, order: {order}, max_order: {max_order}")
 
-            if not (order <= max_order):
-                continue  # skip this combination
+            if not (order <= max_order):  
+                continue  # skip this combination when order > max_order, as it does not exist e.g. [8, 3, 2 ...] means key('+4', 1) not exist
 
             if (max_order > 2) and (A == 1): # E(GMC-PT2)
 
@@ -1192,7 +1192,7 @@ def fitting():
 
                     print(f"Found State {a} E(GMC-QDT2) = {fitting[(key, i)]} in file {linear_displacement_filenames[(key, i)]}")
 
-                    contents += make_line_ev(state=f"{a}", x_val=f"{sign}{order*qsize:.2f}", y_val=fitting[(key, i)], units=", eV", file=f"{linear_displacement_filenames[(key, i)]}")
+                    contents += make_line_ev(state=f"{a}", x_val=f"{sign}{order*qsize:.2f}", y_val=fitting[(key, i)], file=f"{linear_displacement_filenames[(key, i)]}")
 
                 with open(f'fitting_{A}st_mode{pp.mode_map_dict[i]}.dat', 'w') as fp:
                     fp.write(contents)
