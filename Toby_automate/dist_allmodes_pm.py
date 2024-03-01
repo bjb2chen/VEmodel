@@ -312,13 +312,13 @@ def _make_displacement_filenames():
 highest_order = max(pp.highest_order_per_mode)
 
 #linear_disp_keys = ["+1", "+2", "+3", "+4", "-1", "-2", "-3", "-4"]
-linear_disp_keys = [f"+{n+1}" for n in range(highest_order)]
-linear_disp_keys += [f"-{n+1}" for n in range(highest_order)]
+linear_disp_keys = [f"+{n}" for n in range(1, highest_order+1)]
+linear_disp_keys += [f"-{n}" for n in range(1, highest_order+1)]
 
 bi_linear_disp_keys = ["++", "+-", "-+", "--"]
 
-linear_temp_suffix = {f"+{n+1}": 'p'*(n+1) for n in range(highest_order)}
-linear_temp_suffix.update({f"-{n+1}": 'm'*(n+1) for n in range(highest_order)})
+linear_temp_suffix = {f"+{n}": 'p'*n for n in range(1, highest_order+1)}
+linear_temp_suffix.update({f"-{n}": 'm'*n for n in range(1, highest_order+1)})
 
 # these could be lists or dicts... for now I'm just making them dicts
 linear_temp_struct_filenames = {
@@ -1183,7 +1183,7 @@ def fitting():
                     array[a, a] = (fitting[(key, a+1)] - refG_fitting) * ha2ev
 
                 xvals = f"{sign}{order*qsize:.2f}"
-                yvals = '   '.join(f"{array[a, a]:.10f}" for a in range(A))
+                yvals = '   '.join(f"{array[a, a]: .10f}" for a in range(A))
                 data_2 += f"{xvals}   {yvals}   {linear_displacement_filenames[(key, i)]}\n"
 
             elif (max_order > 2): # A == 1
@@ -1208,7 +1208,7 @@ def fitting():
                     data_1 += f" 0.00   {fitting[('0', '0')]}   {file_name}_refG.out\n"
 
                 xvals = f"{sign}{order*qsize:.2f}"
-                yvals = f"{fitting[(key, i)]:.10f}"
+                yvals = f"{fitting[(key, i)]: .10f}"
                 data_1 += f"{xvals}   {yvals}   {linear_displacement_filenames[(key, i)]}\n"
 
         if data_1 != '':
@@ -3077,7 +3077,7 @@ def main(ref_geom_path="ref_structure", ncols=5, **kwargs):
 
     fitting()
 
-    if A == 1:
+    if A == 1: 
         return
 
     mctdh(op_path, hessian_path, frequencies_cm, pp.A, pp.N, **kwargs)
