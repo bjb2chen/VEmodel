@@ -1136,61 +1136,85 @@ def fitting():
     STATE #  1'S GMC-CI-LEVEL DIABATIC ENERGY=     -55.916713021       0.000000000
     STATE #  2'S GMC-CI-LEVEL DIABATIC ENERGY=     -55.694114507       6.057214072
     STATE #  3'S GMC-CI-LEVEL DIABATIC ENERGY=     -55.694113719       6.057235537
-    
+
     gnuplot command:
     p 'fitting_3st_mode7.dat' u 1:2 w lp, "" u 1:3 w lp, "" u 1:4 w lp
     """
-    format_string_au = "{header:s}{xvals:<6s}{yvals:<-10.10f}{units:<15s}{file:<60s}\n" # truncated to 10 d.p.
-    format_string_ev = "{header:s}{xvals:<6s}{yvals:<-10.7f}{units:<15s}{file:<60s}\n"  # truncated to 7 d.p.
-    make_line_au = functools.partial(format_string_au.format, units=", Hartree")
-    make_line_ev = functools.partial(format_string_ev.format, units=", eV")
+    A, N = pp.A, pp.N  # to stop flake8 complaining
 
-    xtemp, ytemp = "{:<4s} ", "{: 10g} " * A
+    # these lines weren't used?
+    # format_string_au = "{header:s}{xvals:<6s}{yvals:<-10.10f}{units:<15s}{file:<60s}\n"  # truncated to 10 d.p.
+    # format_string_ev = "{header:s}{xvals:<6s}{yvals:<-10.7f}{units:<15s}{file:<60s}\n"  # truncated to 7 d.p.
+    # make_line_au = functools.partial(format_string_au.format, units=", Hartree")
+    # make_line_ev = functools.partial(format_string_ev.format, units=", eV")
+    # xtemp, ytemp = "{:<4s} ", "{: 10g} " * A
 
     shape = (A, A)
 
+    header_1 = 'qsize  | {0} | filepath\n'.format("Hamiltonian value units (A.U.) Hartree")
+    header_2 = 'qsize  | {0} | filepath\n'.format("other columns on this side are Hamiltonian values, each col is one state, state 1 2 -> A, units eV")
+
+    a_pattern = 'STATE #.* {col}.S GMC-PT-LEVEL DIABATIC ENERGY='
+
+    ref_geom_path = f'{pp.file_name}_refG.out'
+
+    d1_row_template = " {:+.2f}" + "{:.10f}" + "{path}\n"
+    d2_row_template = " {:+.2f}" + "{:.10f}" * A + "{path}\n"
+
     for i in range(N):
         fitting = {}
-        header_1 = 'qsize  | Hamiltonian value units (A.U.) Hartree | filepath \n'
-        header_2 = 'qsize  | other columns on this side are Hamiltonian values, each col is one state, state 1 2 -> A, units eV | filepath\n'
-        data_1 = ''
-        data_2 = ''
+        data_1, data_2 = '', ''
+        max_order = pp.highest_order_per_mode[i]
 
+        if max_order < 3:
+            continue  # skip linear and quadratic
+
+        # initial/reference geom rows (first row)?
+        if (max_order > 2) and (A > 1):
+            data_2 += d2_row_template.format(0, 0, path=ref_geom_path)
+
+        elif (max_order > 2):  # A == 1
+            zero_zero_key = ('0', '0')  # special case?
+
+            column_specification_string = "tail -1 | cut -c62-"
+            backup_line_idx = slice(62, None)
+            fitting[zero_zero_key] = _extract_energy_from_gamessoutput_grep(
+                ref_geom_path, 'E(GMC-PT2)',
+                column_specification_string,
+                backup_line_idx
+            )
+
+            data_1 += d1_row_template.format(0, fitting[zero_zero_key], path=ref_geom_path)
+
+        # add remaining rows
         for key in linear_disp_keys:
 
-            sign = key[0]
+            # sign, order = key[0], int(key[1])
             order = int(key[1])
-            max_order = pp.highest_order_per_mode[i]
 
-            if not (order <= max_order):  
+            if not (order <= max_order):
                 continue  # skip this combination when order > max_order, as it does not exist e.g. [8, 3, 2 ...] means key('+4', 1) not exist
 
-            if (max_order > 2) and (A > 1): # E(GMC-PT2)
-
-                if key == '+1': # only need to do this once
-                    data_2 += f" 0.00 " + f"0.0000 "*A + "{file_name}_refG.out\n"
+            if (max_order > 2) and (A > 1):  # E(GMC-PT2)
 
                 array = np.zeros(shape)
-
                 for a in range(A):
 
-                    a_pattern = 'STATE #.* {col}.S GMC-PT-LEVEL DIABATIC ENERGY='
-
-                    refG_fitting = extract_in_Hartrees(f'{file_name}_refG.out', a_pattern.format(col=a+1))
+                    refG_fitting = extract_in_Hartrees(ref_geom_path, a_pattern.format(col=a+1))
                     fitting[(key, a+1)] = extract_in_Hartrees(linear_displacement_filenames[(key, i)], a_pattern.format(col=a+1))
 
                     # convert to eV
                     array[a, a] = (fitting[(key, a+1)] - refG_fitting) * ha2ev
 
-                xvals = f"{sign}{order*qsize:.2f}"
-                yvals = '   '.join(f"{array[a, a]: .10f}" for a in range(A))
-                data_2 += f"{xvals}   {yvals}   {linear_displacement_filenames[(key, i)]}\n"
+                x = int(key) * qsize
+                # y_vals = [array[a, a] for a in range(A)]
+                y_vals = np.diag(array)  # there is numpy method for this already
+                data_2 += d2_row_template.format(x, *y_vals, path=linear_displacement_filenames[(key, i)])
 
-            elif (max_order > 2): # A == 1
+            elif (max_order > 2):  # A == 1
 
                 column_specification_string = "tail -1 | cut -c62-"
                 backup_line_idx = slice(62, None)
-
 
                 fitting[(key, i)] = _extract_energy_from_gamessoutput_grep(
                     linear_displacement_filenames[(key, i)], 'E(GMC-PT2)',
@@ -1198,25 +1222,17 @@ def fitting():
                     backup_line_idx
                 )
 
-                if key == '+1':
-                    fitting[('0', '0')] = _extract_energy_from_gamessoutput_grep(
-                        f'{file_name}_refG.out', 'E(GMC-PT2)',
-                        column_specification_string,
-                        backup_line_idx
-                    )
-
-                    data_1 += f" 0.00   {fitting[('0', '0')]}   {file_name}_refG.out\n"
-
-                xvals = f"{sign}{order*qsize:.2f}"
-                yvals = f"{fitting[(key, i)]: .10f}"
-                data_1 += f"{xvals}   {yvals}   {linear_displacement_filenames[(key, i)]}\n"
+                x = int(key) * qsize
+                data_1 += d1_row_template.format(x, fitting[(key, i)], path=linear_displacement_filenames[(key, i)])
 
         if data_1 != '':
-            with open(f'fitting_{A}st_mode{pp.mode_map_dict[i]}.dat', 'w') as fp:
+            path = f'fitting_{A}st_mode{pp.mode_map_dict[i]}.dat'
+            with open(path, 'w') as fp:
                 fp.write(header_1+data_1)
 
         elif data_2 != '':
-            with open(f'fitting_{A}st_mode{pp.mode_map_dict[i]}.dat', 'w') as fp:
+            path = f'fitting_{A}st_mode{pp.mode_map_dict[i]}.dat'
+            with open(path, 'w') as fp:
                 fp.write(header_2+data_2)
 
     return
