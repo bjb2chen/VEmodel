@@ -1239,6 +1239,23 @@ def fitting():
             with open(path, 'w') as fp:
                 fp.write(header_2+data_2)
 
+        size = [1200, 800]
+        path = f'fitting_{A}st_mode{pp.mode_map_dict[i]}'
+
+        plotting_command = '\n'.join([
+        f"set terminal png size {size[0]},{size[1]}",
+        f"set output '{path}.png'",
+        "f(x)=a0+a1*x+a2*x**2+a3*x**3",
+        f"fit f(x) '{path}.dat' u 1:2 via a0,a1,a2,a3",
+        f"plot '{path}.dat' u 1:2 w p, f(x)",
+        ])
+
+        with open(f'{path}.log', 'w') as fp:
+            fp.write(plotting_command)
+
+        breakpoint()
+        subprocess.run(['gnuplot', f'{path}.log'])
+
     return
 
 def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
