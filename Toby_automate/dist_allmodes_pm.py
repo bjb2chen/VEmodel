@@ -1242,6 +1242,13 @@ def fitting():
         size = [1200, 800]
         path = f'fitting_{A}st_mode{pp.mode_map_dict[i]}'
 
+        """ 
+        http://www.bersch.net/gnuplot-doc/fit.html
+        f(x) = a + b*x + c*x**2
+        fit f(x) 'measured.dat' using 1:2 via a,b,c
+        plot 'measured.dat' u 1:2, f(x)
+        """
+
         plotting_command = '\n'.join([
         f"set terminal png size {size[0]},{size[1]}",
         f"set output '{path}.png'",
