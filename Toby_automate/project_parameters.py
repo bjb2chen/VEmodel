@@ -114,7 +114,7 @@ reverse_ij_map = {}
 for key, value in ij_map.items():
     reverse_ij_map[value] = key
 
-highest_order_per_mode = [3, 2, 2, 2, 2, 2]
+nof_displacements_per_mode = [8, 3, 2, 2, 2, 2]
 # -------------------------------------------------------------------------
 
 

@@ -277,7 +277,7 @@ def _make_displacement_filenames():
             sign = key[0]  # select plus or minus
 
             order = int(key[1])
-            max_order = pp.highest_order_per_mode[i]
+            max_order = pp.nof_displacements_per_mode[i]
             if not (order <= max_order):
                 continue  # skip this combination
 
@@ -309,7 +309,7 @@ def _make_displacement_filenames():
 
 # ---------------------------------------------------------------------------------------
 # constants used throughout the code
-highest_order = max(pp.highest_order_per_mode)
+highest_order = max(pp.nof_displacements_per_mode)
 
 #linear_disp_keys = ["+1", "+2", "+3", "+4", "-1", "-2", "-3", "-4"]
 linear_disp_keys = [f"+{n}" for n in range(1, highest_order+1)]
@@ -610,6 +610,8 @@ def extract_DSOME(path, nof_states, nof_electron_couplings=2):
 
     return spin_orbit_array
 
+def extract_fitting_parameters(path, pattern='a.*='):
+    return
 
 # ---------------------------------------------------------------------------------------
 # from memorymap_extract import extract_string_list, extract_from_file, find_byte_begin_and_end
@@ -819,7 +821,7 @@ def diabatization(**kwargs):
         Z, N = pp.Z, pp.N
 
         for i in range(N):
-            assert pp.highest_order_per_mode[i] >= 2, f"Mode {i+1} has order below 2, change code"
+            assert pp.nof_displacements_per_mode[i] >= 2, f"Mode {i+1} has order below 2, change code"
 
         # assume all modes have at least 2
         displacements = {
@@ -836,7 +838,7 @@ def diabatization(**kwargs):
         # Change the filenames such that for 8 points, do x8 so that the filenames are not too long
 
         for i in range(N):
-            max_order_of_qi = pp.highest_order_per_mode[i]
+            max_order_of_qi = pp.nof_displacements_per_mode[i]
             for order in range(3, max_order_of_qi+1):
                 displacements.update({
                     f"+{order}": reference[:] + order * R_array[i] * mode_array[:, i],
@@ -967,7 +969,7 @@ def diabatization(**kwargs):
         for key in linear_disp_keys:
 
             order = int(key[1])
-            max_order = pp.highest_order_per_mode[i]
+            max_order = pp.nof_displacements_per_mode[i]
             if not (order <= max_order):
                 continue  # skip this combination
 
@@ -1124,7 +1126,7 @@ def find_nstate(file_path, pattern='# of states in CI      = '):
 # ---------------------------------------------------------------------------------------
 def fitting():
     """
-    For highest_order_per_mode > 2, want to extract data for fitting.
+    For nof_displacements_per_mode > 2, want to extract data for fitting.
 
     For A == 1:                                                     (extract this)
 
@@ -1163,8 +1165,9 @@ def fitting():
 
     for i in range(N):
         fitting = {}
+        fitting_params = {}
         data_1, data_2 = '', ''
-        max_order = pp.highest_order_per_mode[i]
+        max_order = pp.nof_displacements_per_mode[i]
 
         if max_order < 3:
             continue  # skip routine linear and quadratic only modes
@@ -1249,12 +1252,15 @@ def fitting():
         plot 'measured.dat' u 1:2, f(x)
         """
 
+        fitting_coeff = ''.join([f"+a{i}*x**{i}" for i in range(1, max_order+1)])
+        fitting_coeff_lst = ''.join([f",a{i}" for i in range(1, max_order+1)])
+
         plotting_command = '\n'.join([
         f"set terminal png size {size[0]},{size[1]}",
         f"set output '{path}.png'",
         f"set fit logfile '{path}_FIT.log'",
-        "f(x)=a0+a1*x+a2*x**2+a3*x**3",
-        f"fit f(x) '{path}.dat' u 1:2 via a0,a1,a2,a3",
+        f"f(x)=a0"+fitting_coeff,
+        f"fit f(x) '{path}.dat' u 1:2 via a0{fitting_coeff_lst}",
         f"plot '{path}.dat' u 1:2 w p, f(x)",
         ])
 
@@ -1262,6 +1268,18 @@ def fitting():
             fp.write(plotting_command)
 
         subprocess.run(['gnuplot', f'{path}.log'])
+
+        for a in range(A+1):
+            column_specification_string = "tail -1 | cut -c18-35"
+            backup_line_idx = slice(18, 36)
+    
+            fitting_params[f'a{a}'] = _extract_energy_from_gamessoutput_grep(
+                f'{path}_FIT.log', 'a.*=',
+                column_specification_string,
+                backup_line_idx
+            )
+
+        pprint.pprint(fitting_params)
 
     return
 
@@ -2726,7 +2744,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 for key in linear_disp_keys:
 
                     order = int(key[1])
-                    max_order = pp.highest_order_per_mode[i]
+                    max_order = pp.nof_displacements_per_mode[i]
                     if not (order <= max_order):
                         continue  # skip this combination
 
