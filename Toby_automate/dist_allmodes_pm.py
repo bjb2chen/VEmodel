@@ -1158,8 +1158,8 @@ def fitting():
 
     ref_geom_path = f'{pp.file_name}_refG.out'
 
-    d1_row_template = " {:+.2f}" + "{:.10f}" + "{path}\n"
-    d2_row_template = " {:+.2f}" + "{:.10f}" * A + "{path}\n"
+    d1_row_template = " {:+.2f} " + "   {: .10f}   " + "{path}\n"
+    d2_row_template = " {:+.2f} " + "   {: .10f}   " * A + "{path}\n"
 
     for i in range(N):
         fitting = {}
@@ -1167,11 +1167,15 @@ def fitting():
         max_order = pp.highest_order_per_mode[i]
 
         if max_order < 3:
-            continue  # skip linear and quadratic
+            continue  # skip routine linear and quadratic only modes
 
-        # initial/reference geom rows (first row)?
+        # initial/reference geom rows (first row)? 
+        # (Pdb) d2_row_template
+        # ' {:+.2f}{: .10f}{: .10f}{: .10f}{path}\n'
+
         if (max_order > 2) and (A > 1):
-            data_2 += d2_row_template.format(0, 0, path=ref_geom_path)
+            zero_zero_ham = [0.0000]*A
+            data_2 += d2_row_template.format(0.0, *zero_zero_ham, path=ref_geom_path)
 
         elif (max_order > 2):  # A == 1
             zero_zero_key = ('0', '0')  # special case?
