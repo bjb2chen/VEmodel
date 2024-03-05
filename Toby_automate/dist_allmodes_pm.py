@@ -1252,6 +1252,7 @@ def fitting():
         plotting_command = '\n'.join([
         f"set terminal png size {size[0]},{size[1]}",
         f"set output '{path}.png'",
+        f"set fit logfile '{path}_FIT.log'",
         "f(x)=a0+a1*x+a2*x**2+a3*x**3",
         f"fit f(x) '{path}.dat' u 1:2 via a0,a1,a2,a3",
         f"plot '{path}.dat' u 1:2 w p, f(x)",
@@ -1260,7 +1261,6 @@ def fitting():
         with open(f'{path}.log', 'w') as fp:
             fp.write(plotting_command)
 
-        breakpoint()
         subprocess.run(['gnuplot', f'{path}.log'])
 
     return
