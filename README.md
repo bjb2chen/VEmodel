@@ -20,6 +20,10 @@ D3H CoF3 diabatization - [https://www.youtube.com/watch?v=7tNUAFYKCQE&ab_channel
 
 ![PH3_spectrum](https://github.com/bjb2chen/vmodels/assets/51763900/932d8c1c-fe76-424a-9028-a53819d83681)
 
+## Transition metal spectra
+
+![RhF3_spectrum](https://github.com/bjb2chen/VEmodel/assets/51763900/153a8a29-187a-40be-8e66-5cc4b65fecda)
+
 ![CoF4](https://github.com/bjb2chen/vmodels/assets/51763900/eb5d7752-d0d4-4151-9af5-d399e079bf3a)
 
 
