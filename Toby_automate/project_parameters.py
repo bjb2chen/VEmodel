@@ -1,7 +1,8 @@
-import socket
 import os
+import socket
 import itertools as it
 from os.path import abspath, join
+
 
 # 30 pbf ~ 1GB
 # 100 pbf ~ 2GB
@@ -11,13 +12,15 @@ from os.path import abspath, join
 
 # pbfs = [10, 30, 40, 50]
 pbfs = [30, ]
-tfinal = [100.0, ]
+tfinal = [250.0, ]
 
 expression_list = [pbfs, tfinal, ]
 
 
 # root directory
 # parent_project = "ground_state_energies"
+
+
 # -------------------------------------------------------------------------
 #                       define all global flags
 # -------------------------------------------------------------------------
@@ -30,7 +33,11 @@ dry_run = False
 suppress_zeros = False
 
 # -------------------------------------------------------------------------
+#               set global project/calculation parameters
+# -------------------------------------------------------------------------
+
 # pick which molecule we're calculating
+# (A = number of states, Z = number of atoms)
 
 # project_name, A, Z = "h2o2", 6, 4
 # project_name, A, Z = "hcooh", 7, 5
@@ -38,23 +45,21 @@ suppress_zeros = False
 # project_name, A, Z = "formamide", 7, 6
 # project_name, A, Z = "vcm", 7, 6
 # project_name, A, Z = "op_water3Q_4st", 4, 3
-project_name, A, Z = "op_NH36Q_3st", 3, 4       # A = number of states, Z = number of atoms
+# project_name, A, Z = "op_H2O3Q_3st", 3, 3
+# project_name, A, Z = "op_NH35Q_3st", 3, 4
+project_name, A, Z = "op_NH36Q_3st", 3, 4
 
 # the total number of modes (including translational, rotational, vibrational)
 N_tot = 3 * Z
 
 """ The file_name parameters:
-    {name}_{basis_set}_{calculation_type}_{point_group_symmetry}_{nof_excited_states}_diab
+    {name}_{basis_set}_{calculation_type}_{point_group_symmetry}_{nof_excited_states}st_diab
     {}_{}_{}_{}_{}st_diab
 """
 name, basis_set, calculation_type, point_group_symmetry, nof_excited_states = (
-    #"H2Ocat", "ccd", "gmcpt", "C1", 3
+    # "H2Ocat", "ccd", "gmcpt", "C1", 3
     "NH3cat", "ccd", "gmcpt", "C1", 3
-    # "H2Ocat", "cct", "gmcpt", "C1", 3
-    # "NH3anion", "cctzla", "rohf", "C2v", 4
-    # "H2Ocat", "cct", "gmcpt", "C1", 3
 )
-
 file_name = str(
     f"{name}_"
     f"{basis_set}_"
@@ -65,12 +70,10 @@ file_name = str(
 )
 print(f"Our {file_name=}")
 
+# -------------------------------------------------------------------------
 filnam = file_name  # alias (remove later)
-
-if False:
-    project_name = file_name
-
-SOC_flag = False
+# -------------------------------------------------------------------------
+#               set global project/calculation parameters
 # -------------------------------------------------------------------------
 
 # build mode label objects
@@ -87,11 +90,26 @@ if False:  # if needed in future
     selected_mode_list = sorted([*_selected_modes])
 
 else:
-    selected_mode_list = [7, 8, 9, 10, 11, 12, ]
+    selected_mode_list = {
+        "H2Ocat": [7, 8, 9],
+        # "NH3cat": [8, 9, 10, 11, 12, ],
+        "NH3cat": [7, 8, 9, 10, 11, 12, ],
+    }[name]
 
 #  (ASSUMES YOUR MODES ARE IN INCREASING ORDER)
 assert sorted(selected_mode_list) == selected_mode_list, f"{selected_mode_list=} is not sorted"
+N = len(selected_mode_list)  # the number of modes should be
 
+
+nof_displacements_per_mode = {
+    "H2Ocat": [2, 2, 2],
+    # "NH3cat": [8, 3, 2, 2, 2],
+    "NH3cat": [8, 3, 2, 2, 2, 2],
+}[name]
+
+# -------------------------------------------------------------------------
+#               useful indexing/mapping dictionaries
+# -------------------------------------------------------------------------
 """ This maps array indices to the label of the selected modes.
     The 1st mode is indexed by 0 in the array
     The 2nd mode is indexed by 1 in the array
@@ -102,33 +120,38 @@ assert sorted(selected_mode_list) == selected_mode_list, f"{selected_mode_list=}
     mode_map_dict = {0: 7, 1: 8, 2: 9}
 """
 mode_map_dict = {k: v for k, v in enumerate(selected_mode_list)}
-N = len(selected_mode_list)  # the number of modes should be
 
-# map (i,j)-> numbers from selected_mode_list  (0, 1) -> (7,8)
+# -------------------------------------------------------------------------
+# map (i,j)-> (n_i, n_j) numbers from selected_mode_list  (0, 1) -> (7, 8)
 ij_map = {}
 for i, j in it.combinations(range(N), 2):
     ij_map[(i, j)] = (mode_map_dict[i], mode_map_dict[j])
 
-# for giving back the (0, 1) from (7, 8) keys when accessing upper triangles
+# -------------------------------------------------------------------------
+""" map (n_i, n_j) -> (i,j)-  (7, 8) -> (0, 1)
+returns the 0-indexed keys (0, 1) corresponding to the given literal-mode label keys (7, 8)
+used commonly when accessing upper triangle indices of 2-D arrays/tensors
+"""
 reverse_ij_map = {}
 for key, value in ij_map.items():
     reverse_ij_map[value] = key
 
-nof_displacements_per_mode = [8, 3, 2, 2, 2, 2]
 # -------------------------------------------------------------------------
+#                           Project Paths
+# -------------------------------------------------------------------------
+# user_root = abspath("/bjb2chen/gamess/vibronics/template_examples/NH3/SOC_9st/SOC_6st")        # format is /user/.../*
+user_root = abspath("/ngraymon/Downloads/")        # format is /user/.../*
+home_root = abspath(f"/home/{user_root}/home/{project_name}/")
+work_root = abspath(f"/home/{user_root}/work/mctdh/{project_name}/")
 
-
-# Project Paths
-# user_root = abspath("/bjb2chen/gamess/vibronics/template_examples/")        # format is /user/.../*
-user_root = abspath("/bjb2chen/gamess/vibronics/template_examples/NH3/feb23_testing")        # format is /user/.../*
-home_root = abspath(f"/home/{user_root}/{project_name}/")
-work_root = abspath(f"/work/{user_root}/mctdh/{project_name}/")
 
 # server_flag = (socket.gethostname() == "nlogn") or (socket.gethostname() == "feynman")
 # assert server_flag  # make sure we are on server
 os.makedirs(work_root, exist_ok=True)  # make sure the root directory exists
 
-# definitions
+# -------------------------------------------------------------------------
+#                   path/filename  definitions/conventions
+# -------------------------------------------------------------------------
 # the source files are located in the home directory by convention
 op_file_name = f"{project_name}.op"
 # inp_file_name = f"{project_name}.inp"
@@ -141,16 +164,9 @@ os.makedirs(root_path_op_files, exist_ok=True)
 src_path_original_op_file = join(home_root, op_file_name)
 src_path_execution_script = join('./', execution_script)
 
-dir_string = "{:s}_PBF{:d}_tf{:.2f}"
 # -------------------------------------------------------------------------
+dir_string = "{:s}_PBF{:d}_tf{:.2f}"
 
-# set conversion constants
-qsize = 0.05
-ha2ev = 27.2113961318
-wn2ev = 0.000123981
-wn2eh = 0.00000455633
-ang2br = 1.889725989
-amu2me = 1822.888
 
 # -------------------------------------------------------------------------
 # define constant values
@@ -170,4 +186,3 @@ QM_const.ang2br = 1.889725989
 QM_const.amu2me = 1822.888
 
 # -------------------------------------------------------------------------
-

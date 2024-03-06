@@ -844,7 +844,7 @@ def diabatization(**kwargs):
                     f"+{order}": reference[:] + order * R_array[i] * mode_array[:, i],
                     f"-{order}": reference[:] - order * R_array[i] * mode_array[:, i],
                 })
-        
+
         assert set(displacements.keys()) == set(linear_disp_keys), (f"{displacements.keys()=}\nand\n{linear_disp_keys=}\n no longer agree!")
 
         shape = (Z*3, N)
@@ -1124,6 +1124,8 @@ def find_nstate(file_path, pattern='# of states in CI      = '):
     return None  # Return None if the pattern is not found
 
 # ---------------------------------------------------------------------------------------
+
+
 def fitting():
     """
     For nof_displacements_per_mode > 2, want to extract data for fitting.
@@ -1153,8 +1155,8 @@ def fitting():
 
     shape = (A, A)
 
-    header_1 = 'qsize  | {0} | filepath\n'.format("Hamiltonian value units (A.U.) Hartree")
-    header_2 = 'qsize  | {0} | filepath\n'.format("other columns on this side are Hamiltonian values, each col is one state, state 1 2 -> A, units eV")
+    header_1 = ' qsize  | {0} | filepath\n'.format("Hamiltonian value units (A.U.) Hartree")
+    header_2 = ' qsize  | {0} | filepath\n'.format("other columns on this side are Hamiltonian values, each col is one state, state 1 2 -> A, units eV")
 
     a_pattern = 'STATE #.* {col}.S GMC-PT-LEVEL DIABATIC ENERGY='
 
@@ -1163,62 +1165,54 @@ def fitting():
     d1_row_template = " {:+.2f} " + "   {: .10f}   " + "{path}\n"
     d2_row_template = " {:+.2f} " + "   {: .10f}   " * A + "{path}\n"
 
-    for i in range(N):
+    qsize = pp.gamess_const.qsize
+    ha2ev = pp.QM_const.ha2ev
+
+    # initial/reference geom rows (first row)?
+    # (Pdb) d2_row_template
+    # ' {:+.2f}{: .10f}{: .10f}{: .10f}{path}\n'
+
+    def _max_order(i):
+        return pp.nof_displacements_per_mode[i]
+
+    large_N = [i for i in range(N) if _max_order(i) > 2]
+
+    # ---------------------------------------------------------------------
+    def _extract_single_surface():
+        """
+            for every list there is a list
+            each element of the list is a row in the file contents
+            you can do "\n".join(file_row_list[i]) to get a single string which
+            is the file contents of the i'th mode
+        """
+        file_row_list = [[] for i in range(N)]
         fitting = {}
-        fitting_params = {}
-        data_1, data_2 = '', ''
-        max_order = pp.nof_displacements_per_mode[i]
 
-        if max_order < 3:
-            continue  # skip routine linear and quadratic only modes
-
-        # initial/reference geom rows (first row)? 
-        # (Pdb) d2_row_template
-        # ' {:+.2f}{: .10f}{: .10f}{: .10f}{path}\n'
-
-        if (max_order > 2) and (A > 1):
-            zero_zero_ham = [0.0000]*A
-            data_2 += d2_row_template.format(0.0, *zero_zero_ham, path=ref_geom_path)
-
-        elif (max_order > 2):  # A == 1
-            zero_zero_key = ('0', '0')  # special case?
-
+        for i in large_N: # skip routine linear and quadratic only modes
+            # ---------------------------------------------------------------------------
+            refG_key = ('refG', i)  # special case?
             column_specification_string = "tail -1 | cut -c62-"
             backup_line_idx = slice(62, None)
-            fitting[zero_zero_key] = _extract_energy_from_gamessoutput_grep(
+            fitting[refG_key] = _extract_energy_from_gamessoutput_grep(
                 ref_geom_path, 'E(GMC-PT2)',
                 column_specification_string,
                 backup_line_idx
             )
+            file_row_list[i].append(
+                d1_row_template.format(0, fitting[refG_key], path=ref_geom_path)
+            )
 
-            data_1 += d1_row_template.format(0, fitting[zero_zero_key], path=ref_geom_path)
+            # ---------------------------------------------------------------------------
+            # add remaining rows
+            for key in linear_disp_keys:
+                order = int(key[1])
 
-        # add remaining rows
-        for key in linear_disp_keys:
+                if not (order <= max_order):
+                    # skip this combination when order > max_order
+                    # as it does not exist e.g. [8, 3, 2 ...] means key('+4', 1) not exist
+                    continue
 
-            # sign, order = key[0], int(key[1])
-            order = int(key[1])
-
-            if not (order <= max_order):
-                continue  # skip this combination when order > max_order, as it does not exist e.g. [8, 3, 2 ...] means key('+4', 1) not exist
-
-            if (max_order > 2) and (A > 1):  # E(GMC-PT2)
-
-                array = np.zeros(shape)
-                for a in range(A):
-
-                    refG_fitting = extract_in_Hartrees(ref_geom_path, a_pattern.format(col=a+1))
-                    fitting[(key, a+1)] = extract_in_Hartrees(linear_displacement_filenames[(key, i)], a_pattern.format(col=a+1))
-
-                    # convert to eV
-                    array[a, a] = (fitting[(key, a+1)] - refG_fitting) * ha2ev
-
-                x = int(key) * qsize
-                # y_vals = [array[a, a] for a in range(A)]
-                y_vals = np.diag(array)  # there is numpy method for this already
-                data_2 += d2_row_template.format(x, *y_vals, path=linear_displacement_filenames[(key, i)])
-
-            elif (max_order > 2):  # A == 1
+                assert (max_order > 2), f"How is {max_order=} < 3?"
 
                 column_specification_string = "tail -1 | cut -c62-"
                 backup_line_idx = slice(62, None)
@@ -1230,58 +1224,150 @@ def fitting():
                 )
 
                 x = int(key) * qsize
-                data_1 += d1_row_template.format(x, fitting[(key, i)], path=linear_displacement_filenames[(key, i)])
+                file_row_list[i].append(
+                    d1_row_template.format(x, fitting[(key, i)], path=linear_displacement_filenames[(key, i)])
+                )
 
-        if data_1 != '':
-            path = f'fitting_{A}st_mode{pp.mode_map_dict[i]}.dat'
-            with open(path, 'w') as fp:
-                fp.write(header_1+data_1)
+        return file_row_list, fitting
 
-        elif data_2 != '':
-            path = f'fitting_{A}st_mode{pp.mode_map_dict[i]}.dat'
-            with open(path, 'w') as fp:
-                fp.write(header_2+data_2)
+    def _extract_multi_surface():
+        """ """
+        file_row_list = [[] for i in range(N)]
+        fitting = {}
 
-        size = [1200, 800]
-        path = f'fitting_{A}st_mode{pp.mode_map_dict[i]}'
+        for i in large_N:  # skip routine linear and quadratic only modes
+            # ---------------------------------------------------------------------------
+            refG_y_vals = [0.0, ]*A
+            file_row_list[i].append(
+                d2_row_template.format(0.0, *refG_y_vals, path=ref_geom_path)
+            )
 
-        """ 
-        http://www.bersch.net/gnuplot-doc/fit.html
+            # ---------------------------------------------------------------------------
+            max_order = pp.nof_displacements_per_mode[i]
+            # add remaining rows
+            for key in linear_disp_keys:
+                order = int(key[1])
+
+                if not (order <= max_order):
+                    # skip this combination when order > max_order
+                    # as it does not exist e.g. [8, 3, 2 ...] means key('+4', 1) not exist
+                    continue
+
+                assert (max_order > 2), f"How is {max_order=} < 3?"
+
+                # E(GMC-PT2)
+                array = np.zeros(shape)
+                for a in range(A):
+
+                    refG_fitting = extract_in_Hartrees(ref_geom_path, a_pattern.format(col=a+1))
+                    fitting[(key, i, a+1)] = extract_in_Hartrees(linear_displacement_filenames[(key, i)], a_pattern.format(col=a+1))
+
+                    # convert to eV
+                    array[a, a] = (fitting[(key, i, a+1)] - refG_fitting) * ha2ev
+
+                x = int(key) * qsize
+                # y_vals = [array[a, a] for a in range(A)]
+                y_vals = np.diag(array)  # there is numpy method for this already
+                file_row_list[i].append(
+                    d2_row_template.format(x, *y_vals, path=linear_displacement_filenames[(key, i)])
+                )
+            #
+        return file_row_list, fitting
+
+    if A == 1:
+        row_list, fitting_dict = _extract_single_surface()
+        header = header_1
+    elif A > 1:
+        row_list, fitting_dict = _extract_multi_surface()
+        header = header_2
+    else:
+        raise Exception(f"How is {A=} < 1 ?")
+
+    # ---------------------------------------------------------------------
+    # sort
+    for i in large_N:  # skip routine linear and quadratic only modes
+        row_array = np.array(row_list[i])
+
+        # grab the value of the first column and sort along it
+        n_list = [float(row.split()[0]) for row in row_array]
+        idx = np.argsort(n_list)
+
+        sorted_rows = row_array[idx]  # -0.4 -> +0.4
+        if False: sorted_rows = np.flip(sorted_rows)  # this gives +0.4 -> -0.4
+
+        row_list[i] = sorted_rows.tolist()
+
+    # ---------------------------------------------------------------------
+    # save
+    for i in large_N:  # skip routine linear and quadratic only modes
+
+        string = header + "".join(row_list[i])
+        path = f'fitting_{A}st_mode{pp.mode_map_dict[i]}.dat'
+        with open(path, 'w') as fp:
+            fp.write(string)
+
+    # ---------------------------------------------------------------------
+    # solve for the polynomial coefficients
+
+    def _perform_fitting(path, i):
+        """ This uses gnuplot to print out a,b,c's in the gnuplot logfile.
+        See - http://www.bersch.net/gnuplot-doc/fit.html
         f(x) = a + b*x + c*x**2
         fit f(x) 'measured.dat' using 1:2 via a,b,c
         plot 'measured.dat' u 1:2, f(x)
         """
-
+        max_order = pp.nof_displacements_per_mode[i]
+        size = [1200, 800]
         fitting_coeff = ''.join([f"+a{i}*x**{i}" for i in range(1, max_order+1)])
         fitting_coeff_lst = ''.join([f",a{i}" for i in range(1, max_order+1)])
 
         plotting_command = '\n'.join([
-        f"set terminal png size {size[0]},{size[1]}",
-        f"set output '{path}.png'",
-        f"set fit logfile '{path}_FIT.log'",
-        f"f(x)=a0"+fitting_coeff,
-        f"fit f(x) '{path}.dat' u 1:2 via a0{fitting_coeff_lst}",
-        f"plot '{path}.dat' u 1:2 w p, f(x)",
+            f"set terminal png size {size[0]},{size[1]}",
+            f"set output '{path}.png'",
+            f"set fit logfile '{path}_FIT.log'",
+            f"f(x)=a0{fitting_coeff}",
+            f"fit f(x) '{path}.dat' u 1:2 via a0{fitting_coeff_lst}",
+            f"plot '{path}.dat' u 1:2 w p, f(x)",
         ])
 
         with open(f'{path}.log', 'w') as fp:
             fp.write(plotting_command)
 
         subprocess.run(['gnuplot', f'{path}.log'])
+        # subprocess_run_wrapper(['gnuplot', f'{path}.log'])
+        return
 
-        for a in range(A+1):
-            column_specification_string = "tail -1 | cut -c18-35"
-            backup_line_idx = slice(18, 36)
-    
-            fitting_params[f'a{a}'] = _extract_energy_from_gamessoutput_grep(
-                f'{path}_FIT.log', 'a.*=',
-                column_specification_string,
-                backup_line_idx
-            )
+    for i in large_N:  # skip routine linear and quadratic only modes
+        path = f'fitting_{A}st_mode{pp.mode_map_dict[i]}'
+        _perform_fitting(path, i)
 
-        pprint.pprint(fitting_params)
+    # ---------------------------------------------------------------------
+    # extract the polynomials coefficients and ....
+
+        def _something(path, i):
+            fitting_params = {}
+            for a in range(A+1):
+                column_specification_string = "tail -1 | cut -c18-35"
+                backup_line_idx = slice(18, 36)
+                fitting_params[f'a{a}'] = _extract_energy_from_gamessoutput_grep(
+                    f'{path}_FIT.log', 'a.*=',
+                    column_specification_string,
+                    backup_line_idx
+                )
+
+            pprint.pprint(fitting_params)
+
+    for i in large_N:  # skip routine linear and quadratic only modes
+        path = f'fitting_{A}st_mode{pp.mode_map_dict[i]}'
+        _something(path, i)
+
+    # do something
+    # ---------------------------------------------------------------------
 
     return
+
+# ---------------------------------------------------------------------------------------
+
 
 def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
     """ This function creates an `*.op` which will be used by MCTDH.
@@ -3139,7 +3225,7 @@ def main(ref_geom_path="ref_structure", ncols=5, **kwargs):
 
     fitting()
 
-    if A == 1: 
+    if A == 1:
         return
 
     mctdh(op_path, hessian_path, frequencies_cm, pp.A, pp.N, **kwargs)
