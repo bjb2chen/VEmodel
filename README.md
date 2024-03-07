@@ -24,6 +24,9 @@ D3H CoF3 diabatization - [https://www.youtube.com/watch?v=7tNUAFYKCQE&ab_channel
 
 ![RhF3_spectrum](https://github.com/bjb2chen/VEmodel/assets/51763900/153a8a29-187a-40be-8e66-5cc4b65fecda)
 
+![manual_supervision](https://github.com/bjb2chen/VEmodel/assets/51763900/e472d956-8c66-41d8-9d24-1e581f2c235d)
+
 ![CoF4](https://github.com/bjb2chen/vmodels/assets/51763900/eb5d7752-d0d4-4151-9af5-d399e079bf3a)
+
 
 
