@@ -1346,7 +1346,8 @@ def fitting():
 
         def _something(path, i):
             fitting_params = {}
-            for a in range(A+1):
+            max_order = pp.nof_displacements_per_mode[i]
+            for a in range(max_order+1):
                 column_specification_string = "tail -1 | cut -c18-35"
                 backup_line_idx = slice(18, 36)
                 fitting_params[f'a{a}'] = _extract_energy_from_gamessoutput_grep(
