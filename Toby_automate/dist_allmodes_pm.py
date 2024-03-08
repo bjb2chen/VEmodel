@@ -2179,8 +2179,15 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             '\n'
         ])
 
-        block += " | ".join(h_labels) + "\n"
+        block += h_labels + "\n"
         block += f"{'-'*47}\n\n"
+
+        # h_labels = ["modes", "el", ] + [
+        #     f"v{s:>02d}"
+        #     for s in mode_number_key
+        # ]
+
+        # block += " | ".join(h_labels) + "\n"
 
         for j in range(1, A+1):
             block += f"1.0         |1 S{A+1}&{j}\n"  # A+1, set ground state as fictitious +1 state
