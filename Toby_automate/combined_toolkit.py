@@ -2,6 +2,7 @@ import os
 import shutil
 import sys
 import subprocess
+import project_parameters as pp
 
 def process_optimized_rhf(file):
 
@@ -235,20 +236,19 @@ def process_equilibrium_geometry(file):
     if [ -f ref_structure ]; then
       rm -f ref_structure
     fi
-    # Prompt user for the number of atoms
-    echo "Enter the number of atoms:"
-    read natoms
+    # # Prompt user for the number of atoms
+    # echo "Enter the number of atoms:"
+    # read natoms
     
     # Extracting the table section
     table=$(sed -n "/EQUILIBRIUM GEOMETRY/,/INTERNUCLEAR DISTANCES/p" "{file}")
     
-    # Extracting the last 'natoms' lines from the table (excluding the last line of the section)
-    echo "$table" | tail -n "$((natoms + 2))" | head -n -2  > "ref_structure"
+    # Extracting the last '{pp.Z}' lines from the table (excluding the last line of the section)
+    echo "$table" | tail -n "$(({pp.Z} + 2))" | head -n -2  > "ref_structure"
     echo "EQUILIBRIUM GEOMETRY coordinates prepared in ref_structure"
     """
 
     os.system(bash_script)
-
 
 if __name__ == "__main__":
     file = sys.argv[1]
