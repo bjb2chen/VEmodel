@@ -2173,10 +2173,11 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
         # Write modes and mode labels
         mode_number_key = [selected_mode_list[i] for i in range(N)]
-        h_labels = ["modes", "el", ] + [
-            f"v{s:>02d}"
-            for s in mode_number_key
-        ]
+        h_labels = ''.join([
+            ' modes   |  el  |',
+            ''.join([f" v{N+1:0>2d}|" for N in range(N)]),
+            '\n'
+        ])
 
         block += " | ".join(h_labels) + "\n"
         block += f"{'-'*47}\n\n"
@@ -2813,7 +2814,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             "end-operator\n"
         ])
 
-        if True:
+        if False: # VECC-compatible notation if False
             for i in range(N):
                 new_i = mode_map_dict[i]
                 file_contents = file_contents.replace(f'v{i+1:>02d}', f'v{new_i:>02d}')
