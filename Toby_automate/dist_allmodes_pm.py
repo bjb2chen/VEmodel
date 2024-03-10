@@ -276,7 +276,7 @@ def _make_displacement_filenames():
         for key in linear_disp_keys:
             sign = key[0]  # select plus or minus
 
-            order = int(key[1])
+            order = int(key[1:])
             max_order = pp.nof_displacements_per_mode[i]
             if not (order <= max_order):
                 continue  # skip this combination
@@ -850,7 +850,7 @@ def diabatization(**kwargs):
         shape = (Z*3, N)
 
         for k in linear_disp_keys:
-            if int(k[1]) > 2:
+            if int(k[1:]) > 2:
                 assert displacements[k].shape == (Z*3,),  f"{k=} {displacements[k].shape=} not {(Z*3,)=}?"
             else:
                 assert displacements[k].shape == shape, f"{k=} {displacements[k].shape=} not {shape=}?"
@@ -927,7 +927,7 @@ def diabatization(**kwargs):
 
                 # temporary, if we are doing extra displacements along 1 mode for linear
                 # then the dimensionality is different
-                if (d.ndim == 1) and ('+3' in key_list) and int(key[1]) > 2:
+                if (d.ndim == 1) and ('+3' in key_list) and int(key[1:]) > 2:
                     string = template_string.format(
                         atom_list[idx_atom], charge_list[idx_atom],
                         d[offset+0],  # x component
@@ -968,7 +968,7 @@ def diabatization(**kwargs):
 
         for key in linear_disp_keys:
 
-            order = int(key[1])
+            order = int(key[1:])
             max_order = pp.nof_displacements_per_mode[i]
             if not (order <= max_order):
                 continue  # skip this combination
@@ -1205,8 +1205,8 @@ def fitting():
             # ---------------------------------------------------------------------------
             # add remaining rows
             for key in linear_disp_keys:
-                order = int(key[1])
-
+                order = int(key[1:])
+                max_order = pp.nof_displacements_per_mode[i]
                 if not (order <= max_order):
                     # skip this combination when order > max_order
                     # as it does not exist e.g. [8, 3, 2 ...] means key('+4', 1) not exist
@@ -1246,7 +1246,7 @@ def fitting():
             max_order = pp.nof_displacements_per_mode[i]
             # add remaining rows
             for key in linear_disp_keys:
-                order = int(key[1])
+                order = int(key[1:])
 
                 if not (order <= max_order):
                     # skip this combination when order > max_order
@@ -2173,21 +2173,13 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
         # Write modes and mode labels
         mode_number_key = [selected_mode_list[i] for i in range(N)]
-        h_labels = ''.join([
-            ' modes   |  el  |',
-            ''.join([f" v{N+1:0>2d}|" for N in range(N)]),
-            '\n'
-        ])
+        h_labels = ["modes", "el", ] + [
+            f"v{s:>02d}"
+            for s in mode_number_key
+        ]
 
-        block += h_labels + "\n"
+        block += " | ".join(h_labels) + "\n"
         block += f"{'-'*47}\n\n"
-
-        # h_labels = ["modes", "el", ] + [
-        #     f"v{s:>02d}"
-        #     for s in mode_number_key
-        # ]
-
-        # block += " | ".join(h_labels) + "\n"
 
         for j in range(1, A+1):
             block += f"1.0         |1 S{A+1}&{j}\n"  # A+1, set ground state as fictitious +1 state
@@ -2821,7 +2813,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             "end-operator\n"
         ])
 
-        if False: # VECC-compatible notation if False
+        if True:
             for i in range(N):
                 new_i = mode_map_dict[i]
                 file_contents = file_contents.replace(f'v{i+1:>02d}', f'v{new_i:>02d}')
@@ -2838,7 +2830,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 grace_code = {}
                 for key in linear_disp_keys:
 
-                    order = int(key[1])
+                    order = int(key[1:])
                     max_order = pp.nof_displacements_per_mode[i]
                     if not (order <= max_order):
                         continue  # skip this combination
