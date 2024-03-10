@@ -824,6 +824,7 @@ def diabatization(**kwargs):
             assert pp.nof_displacements_per_mode[i] >= 2, f"Mode {i+1} has order below 2, change code"
 
         # assume all modes have at least 2
+        # NEIL MAGIC CODE ＼(^o^)／
         displacements = {
             "+1": reference[:, NEW] + 1.0 * R_array[NEW, :] * mode_array[:, :],
             "-1": reference[:, NEW] - 1.0 * R_array[NEW, :] * mode_array[:, :],
