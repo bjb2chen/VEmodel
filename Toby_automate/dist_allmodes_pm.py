@@ -135,8 +135,8 @@ def subprocess_run_wrapper(*args, **kwargs):
         return subprocess.run(command, **kwargs)
 
 
-def _delete_file_using_rmrf(path):
-    """ x """
+def _delete_file_using_rmrf(path): 
+    """ Delete a file using `rm -f`""" 
     try:  # remove the previous file, as we are about to write to it
         subprocess_run_wrapper(['rm', '-f', path])
     except Exception as e:
