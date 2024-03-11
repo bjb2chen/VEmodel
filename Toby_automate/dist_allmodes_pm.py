@@ -610,11 +610,21 @@ def extract_DSOME(path, nof_states, nof_electron_couplings=2):
 
     return spin_orbit_array
 
-def extract_fitting_parameters(path, pattern='a.*='):
-    return
-
 # ---------------------------------------------------------------------------------------
 # from memorymap_extract import extract_string_list, extract_from_file, find_byte_begin_and_end
+
+# TODO: figure this out
+def testing_mmap(path):
+    # import mmap
+
+    # with open('RhF3_SPK_gmcpt_C1_e_mult5_diis_15st_diab_mode8_-0.05_mode8_-0.05.out', 'rb') as f: # has to be read+binary
+    #     fd = f.fileno()
+    
+    #     with mmap.mmap(fd, 0, access=mmap.ACCESS_READ) as mm: # has to be mmap.ACCESS_READ
+            
+    #         data = mm[:100]  # Read the first 100 bytes
+    #         print(data)
+    return
 
 def _example_processing_function(path, memmap):
 
