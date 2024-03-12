@@ -539,7 +539,7 @@ def extract_DSOME(path, nof_states, nof_electron_couplings=2):
 
     # check for stars in lines? this means Gamess calculation failed/is bad
     for line in selected_lines:
-        assert '*' not in line, "You likely messed up REFDET! Gamess calculated failed?"
+        assert '*' not in line, "You probably messed up REFDET section! Gamess calculated failed?"
 
     shape = (A, A)
     spin_orbit_array = np.zeros(shape, dtype=C128)
@@ -1006,7 +1006,7 @@ def diabatization(**kwargs):
             if (ref_geom_flag_exists and gamess_calculation_not_run) or pp.dry_run:
                 print(f"Running calculations for {games_filename}")
                 try:
-                    output_filename = my_subgam(games_filename+'.inp', ncpus=2, ngb=1, nhour=1)
+                    output_filename = my_subgam(games_filename+'.inp', ncpus=3, ngb=2, nhour=3)
                     os_system_wrapper(f"sbatch {output_filename}")
                 except Exception as e:
                     print(f"Error running diabatization calculation: {str(e)}")
@@ -1048,7 +1048,7 @@ def diabatization(**kwargs):
             if (ref_geom_flag_exists and gamess_calculation_not_run) or pp.dry_run:
                 print(f"Running calculations for {games_filename}!")
                 try:
-                    output_filename = my_subgam(games_filename+'.inp', ncpus=2, ngb=1, nhour=1)
+                    output_filename = my_subgam(games_filename+'.inp', ncpus=3, ngb=2, nhour=3)
                     os_system_wrapper(f"sbatch {output_filename}")
                 except Exception as e:
                     print(f"Error running diabatization calculation: {str(e)}")
@@ -3138,7 +3138,7 @@ def refG_calc(ref_geom_path, **kwargs):
 
     # Finally we submit and run the refG calculation (you may need to customize this command based on your setup)
     # refG_job_result = subprocess_run_wrapper(["./subgam.diab", input_path, "4", "0", "1"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    job_path = my_subgam(input_path, ncpus=2, ngb=1, nhour=1)
+    job_path = my_subgam(input_path, ncpus=4, ngb=3, nhour=3)
     os_system_wrapper(f"sbatch -W {job_path}")
 
     # At this point, refG calculation has completed successfully.
