@@ -104,8 +104,9 @@ N = len(selected_mode_list)  # the number of modes should be
 nof_displacements_per_mode = {
     "H2Ocat": [2, 2, 2],
     # "NH3cat": [8, 3, 2, 2, 2],
-    "NH3cat": [8, 3, 2, 2, 2, 2],
+    "NH3cat": [18, 18, 18, 18, 18, 18],
 }[name]
+
 
 # -------------------------------------------------------------------------
 #               useful indexing/mapping dictionaries
@@ -120,6 +121,14 @@ nof_displacements_per_mode = {
     mode_map_dict = {0: 7, 1: 8, 2: 9}
 """
 mode_map_dict = {k: v for k, v in enumerate(selected_mode_list)}
+
+
+# -------------------------------------------------------------------------
+# modes which have an order higher than 2
+# all the +3/-3, +4/-4 displacements are handled by fitting instead of `mctdh()`
+# this is a list of the indicies corresponding to those modes where their order is > 2
+fitting_mode_idxs = [k for k in mode_map_dict.keys() if nof_displacements_per_mode[k] > 2]
+N_fit = len(fitting_mode_idxs)
 
 # -------------------------------------------------------------------------
 # map (i,j)-> (n_i, n_j) numbers from selected_mode_list  (0, 1) -> (7, 8)
@@ -140,7 +149,7 @@ for key, value in ij_map.items():
 #                           Project Paths
 # -------------------------------------------------------------------------
 # user_root = abspath("/bjb2chen/gamess/vibronics/template_examples/NH3/SOC_9st/SOC_6st")        # format is /user/.../*
-user_root = abspath("/ngraymon/Downloads/")        # format is /user/.../*
+user_root = abspath("/bjb2chen/gamess/vibronics/template_examples/NH3")        # format is /user/.../*
 home_root = abspath(f"/home/{user_root}/home/{project_name}/")
 work_root = abspath(f"/home/{user_root}/work/mctdh/{project_name}/")
 
@@ -174,7 +183,7 @@ from types import SimpleNamespace
 
 # constants regarding the calculation
 gamess_const = SimpleNamespace()  # make an empty object
-gamess_const.qsize = 0.05
+gamess_const.qsize = 0.30
 
 # Quantum Mechanical constants
 QM_const = SimpleNamespace()  # make an empty object

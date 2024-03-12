@@ -135,8 +135,8 @@ def subprocess_run_wrapper(*args, **kwargs):
         return subprocess.run(command, **kwargs)
 
 
-def _delete_file_using_rmrf(path): 
-    """ Delete a file using `rm -f`""" 
+def _delete_file_using_rmrf(path):
+    """ Delete a file using `rm -f`"""
     try:  # remove the previous file, as we are about to write to it
         subprocess_run_wrapper(['rm', '-f', path])
     except Exception as e:
@@ -619,9 +619,9 @@ def testing_mmap(path):
 
     # with open('RhF3_SPK_gmcpt_C1_e_mult5_diis_15st_diab_mode8_-0.05_mode8_-0.05.out', 'rb') as f: # has to be read+binary
     #     fd = f.fileno()
-    
+
     #     with mmap.mmap(fd, 0, access=mmap.ACCESS_READ) as mm: # has to be mmap.ACCESS_READ
-            
+
     #         data = mm[:100]  # Read the first 100 bytes
     #         print(data)
     return
@@ -833,7 +833,8 @@ def diabatization(**kwargs):
         for i in range(N):
             assert pp.nof_displacements_per_mode[i] >= 2, f"Mode {i+1} has order below 2, change code"
 
-        # assume all modes have at least 2
+        # -------------------------------------------------------------------------
+        # assume all modes have at least order 2
         # NEIL MAGIC CODE ＼(^o^)／
         displacements = {
             "+1": reference[:, NEW] + 1.0 * R_array[NEW, :] * mode_array[:, :],
@@ -845,26 +846,34 @@ def diabatization(**kwargs):
         #                  (9, 1)                   (1,  3)             (9, 3)
         #                  (12, 1)                  (1,  6)            (12, 6)
 
-        # Do a loop here so that it scales for 8 points, 10 points
-        # Change the filenames such that for 8 points, do x8 so that the filenames are not too long
+        # -------------------------------------------------------------------------
+        # # handle all modes with order > 3
+        # for i in pp.fitting_mode_idxs:
 
-        for i in range(N):
-            max_order_of_qi = pp.nof_displacements_per_mode[i]
-            for order in range(3, max_order_of_qi+1):
-                displacements.update({
-                    f"+{order}": reference[:] + order * R_array[i] * mode_array[:, i],
-                    f"-{order}": reference[:] - order * R_array[i] * mode_array[:, i],
-                })
+        #     # this check is redundant but here for sanity
+        max_order_of_qi = max(pp.nof_displacements_per_mode)
+            #assert max_order_of_qi > 2, f"You messed up {pp.fitting_mode_idxs=} somehow? why are {pp.nof_displacements_per_mode[pp.fitting_mode_idxs]}= not all > 2"
 
+        for order in range(3, max_order_of_qi+1):
+            displacements.update({
+                f"+{order}": reference[:, NEW] + order * R_array[NEW, :] * mode_array[:, :],
+                f"-{order}": reference[:, NEW] - order * R_array[NEW, :] * mode_array[:, :],
+            })
+
+        # -------------------------------------------------------------------------
+        # some sanity checks
         assert set(displacements.keys()) == set(linear_disp_keys), (f"{displacements.keys()=}\nand\n{linear_disp_keys=}\n no longer agree!")
 
-        shape = (Z*3, N)
+        N_fit = pp.N_fit
+        fitting_shape = (Z*3, N_fit)
+        full_shape = (Z*3, N)
 
         for k in linear_disp_keys:
-            if int(k[1:]) > 2:
-                assert displacements[k].shape == (Z*3,),  f"{k=} {displacements[k].shape=} not {(Z*3,)=}?"
-            else:
-                assert displacements[k].shape == shape, f"{k=} {displacements[k].shape=} not {shape=}?"
+            # if abs(int(k)) > 2:
+            #     assert displacements[k].shape == fitting_shape,  f"{k=} {displacements[k].shape=} not {fitting_shape=}?"
+            # else:
+            assert displacements[k].shape == full_shape, f"{k=} {displacements[k].shape=} not {full_shape=}?"
+        # -------------------------------------------------------------------------
 
         # store the displacements in the `distored_coords` dictionary
         for key in linear_disp_keys:
@@ -930,28 +939,19 @@ def diabatization(**kwargs):
         for key in key_list:
             file_contents = []
             d = displaced_q[key]
+
             for idx_atom in range(Z):
                 offset = 3*idx_atom  # 3 xyz-coordinates
 
                 if False and len(mode_idx) > 1:
                     print(*mode_idx, d.shape); breakpoint()
 
-                # temporary, if we are doing extra displacements along 1 mode for linear
-                # then the dimensionality is different
-                if (d.ndim == 1) and ('+3' in key_list) and int(key[1:]) > 2:
-                    string = template_string.format(
-                        atom_list[idx_atom], charge_list[idx_atom],
-                        d[offset+0],  # x component
-                        d[offset+1],  # y component
-                        d[offset+2],  # z component
-                    )
-                else:
-                    string = template_string.format(
-                        atom_list[idx_atom], charge_list[idx_atom],
-                        d[(offset+0, *mode_idx)],  # x component
-                        d[(offset+1, *mode_idx)],  # y component
-                        d[(offset+2, *mode_idx)],  # z component
-                    )
+                string = template_string.format(
+                    atom_list[idx_atom], charge_list[idx_atom],
+                    d[(offset+0, *mode_idx)],  # x component
+                    d[(offset+1, *mode_idx)],  # y component
+                    d[(offset+2, *mode_idx)],  # z component
+                )
 
                 file_contents.append(string)
 
@@ -1091,11 +1091,15 @@ def diabatization(**kwargs):
     for i in range(N):
 
         _remove_existing_distorted_structure_files(linear_temp_struct_filenames)
+
+        max_order = pp.nof_displacements_per_mode[i]
+        key_list = [k for k in linear_disp_keys if abs(int(k)) <= max_order]
+
         index = (i, )
         _save_distorted_structure(
             index, disp_coord, charge_list, atom_list,
             linear_temp_struct_filenames,
-            linear_disp_keys
+            key_list
         )
         _create_linear_diabatization_input_files(i, file_name, qsize)
 
