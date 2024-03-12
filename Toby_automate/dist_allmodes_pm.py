@@ -539,7 +539,7 @@ def extract_DSOME(path, nof_states, nof_electron_couplings=2):
 
     # check for stars in lines? this means Gamess calculation failed/is bad
     for line in selected_lines:
-        assert '*' not in line, "You messed up! Gamess calculated failed?"
+        assert '*' not in line, "You likely messed up REFDET! Gamess calculated failed?"
 
     shape = (A, A)
     spin_orbit_array = np.zeros(shape, dtype=C128)
