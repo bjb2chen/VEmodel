@@ -1,6 +1,10 @@
 # VEmodel
-
 ### Repository for vibronic models construction.
+<div align="center">
+![VEmodel_scheme](https://github.com/bjb2chen/VEmodel/assets/51763900/ac8e97f0-df54-4776-abf0-b123616d2af9)
+<h3>
+</h3>
+</div>
 
 Video recording on how to run the diabatization code (assuming you have GAMESS with gmcpt module already): 
 
