@@ -3231,22 +3231,24 @@ def main(ref_geom_path="ref_structure", ncols=5, **kwargs):
     disp_coord = diabatization(**diabatization_kwargs)
     # turns out we don't actually use the `disp_coord` for anything?
 
-    print("Diabatization successfully modified?")
+    print("Diabatization successfully modified? If you continue you will do mctdh and fitting")
 
+    breakpoint() 
     # -------------------------------------------------------------------------
     op_file_name = "mctdh.op"
     op_path = join("./", op_file_name)
 
     hessian_path = kwargs['hessian_filename']
 
+    mctdh(op_path, hessian_path, frequencies_cm, pp.A, pp.N, **kwargs)
+
+    print(f"{op_path=} successfully modified\n")
+
+    # -------------------------------------------------------------------------
     fitting()
 
     if A == 1:
         return
-
-    mctdh(op_path, hessian_path, frequencies_cm, pp.A, pp.N, **kwargs)
-
-    print(f"{op_path=} successfully modified\n")
 
     # -------------------------------------------------------------------------
     # copy <mctdh.op> file to <specific_file_name.op>
