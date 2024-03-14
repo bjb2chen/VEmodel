@@ -211,6 +211,13 @@ def my_subgam(path, **kwargs):
     # nhour = pp.nhour
     # ngb = pp.ngb
 
+    # nlogn compute resources
+    # bjb2chen@nlogn: sinfo -o "%20N %20f %6c %6m"
+    # NODELIST             AVAIL_FEATURES       CPUS   MEMORY
+    # cpu[005-006]         intel,westmere,X5670 12     48000 
+    # io003                intel,ivybridge,E5-2 16     128000
+    # io[001-002]          intel,westmere,X5670 12     48000 
+
     ncpus = kwargs.get('ncpus', 2)
     nhour = kwargs.get('nhour', 1)
     ngb = kwargs.get('ngb', 2)
