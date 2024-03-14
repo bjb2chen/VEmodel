@@ -1975,13 +1975,13 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
             return '\n'.join([
                 (
-                    f"C1_s{a1:0>2d}s{a2:0>2d}_v{i:0>2d}r"
+                    f"I*C1_s{a1:0>2d}s{a2:0>2d}_v{i:0>2d}r"
                     f"{spacer:>11}1 S{a1:d}&{a2:d}"
-                    f"{spacer:>4}{i+1}  I*q"
+                    f"{spacer:>4}{i+1}  q"
                 ) + '\n' + (
-                    f"C1_s{a1:0>2d}s{a2:0>2d}_v{i:0>2d}i"
+                    f"-I*C1_s{a1:0>2d}s{a2:0>2d}_v{i:0>2d}i"
                     f"{spacer:>11}1 S{a1:d}&{a2:d}"
-                    f"{spacer:>4}{i+1}  -I*q"
+                    f"{spacer:>4}{i+1}  q"
                 )
                 for a1, a2, i in it.product(range(1, A+1), range(1, A+1), range(1, N+1))
                 if (a1 < a2)
@@ -1996,13 +1996,13 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
             return '\n'.join([
                 (
-                    f"C2_s{a1:0>2d}s{a2:0>2d}_v{i:0>2d}v{i:0>2d}r"
+                    f"I*C2_s{a1:0>2d}s{a2:0>2d}_v{i:0>2d}v{i:0>2d}r"
                     f"{spacer:>9}1 S{a1:d}&{a2:d}"
-                    f"{spacer:>4}{i+1}  I*q^2"
+                    f"{spacer:>4}{i+1}  q^2"
                 ) + '\n' + (
-                    f"C2_s{a1:0>2d}s{a2:0>2d}_v{i:0>2d}v{i:0>2d}i"
+                    f"-I*C2_s{a1:0>2d}s{a2:0>2d}_v{i:0>2d}v{i:0>2d}i"
                     f"{spacer:>9}1 S{a1:d}&{a2:d}"
-                    f"{spacer:>4}{i+1}  -I*q^2"
+                    f"{spacer:>4}{i+1}  q^2"
                 )
                 for a1, a2, i in it.product(range(1, A+1), range(1, A+1), range(1, N+1))
                 if (a1 < a2)
