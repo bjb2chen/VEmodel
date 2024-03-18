@@ -1598,7 +1598,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         return '\n'.join([
             ''.join([
                 make_line(
-                    label=f"C1_s{a+1:0>2d}s{a+1:0>2d}_v{i+1:0>2d}",
+                    label=f"C1_s{a+1:0>2d}_s{a+1:0>2d}_v{i+1:0>2d}", # VECC has underscore btwn states ONLY for linear
                     value=linear[i][a, a]
                 )
                 for a, i in it.product(range(A), range(N))
@@ -1606,7 +1606,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             ]),
             ''.join([
                 make_line(
-                    label=f"C1_s{a1+1:0>2d}s{a2+1:0>2d}_v{i+1:0>2d}",
+                    label=f"C1_s{a1+1:0>2d}_s{a2+1:0>2d}_v{i+1:0>2d}", # VECC has underscore btwn states ONLY for linear
                     value=linear[i][a1, a2]
                 )
                 for a1, a2, i in it.product(range(A), range(A), range(N))
