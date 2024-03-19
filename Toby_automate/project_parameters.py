@@ -104,7 +104,7 @@ N = len(selected_mode_list)  # the number of modes should be
 nof_displacements_per_mode = {
     "H2Ocat": [2, 2, 2],
     # "NH3cat": [8, 3, 2, 2, 2],
-    "NH3cat": [18, 18, 18, 18, 18, 18],
+    "NH3cat": [2, 2, 2, 2, 2, 2],
 }[name]
 
 
@@ -183,7 +183,7 @@ from types import SimpleNamespace
 
 # constants regarding the calculation
 gamess_const = SimpleNamespace()  # make an empty object
-gamess_const.qsize = 0.30
+gamess_const.qsize = 0.05
 
 # Quantum Mechanical constants
 QM_const = SimpleNamespace()  # make an empty object
