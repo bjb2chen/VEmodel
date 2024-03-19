@@ -50,6 +50,11 @@ def create_input_file(source_dir, *args):
             "end-input\n"
         ])
 
+        if VECC_flag: # VECC-compatible notation if True
+            for i in range(N):
+                new_i = mode_map_dict[i]
+                input_string = file_contents.replace(f'v{i+1:>02d}', f'v{new_i:>02d}')
+
         # the input file name
         inp_file_name = f"{xyz_name}.inp"
 

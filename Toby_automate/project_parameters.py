@@ -26,6 +26,8 @@ expression_list = [pbfs, tfinal, ]
 # -------------------------------------------------------------------------
 SOC_flag = False
 
+VECC_flag = True
+
 # if True it doesn't run any subprocess.run() commands
 # instead it simply prints out what the commands would be to the terminal
 dry_run = False
@@ -104,7 +106,7 @@ N = len(selected_mode_list)  # the number of modes should be
 nof_displacements_per_mode = {
     "H2Ocat": [2, 2, 2],
     # "NH3cat": [8, 3, 2, 2, 2],
-    "NH3cat": [18, 18, 18, 18, 18, 18],
+    "NH3cat": [2, 2, 2, 2, 2, 2],
 }[name]
 
 
@@ -151,7 +153,7 @@ for key, value in ij_map.items():
 # user_root = abspath("/bjb2chen/gamess/vibronics/template_examples/NH3/SOC_9st/SOC_6st")        # format is /user/.../*
 user_root = abspath("/bjb2chen/gamess/vibronics/template_examples/NH3")        # format is /user/.../*
 home_root = abspath(f"/home/{user_root}/home/{project_name}/")
-work_root = abspath(f"/home/{user_root}/work/mctdh/{project_name}/")
+work_root = abspath(f"/work/{user_root}/mctdh/{project_name}/")
 
 
 # server_flag = (socket.gethostname() == "nlogn") or (socket.gethostname() == "feynman")
@@ -183,7 +185,7 @@ from types import SimpleNamespace
 
 # constants regarding the calculation
 gamess_const = SimpleNamespace()  # make an empty object
-gamess_const.qsize = 0.30
+gamess_const.qsize = 0.05
 
 # Quantum Mechanical constants
 QM_const = SimpleNamespace()  # make an empty object
