@@ -27,6 +27,7 @@ import pprint
 import project_parameters as pp
 from project_parameters import *  # eventually remove this
 SOC_flag = pp.SOC_flag  # initialize globally
+VECC_flag = pp.VECC_flag
 # ---------------------------------------------------------------------------------------
 
 
@@ -1520,8 +1521,10 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             if not suppress_zeros or not np.isclose(E0_array[row, col], 0.0)  # if you don't want to print the zeros;
         ])
 
-        string = diag_block
-        #string += "\n" + off_diag_block
+        string = diag_block + "\n" + off_diag_block
+
+        if VECC_flag:
+            string = diag_block
 
         if True:  # add fictious surface
             string += '\n'
@@ -1537,6 +1540,10 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             By default all values in *.op files are in atomic units (au) but we want to explicitly label them
             for clarity.
         """
+        op_lst = ['x', 'y', 'z']
+        if VECC_flag:
+            op_lst = ['x']
+
         def make_xyz_blocks():
             block = ""
             """ Write the xyz component of each excitation as a single block """
@@ -1544,8 +1551,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 src, dst = key[0], key[1]  # the #'s identifying the states between which the excitation is occuring
                 block += "".join([
                     make_line_au(label=f"E{op}_s{src:>02d}_s{dst:>02d}", value=dipoles_dict[key][xyz_idx])
-                    #for xyz_idx, op in enumerate(['x', 'y', 'z'])
-                    for xyz_idx, op in enumerate(['x'])
+                    for xyz_idx, op in enumerate(op_lst)
                     # always print all transition dipole moments out even if zero
                 ])# + "\n"
 
@@ -1554,8 +1560,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         def make_state_blocks():
             """ Write all Ex transitions as one block, then repeat with Ey, and then Ez"""
             block = ""
-            #for xyz_idx, op in enumerate(['x', 'y', 'z']):
-            for xyz_idx, op in enumerate(['x']):
+            for xyz_idx, op in enumerate(op_lst):
                 for key in dipoles_dict.keys():
                     src, dst = key[0], key[1]  # the #'s identifying the states between which the excitation is occuring
                     block += "".join([
@@ -1582,6 +1587,10 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         # only do this if you cannot find etdm
         #dipoles_dict = {key: [0.1] for key in dipoles_dict} # arbitrary fictitious magnetic dipoles
 
+        op_lst = ['x', 'y', 'z']
+        if VECC_flag:
+            op_lst = ['x']
+
         def make_xyz_blocks():
             block = ""
             """ Write the xyz component of each excitation as a single block """
@@ -1589,8 +1598,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 src, dst = key[0], key[1]  # the #'s identifying the states between which the excitation is occuring
                 block += "".join([
                     make_line_au(label=f"M{op}_s{src:>02d}_s{dst:>02d}", value=dipoles_dict[key][xyz_idx])
-                    #for xyz_idx, op in enumerate(['x', 'y', 'z'])
-                    for xyz_idx, op in enumerate(['x'])
+                    for xyz_idx, op in enumerate(op_lst)
                     # always print all transition dipole moments out even if zero
                 ])# + "\n"
 
@@ -1599,8 +1607,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         def make_state_blocks():
             """ Write all Ex transitions as one block, then repeat with Ey, and then Ez"""
             block = ""
-            #for xyz_idx, op in enumerate(['x', 'y', 'z']):
-            for xyz_idx, op in enumerate(['x']):
+            for xyz_idx, op in enumerate(op_lst):
                 for key in dipoles_dict.keys():
                     src, dst = key[0], key[1]  # the #'s identifying the states between which the excitation is occuring
                     block += "".join([
@@ -1708,7 +1715,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 make_line(
                     # Bilinear is technically order=1, but C2 for VECC compatibility
                     # Bilinear will go under Quadratic banner to align with VECC hamiltonian
-                    label=f"C2_s{a+1:0>2d}s{a+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}", 
+                    label=f"C1_s{a+1:0>2d}s{a+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}", 
                     # value=0.0
                     value=bi_lin[(j1, j2)][a, a]
                 )
@@ -1718,7 +1725,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             ]),
             ''.join([
                 make_line(
-                    label=f"C2_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}",
+                    label=f"C1_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}",
                     # value=0.0
                     value=bi_lin[(j1, j2)][a1, a2]
                 )
@@ -1775,10 +1782,10 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
             return ''.join([
                 make_line_cm(
-                    label=f"C2_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}r", # C2 for VECC compatibility
+                    label=f"C1_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}r", # C2 for VECC compatibility
                     value=bi_lin[(j1, j2)][a1, a2].real
                 ) + make_line_cm(
-                    label=f"C2_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}i",
+                    label=f"C1_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}i",
                     value=bi_lin[(j1, j2)][a1, a2].imag
                 )
                 for a1, a2, j1, j2 in it.product(range(A), range(A), range(N), range(N))
@@ -1809,7 +1816,8 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         return '\n'.join([
             build_linear_SOC(soc_dict['Linear'], A, N),
             build_quadratic_SOC(soc_dict['Quadratic'], A, N),
-            build_BiLinear_SOC(soc_dict['BiLinear'], A, N),
+            (build_BiLinear_SOC(soc_dict['BiLinear'], A, N).replace('C1', 'C2') if VECC_flag
+            else build_BiLinear_SOC(soc_dict['BiLinear'], A, N)),
             build_Total_SOC(soc_dict['Total'], A, N),
         ]) + '\n'
 
@@ -1867,8 +1875,10 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
         key = 'BiLinear'
         if key in model.keys():
-            #return_list += [make_header(headers[key]),  build_bilinear_coupling(model[key], A, N)] # Toby hamiltonian
-            return_list += [build_bilinear_coupling(model[key], A, N)] # VECC ham needs bilinear under quadratic banner
+            if VECC_flag:
+                return_list += [build_bilinear_coupling(model[key], A, N).replace('C1', 'C2')] # VECC ham needs bilinear under quadratic banner
+            else:
+                return_list += [make_header(headers[key]),  build_bilinear_coupling(model[key], A, N)] # Toby hamiltonian
 
         key = 'SOC'
         if key in model.keys():
@@ -1910,7 +1920,10 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             and (not suppress_zeros or not np.isclose(energy[a1-1, a2-1], 0.0))
         ]) + '\n'
 
-        string = diag_block + "\n" + off_diag_block
+        string = diag_block + "\n" + off_diag_block 
+        
+        if VECC_flag:
+            string = diag_block # VECC can only take diagonal
 
         if True:  # add fictious surface
             string += '\n'
@@ -1985,7 +1998,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
         return '\n'.join([
             (
-                f"C2_s{a:0>2d}s{a:0>2d}_v{j1:0>2d}v{j2:0>2d}" # C2 to align with VECC
+                f"C1_s{a:0>2d}s{a:0>2d}_v{j1:0>2d}v{j2:0>2d}" # C2 to align with VECC
                 f"{spacer:>9}1 S{a:d}&{a:d}"
                 f"{spacer:>4}{j1+1}  q{spacer:>6}{j2+1}  q"
             )
@@ -1996,7 +2009,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 ''  # creates a blank line between the (surface) diagonal and off-diagonal linear terms
         ] + [
             (
-                f"C2_s{a1:0>2d}s{a2:0>2d}_v{j1:0>2d}v{j2:0>2d}"
+                f"C1_s{a1:0>2d}s{a2:0>2d}_v{j1:0>2d}v{j2:0>2d}"
                 f"{spacer:>9}1 S{a1:d}&{a2:d}"
                 f"{spacer:>4}{j1+1}  q{spacer:>6}{j2+1}  q"
             )
@@ -2163,8 +2176,8 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         """Returns a string which defines the `HAMILTONIAN-SECTION` of an .op file"""
         start, end = "HAMILTONIAN-SECTION", "end-hamiltonian-section"
         spec = ''.join([
-            ' modes   |  el  |',
-            ''.join([f" v{N+1:0>2d}|" for N in range(N)]),
+            ' modes | el |',
+            ''.join([f" v{N+1:0>2d} |" for N in range(N)]),
             '\n'
         ])
 
@@ -2200,7 +2213,10 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
         key = 'BiLinear'
         if key in model.keys():
-            return_list += [label_bilinear_coupling(model[key], A, N)]
+            if VECC_flag:
+                return_list += [label_bilinear_coupling(model[key], A, N)].replace('C1', 'C2')
+            else:
+                return_list += [label_bilinear_coupling(model[key], A, N)]
 
         key = 'SOC'
         if key in model.keys():
@@ -2374,10 +2390,10 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                     state, pair = int(state), int(pair)
                     if pair == state:  # transition from the fictitious ground state (0) -> to `state` #
                         pair = 0
-                        dipoles[(pair, state)] = [float(x)] # VECC compatible
-
-                    # uncomment here if you want off-diagonal state-pairs
-                    #dipoles[(pair, state)] = [float(x), float(y), float(z)]  
+                        if VECC_flag:
+                            dipoles[(pair, state)] = [float(x)] # VECC compatible
+                        else:
+                            dipoles[(pair, state)] = [float(x), float(y), float(z)] # off-diagonal state-pairs
  
                 except Exception as e:
                     print(f"Error processing line: {line} - {e}")
@@ -2887,7 +2903,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             "end-operator\n"
         ])
 
-        if False: # VECC-compatible notation if False
+        if not VECC_flag: # VECC-compatible notation if True
             for i in range(N):
                 new_i = mode_map_dict[i]
                 file_contents = file_contents.replace(f'v{i+1:>02d}', f'v{new_i:>02d}')

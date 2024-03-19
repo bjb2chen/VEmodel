@@ -26,6 +26,8 @@ expression_list = [pbfs, tfinal, ]
 # -------------------------------------------------------------------------
 SOC_flag = False
 
+VECC_flag = True
+
 # if True it doesn't run any subprocess.run() commands
 # instead it simply prints out what the commands would be to the terminal
 dry_run = False
