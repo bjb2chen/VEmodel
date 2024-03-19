@@ -151,7 +151,7 @@ for key, value in ij_map.items():
 # user_root = abspath("/bjb2chen/gamess/vibronics/template_examples/NH3/SOC_9st/SOC_6st")        # format is /user/.../*
 user_root = abspath("/bjb2chen/gamess/vibronics/template_examples/NH3")        # format is /user/.../*
 home_root = abspath(f"/home/{user_root}/home/{project_name}/")
-work_root = abspath(f"/home/{user_root}/work/mctdh/{project_name}/")
+work_root = abspath(f"/work/{user_root}/mctdh/{project_name}/")
 
 
 # server_flag = (socket.gethostname() == "nlogn") or (socket.gethostname() == "feynman")
