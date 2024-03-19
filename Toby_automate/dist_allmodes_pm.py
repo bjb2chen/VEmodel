@@ -1578,18 +1578,17 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         return block
 
     def build_magnetic_moments(dipoles_dict):
-        """ Identical to build_electronic_moments, but set 0.1 arbitrary value since GMS
-            does not give magnetic transition dipole values.
-        """
-        M_moments = {key: [0.1] for key in dipoles_dict} # arbitrary fictitious magnetic dipoles
+        
+        # only do this if you cannot find etdm
+        #dipoles_dict = {key: [0.1] for key in dipoles_dict} # arbitrary fictitious magnetic dipoles
 
         def make_xyz_blocks():
             block = ""
             """ Write the xyz component of each excitation as a single block """
-            for key in M_moments.keys():
+            for key in dipoles_dict.keys():
                 src, dst = key[0], key[1]  # the #'s identifying the states between which the excitation is occuring
                 block += "".join([
-                    make_line_au(label=f"M{op}_s{src:>02d}_s{dst:>02d}", value=M_moments[key][xyz_idx])
+                    make_line_au(label=f"M{op}_s{src:>02d}_s{dst:>02d}", value=dipoles_dict[key][xyz_idx])
                     #for xyz_idx, op in enumerate(['x', 'y', 'z'])
                     for xyz_idx, op in enumerate(['x'])
                     # always print all transition dipole moments out even if zero
@@ -1602,10 +1601,10 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             block = ""
             #for xyz_idx, op in enumerate(['x', 'y', 'z']):
             for xyz_idx, op in enumerate(['x']):
-                for key in M_moments.keys():
+                for key in dipoles_dict.keys():
                     src, dst = key[0], key[1]  # the #'s identifying the states between which the excitation is occuring
                     block += "".join([
-                        make_line_au(label=f"M{op}_s{src:>02d}_s{dst:>02d}", value=M_moments[key][xyz_idx])
+                        make_line_au(label=f"M{op}_s{src:>02d}_s{dst:>02d}", value=dipoles_dict[key][xyz_idx])
                         # always print all transition dipole moments out even if zero
                     ])
                 block += "\n"
@@ -1613,7 +1612,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             return block
 
         # just-in-case
-        for key in M_moments.keys():  # all keys are length 2 tuples
+        for key in dipoles_dict.keys():  # all keys are length 2 tuples
             assert isinstance(key, tuple) and len(key) == 2
 
         if True:  # xyz_blocks
