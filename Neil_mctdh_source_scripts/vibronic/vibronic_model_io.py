@@ -15,7 +15,7 @@ from numpy import float64 as F64
 from numpy import complex128 as C128
 
 # local imports
-from .log_conf import log
+from ..log_conf import log
 from .vibronic_model_keys import VibronicModelKeys as VMK
 from . import model_op
 
@@ -37,7 +37,8 @@ def model_shape_dict(A, N):
 
     """
     dictionary = {
-        VMK.tdm: (A, ),
+        VMK.etdm: (1, A),
+        VMK.mtdm: (1, A),
         VMK.E: (A, A),
         VMK.w: (N, ),
         VMK.G1: (N, A, A),
@@ -55,7 +56,8 @@ def diagonal_model_shape_dict(A, N):
 
     """
     dictionary = {
-        VMK.tdm: (A, ),
+        VMK.etdm: (1, A),
+        VMK.mtdm: (1, A),
         VMK.E: (A, ),
         VMK.w: (N, ),
         VMK.G1: (N, A),
@@ -67,7 +69,7 @@ def diagonal_model_shape_dict(A, N):
     return dictionary
 
 
-def model_zeros_template_json_dict(A, N, highest_order=4):
+def model_zeros_template_json_dict(A, N, highest_order=1):
     """ returns a dictionary that is a valid model, where all values (other than states and modes) are set to 0
     """
     shape = model_shape_dict(A, N)
@@ -76,17 +78,22 @@ def model_zeros_template_json_dict(A, N, highest_order=4):
         VMK.A: A,
         VMK.E: np.zeros(shape[VMK.E], dtype=F64),
         VMK.w: np.zeros(shape[VMK.w], dtype=F64),
-        VMK.tdm: np.zeros(shape[VMK.tdm], dtype=C128),
+        VMK.etdm: np.zeros(shape[VMK.etdm], dtype=C128),
+        VMK.mtdm: np.zeros(shape[VMK.mtdm], dtype=C128),
     }
 
     for idx, key in enumerate(VMK.coupling_list()):
         if idx + 1 <= highest_order:
             dictionary.update({key: np.zeros(shape[key], dtype=F64)})
 
+    if highest_order > VMK.max_order():
+        e_str = f"VMK supports at most order {VMK.max_order()} coupling terms, not {highest_order=}\n"
+        raise Exception(e_str)
+
     return dictionary
 
 
-def diagonal_model_zeros_template_json_dict(A, N, highest_order=4):
+def diagonal_model_zeros_template_json_dict(A, N, highest_order=1):
     """ returns a dictionary that is a valid diagonal model, where all values (other than states and modes) are set to 0
     """
     shape = diagonal_model_shape_dict(A, N)
@@ -95,12 +102,17 @@ def diagonal_model_zeros_template_json_dict(A, N, highest_order=4):
         VMK.A: A,
         VMK.E: np.zeros(shape[VMK.E], dtype=F64),
         VMK.w: np.zeros(shape[VMK.w], dtype=F64),
-        VMK.tdm: np.zeros(shape[VMK.tdm], dtype=C128),
+        VMK.etdm: np.zeros(shape[VMK.etdm], dtype=C128),
+        VMK.mtdm: np.zeros(shape[VMK.mtdm], dtype=C128),
     }
 
     for idx, key in enumerate(VMK.coupling_list()):
         if idx + 1 <= highest_order:
             dictionary.update({key: np.zeros(shape[key], dtype=F64)})
+
+    if highest_order > VMK.max_order():
+        e_str = f"VMK supports at most order {VMK.max_order()} coupling terms, not {highest_order=}\n"
+        raise Exception(e_str)
 
     return dictionary
 
@@ -114,8 +126,11 @@ def verify_model_parameters(kwargs):
     shape_dict = model_shape_dict(A, N)
 
     for key, value in kwargs.items():
-        if key in shape_dict:
-            assert kwargs[key].shape == shape_dict[key], f"{key} have incorrect shape"
+        if (key == VMK.A) or (key == VMK.N) or key in [VMK.etdm, VMK.mtdm]:
+            continue
+        elif key in shape_dict:
+            assert kwargs[key].shape == shape_dict[key], \
+                f"{key} has incorrect shape {kwargs[key].shape} instead of {shape_dict[key]}"
         else:
             log.debug(f"Found key {key} which is not present in the default dictionary")
 
@@ -131,8 +146,11 @@ def verify_diagonal_model_parameters(kwargs):
     shape_dict = diagonal_model_shape_dict(A, N)
 
     for key, value in kwargs.items():
-        if key in shape_dict:
-            assert kwargs[key].shape == shape_dict[key], f"{key} have incorrect shape"
+        if (key == VMK.A) or (key == VMK.N):
+            continue
+        elif key in shape_dict:
+            assert kwargs[key].shape == shape_dict[key], \
+                f"{key} has incorrect shape {kwargs[key].shape} instead of {shape_dict[key]}"
         else:
             log.debug(f"Found key {key} which is not present in the default dictionary")
 
@@ -319,6 +337,47 @@ def model_parameters_are_symmetric_in_modes(kwargs):
     return True
 
 
+def model_is_FC(model):
+    """Return True if all off-diagonal (electronic and vibrational) coefficients are zero.
+    Return False otherwise."""
+
+    verify_model_parameters(model)
+
+    # extract parameters
+    A, N = extract_dimensions_of_model(model)
+    max_order = extract_maximum_order_of_model(model)
+    assert max_order <= 2, f"Need to define `off-diagonal` for >=3 modes, only 1 or 2 modes are implemented\n"
+    key_list = VMK.key_list()
+
+    # create a copy
+    temp_model = create_deepcopy(model)
+
+    # set diagonal to zero
+    # then check if all values in the array are zero
+    for order in range(max_order):
+        key = key_list[order]
+        if (key == VMK.E) or (key == VMK.G1):
+            # fill the diagonal of the electronic dimension
+            for a in range(A):
+                temp_model[key][..., a, a].fill(0.0)
+
+        elif key == VMK.G2:
+            # fill the diagonal of the electronic dimension
+            for a in range(A):
+                temp_model[key][..., a, a].fill(0.0)
+            # fill the off-diagonal of the vibrational dimension
+            for i in range(N):
+                temp_model[key][i, i, ...].fill(0.0)
+
+        else:
+            raise Exception(f"max_order is ({max_order}) <= 2 but we got this key {key}?? How did that happen!")
+
+        if not np.all(temp_model[key] == 0.0):
+            log.debug(f"Not all values of {key} are zero\n{temp_model[key]}\n")
+            return False
+
+    return True
+
 # ------------------------------------------------------------------------
 # ------------------------------------------------------------------------
 # Functions which modify a model in some way
@@ -358,10 +417,18 @@ def model_add_surface(old_model, **kwargs):
 
     # transition dipole moment
     for a in range(old_A):
-        new_model[VMK.tdm][a] = old_model[VMK.tdm][a]
+
+        if VMK.etdm in old_model:
+            new_model[VMK.etdm][:, a] = old_model[VMK.etdm][:, a]
+        if VMK.mtdm in old_model:
+            new_model[VMK.mtdm][:, a] = old_model[VMK.mtdm][:, a]
 
     # add transition moment of new surface from `kwargs`
-    new_model[VMK.tdm][-1] = kwargs[VMK.tdm]
+
+    if VMK.etdm in old_model:
+        new_model[VMK.etdm][:, -1] = kwargs[VMK.etdm]
+    if VMK.mtdm in old_model:
+        new_model[VMK.mtdm][:, -1] = kwargs[VMK.mtdm]
 
     # frequencies don't change
     new_model[VMK.w] = old_model[VMK.w]
@@ -396,12 +463,27 @@ def model_remove_ground_state(old_model, **kwargs):
     order = extract_maximum_order_of_model(old_model)
     new_model = model_zeros_template_json_dict(A, N, highest_order=order)
 
+    # unfortunately we have to cheat for now and we will fix it later
+    if VMK.etdm in old_model:
+        new_model[VMK.etdm] = np.zeros((old_model[VMK.etdm].shape[0], A), dtype=C128)
+
+    if VMK.mtdm in old_model:
+        new_model[VMK.mtdm] = np.zeros((old_model[VMK.mtdm].shape[0], A), dtype=C128)
+
+    print(old_model.keys())
+
     # frequencies don't change
     new_model[VMK.w] = old_model[VMK.w]
 
     # energy
     for a in range(A):
-        new_model[VMK.tdm][a] = old_model[VMK.tdm][a]
+
+        if VMK.etdm in old_model:
+            new_model[VMK.etdm][:, a] = old_model[VMK.etdm][:, a]
+
+        if VMK.mtdm in old_model:
+            new_model[VMK.mtdm][:, a] = old_model[VMK.mtdm][:, a]
+
         for b in range(A):
             new_model[VMK.E][a, b] = old_model[VMK.E][a, b]
             for key in [VMK.G1, VMK.G2, VMK.G3, VMK.G4]:
@@ -428,12 +510,28 @@ def diagonal_model_add_surface(old_model, **kwargs):
     # add energy of new surface from `kwargs`
     new_model[VMK.E][-1] = kwargs[VMK.E]
 
+    # unfortunately we have to cheat for now and we will fix it later
+    if VMK.etdm in old_model:
+        new_model[VMK.etdm] = np.zeros((old_model[VMK.etdm].shape[0], A), dtype=C128)
+
+    if VMK.mtdm in old_model:
+        new_model[VMK.mtdm] = np.zeros((old_model[VMK.mtdm].shape[0], A), dtype=C128)
+
     # transition dipole moment
     for a in range(old_A):
-        new_model[VMK.tdm][a] = old_model[VMK.tdm][a]
+
+        if VMK.etdm in old_model:
+            new_model[VMK.etdm][:, a] = old_model[VMK.etdm][:, a]
+
+        if VMK.mtdm in old_model:
+            new_model[VMK.mtdm][:, a] = old_model[VMK.mtdm][:, a]
 
     # add transition moment of new surface from `kwargs`
-    new_model[VMK.tdm][-1] = kwargs[VMK.tdm]
+    if VMK.etdm in old_model:
+        new_model[VMK.etdm][:, -1] = kwargs[VMK.etdm]
+
+    if VMK.mtdm in old_model:
+        new_model[VMK.mtdm][:, -1] = kwargs[VMK.mtdm]
 
     # frequencies don't change
     new_model[VMK.w] = old_model[VMK.w]
@@ -479,7 +577,13 @@ def diagonal_model_remove_surface(old_model, A_idxs):
     new_model[VMK.E] = np.delete(old_model[VMK.E], A_idxs)
 
     # transition moment
-    new_model[VMK.tdm] = np.delete(old_model[VMK.tdm], A_idxs)
+    if VMK.etdm in old_model:
+        for d in range(new_model[VMK.etdm].shape[0]):
+            new_model[VMK.etdm][d, :] = np.delete(old_model[VMK.etdm][d, :], A_idxs)
+
+    if VMK.mtdm in old_model:
+        for d in range(new_model[VMK.mtdm].shape[0]):
+            new_model[VMK.mtdm][d, :] = np.delete(old_model[VMK.mtdm][d, :], A_idxs)
 
     # frequencies
     new_model[VMK.w] = old_model[VMK.w]
@@ -539,12 +643,91 @@ def remove_coupling_from_model(path_source, path_destination):
     return
 
 
-def remove_higher_order_terms(model, highest_order=4):
+def remove_higher_order_terms(model, highest_order=1):
     for idx, key in enumerate(VMK.key_list()):
         if key in model and idx > highest_order:
             del model[key]
+            log.debug(f"Removed {key.name:s}")
     return
 
+
+def swap_coupling_coefficient_axes(model, coeff_order):
+    """
+    Currently the CC integration code expects the coefficients to have the surface dimensions first.
+    When they are read in from the .op file they are the last dimensions.
+    Therefore we need to shift their position.
+    We do this by shifting the mode dimensions around the surface dimensions.
+    """
+
+    if coeff_order == 0:
+        return  # no need to change order if their are no coupling coefficients
+
+    log.debug(f"Swapping the axis of the order {coeff_order} coupling coefficients")
+    index = VMK.key_list()[coeff_order]
+    source_list = [i for i in range(coeff_order)]
+    destination_list = [i for i in range(-coeff_order, 0)]
+    log.debug(f"Original electronic dimension(s) indices: {source_list}")
+    log.debug(f"New electronic dimension(s) indices:      {destination_list}")
+
+    model[index] = np.moveaxis(model[index], source_list, destination_list)
+    return
+
+
+def unswap_coupling_coefficient_axes(model, coeff_order):
+    """
+    Currently the CC integration code expects the coefficients to have the surface dimensions first.
+    When they are read in from the .op file they are the last dimensions.
+    Therefore we need to shift their position.
+    We do this by shifting the mode dimensions around the surface dimensions.
+    """
+
+    if coeff_order == 0:
+        return  # no need to change order if their are no coupling coefficients
+
+    log.debug(f"Swapping the axis of the order {coeff_order} coupling coefficients")
+    index = VMK.key_list()[coeff_order]
+    source_list = [i for i in range(-coeff_order, 0)]
+    destination_list = [i for i in range(coeff_order)]
+    log.debug(f"Original electronic dimension(s) indices: {source_list}")
+    log.debug(f"New electronic dimension(s) indices:      {destination_list}")
+
+    model[index] = np.moveaxis(model[index], source_list, destination_list)
+    return
+
+
+def temp_unswap_model_from_cc_integration(model, highest_order):
+    """Removes extra parameters from .op file and reshapes the coupling coefficient tensors."""
+
+    # we are only handling the linear and quadratic terms at the moment
+    for index in [1, 2]:
+        key = VMK.key_list()[index]
+        if highest_order >= index:
+            if key not in model:
+                A, N = vIO.extract_dimensions_of_model(model)
+                model[key] = np.zeros(vIO.model_shape_dict(A, N)[key], dtype=float)
+
+            unswap_coupling_coefficient_axes(model, coeff_order=index)
+    return
+
+
+def prepare_model_for_cc_integration(model, highest_order):
+    """Removes extra parameters from .op file and reshapes the coupling coefficient tensors."""
+
+    # remove any extra arguments we don't need (high ordered terms)
+    remove_higher_order_terms(model, highest_order=highest_order)
+
+    # we are only handling the linear and quadratic terms at the moment
+    for index in [1, 2]:
+        key = VMK.key_list()[index]
+        if highest_order >= index:
+            if key not in model:
+                # A, N = vIO.extract_dimensions_of_model(model)
+                A, N = extract_dimensions_of_model(model)
+                #  model[key] = np.zeros(vIO.model_shape_dict(A, N)[key], dtype=float)
+                model[key] = np.zeros(model_shape_dict(A, N)[key], dtype=float)
+
+            swap_coupling_coefficient_axes(model, coeff_order=index)
+    return
 
 # ------------------------------------------------------------------------
 # ------------------------------------------------------------------------
@@ -569,7 +752,7 @@ def _generate_quadratic_terms(quadratic_terms, shape, displacement, Modes):
     return
 
 
-def generate_vibronic_model_data(input_parameters=None):
+def generate_vibronic_model_data(input_parameters=None, highest_order=1):
     """redo this one but otherwise its fine returns e,w,l,q filled with appropriate values"""
 
     # default values
@@ -600,7 +783,7 @@ def generate_vibronic_model_data(input_parameters=None):
     shape = model_shape_dict(numStates, numModes)
 
     # assume we are building a coupled model
-    model = model_zeros_template_json_dict(numStates, numModes)
+    model = model_zeros_template_json_dict(numStates, numModes, highest_order=highest_order)
 
     # generate frequencies
     model[VMK.w] = np.linspace(minFreq, maxFreq, num=numModes, endpoint=True, dtype=F64)
@@ -612,29 +795,36 @@ def generate_vibronic_model_data(input_parameters=None):
 
     # I'm not sure what appropriate parameters would be for this
     # so for now we'll just use 0.1 eV's for all the values
-    model[VMK.tdm] = np.full(shape=shape[VMK.tdm], fill_value=0.1, dtype=C128)
+    model[VMK.etdm] = np.full(shape=shape[VMK.etdm], fill_value=0.1, dtype=C128)
+    model[VMK.mtdm] = np.full(shape=shape[VMK.mtdm], fill_value=0.1, dtype=C128)
 
     # calculate the linear displacement
     l_shift = paramDict['linear_scaling'] / model[VMK.w]
     _generate_linear_terms(model[VMK.G1], shape, l_shift, Modes)
 
-    # TODO - no quadratic terms for the moment - turn back on after further testing
-    # calculate the quadratic displacement
-    # q_shift = np.sqrt(np.outer(frequencies, frequencies)) / paramDict['quadratic_scaling']
-    # _generate_quadratic_terms(q_terms, shape, q_shift, Modes)
+    # TODO - no quadratic terms for the moment
+    if highest_order >= 2:
+        raise Exception('not supported, turn back on after further testing')
+        # calculate the quadratic displacement
+        frequencies = model[VMK.w]
+        q_shift = np.sqrt(np.outer(frequencies, frequencies)) / paramDict['quadratic_scaling']
+        _generate_quadratic_terms(q_terms, shape, q_shift, Modes)
 
     # if we are building a harmonic model then zero out all off-diagonal entries
     if paramDict['diagonal']:
-        d_model = diagonal_model_zeros_template_json_dict(numStates, numModes)
+        d_model = diagonal_model_zeros_template_json_dict(numStates, numModes, highest_order=highest_order)
 
         d_model[VMK.E] = np.diag(model[VMK.E])
-        d_model[VMK.tdm] = model[VMK.tdm]
+        d_model[VMK.etdm] = model[VMK.etdm]
+        d_model[VMK.mtdm] = model[VMK.mtdm]
         d_model[VMK.w] = model[VMK.w]
 
         for i in Modes:
             d_model[VMK.G1][i, ...] = np.diag(model[VMK.G1][i, ...])
-        for i, j in it.product(Modes, repeat=2):
-            d_model[VMK.G2][i, j, ...] = np.diag(model[VMK.G2][i, j, ...])
+
+        if highest_order >= 2:
+            for i, j in it.product(Modes, repeat=2):
+                d_model[VMK.G2][i, j, ...] = np.diag(model[VMK.G2][i, j, ...])
 
         return d_model
 
@@ -672,69 +862,95 @@ def create_random_diagonal_model():
 # ------------------------------------------------------------------------
 # Functions which handle I/O with files ending in `.op`
 # ------------------------------------------------------------------------
-def read_model_op_file(
-    path_file_op,
-    surface_symmetrize=True,
-    double_quadratic=True,
-    symmetrize_quadratic=False,
-):
-    """ wrapper function to maintain functionality - possible remove in the future"""
-    return model_op.read_model_op_file(
-        path_file_op,
-        surface_symmetrize=surface_symmetrize,
-        double_quadratic=double_quadratic,
-        symmetrize_quadratic=symmetrize_quadratic
-    )
-
-
-def read_raw_model_op_file(path_file_op):
-    """ wrapper function to maintain functionality - possible remove in the future"""
+def read_raw_model_op_file(path_file_op, highest_order=2, **kwargs):
+    """When you want to "read as written" (RAW) the op file. Data will not be symmetrized."""
     return model_op.read_model_op_file(
         path_file_op,
         surface_symmetrize=False,
+        symmetrize_quadratic=False,
         double_quadratic=False,
-        symmetrize_quadratic=False
+        highest_order=highest_order,
+        **kwargs
     )
+
+
+def read_model_op_file(
+    path_file_op,
+    surface_symmetrize=True,
+    symmetrize_quadratic=True,
+    double_quadratic=False,
+    highest_order=None,
+    FC=False,
+    **kwargs
+):
+    """Symmetrize both surfaces and modes up to quadratic terms."""
+    if highest_order is not None:
+        kwargs["highest_order"] = highest_order
+
+    model = model_op.read_model_op_file(
+        path_file_op,
+        surface_symmetrize=surface_symmetrize,
+        double_quadratic=double_quadratic,
+        symmetrize_quadratic=symmetrize_quadratic,
+        **kwargs
+    )
+
+    if highest_order is not None:
+        assert isinstance(highest_order, int), f"highest_order must be an integer not {highest_order}"
+        remove_higher_order_terms(model, highest_order=highest_order)
+
+    if FC:
+        fill_offdiagonalsurfaces_of_model_with_zeros(model)
+        fill_offdiagonalmodes_of_model_with_zeros(model)
+
+    return model
 
 
 def extract_excited_state_model_op(
     path_file_op,
     surface_symmetrize=True,
-    symmetrize_quadratic=False,
+    symmetrize_quadratic=True,
     double_quadratic=False,
+    highest_order=None,
+    FC=False,
+    **kwargs
 ):
-    """ wrapper function to maintain functionality - possible remove in the future"""
-    model = model_op.read_model_op_file(
+    """Removes a ground state if one exists"""
+    model = read_model_op_file(
         path_file_op,
         surface_symmetrize=surface_symmetrize,
         double_quadratic=double_quadratic,
-        symmetrize_quadratic=symmetrize_quadratic
+        symmetrize_quadratic=symmetrize_quadratic,
+        highest_order=highest_order,
+        FC=FC,
+        **kwargs
     )
+    # remove ground state from model and adjust parameter dimensions.
     new_model = model_remove_ground_state(model)
     return new_model
 
 
-def write_diagonal_model_op_file(path_file_op, diagonal_model, half_quadratic=True):
+def write_diagonal_model_op_file(path_file_op, diagonal_model, half_quadratic=False, highest_order=2):
     """Takes a diagonal model and writes it to a molecule_vibron.op files"""
     if half_quadratic:
         diagonal_model[VMK.G2] /= 2.0
 
     verify_diagonal_model_parameters(diagonal_model)
-    formatted_data = model_op.generate_op_file_data(diagonal_model, flag_diagonal=True)
+    formatted_data = model_op.generate_op_file_data(diagonal_model, highest_order=highest_order, flag_diagonal=True)
     with open(path_file_op, 'w') as source_file:
         source_file.write(formatted_data)
 
 
-def write_raw_model_op_file(path_file_op, model):
+def write_raw_model_op_file(path_file_op, model, highest_order=2):
     """Takes a model and writes it to a molecule_vibron.op files"""
     verify_model_parameters(model)
-    formatted_data = model_op.generate_op_file_data(model)
+    formatted_data = model_op.generate_op_file_data(model, highest_order=highest_order)
     with open(path_file_op, 'w') as source_file:
         source_file.write(formatted_data)
     return
 
 
-def write_model_op_file(path_file_op, model, half_quadratic=True):
+def write_model_op_file(path_file_op, model, half_quadratic=False):
     """Takes a model and writes it to a molecule_vibron.op files"""
     if half_quadratic:
         model[VMK.G2] /= 2.0
@@ -759,11 +975,13 @@ def _save_to_JSON(path, dictionary):
     dict_copy = copy.deepcopy(dictionary)
     VMK.change_dictionary_keys_from_enum_members_to_strings(dict_copy)
     """ converts each numpy array to a list so that json can serialize them properly"""
+
     for key, value in list(dict_copy.items()):
         if isinstance(value, (np.ndarray, np.generic)):
             if np.count_nonzero(value) > 0:
-                if key == VMK.transition_dipole_moments.value:
-                    dict_copy[key] = [str(n) for n in value]
+                if key in [VMK.etdm.value, VMK.mtdm.value]:
+                    assert value.shape == (1, dict_copy[VMK.A.value])
+                    dict_copy[key] = [[str(n) for n in value[i, :].tolist()] for i in range(value.shape[0])]
                 else:
                     dict_copy[key] = value.tolist()
             else:
@@ -810,15 +1028,16 @@ def _load_inplace_from_JSON(path, dictionary):
             # this is a safer way of forcing the input arrays that have no corresponding key in the input_dictionary to have zero values
             # although this might not be necessary, it is a safer alternative at the moment
             if key not in input_dictionary:
-                if key is VMK.tdm:
+                if key in [VMK.etdm, VMK.mtdm]:
                     # the transition dipole moment is complex
                     # the complex numbers are stored as strings in the JSON file
                     dictionary[key].fill(complex(0.0))
                 else:
                     # the rest of the model is doubles
                     dictionary[key].fill(0.0)
-            elif key is VMK.tdm:
-                tdm_list = list(map(complex, input_dictionary[key]))
+
+            elif key in [VMK.etdm, VMK.mtdm]:
+                tdm_list = [[*map(complex, row)] for row in input_dictionary[key]]
                 dictionary[key][:] = np.array(tdm_list, dtype=C128)
             else:
                 dictionary[key][:] = np.array(input_dictionary[key], dtype=F64)
@@ -835,10 +1054,10 @@ def _load_from_JSON(path):
 
     for key, value in input_dictionary.items():
         if isinstance(value, list):
-            if key is VMK.tdm:
+            if key in [VMK.etdm, VMK.mtdm]:
                 # the transition dipole moment is complex
                 # the complex numbers are stored as strings in the JSON file
-                value = list(map(complex, value))
+                value = [[*map(complex, row)] for row in value]
                 input_dictionary[key] = np.array(value, dtype=C128)
             else:
                 # the rest of the model is doubles
@@ -893,9 +1112,7 @@ def load_diagonal_model_from_JSON(path, dictionary=None):
     # no arrays were provided so return newly created arrays after filling them with the appropriate values
     if not bool(dictionary):
         new_model_dict = _load_from_JSON(path)
-
         # TODO - we might want to make sure that none of the values in the dictionary have all zero values or are None
-
         verify_diagonal_model_parameters(new_model_dict)
         return new_model_dict
 
@@ -969,7 +1186,7 @@ def print_model(model, highest_order=None):
         sep='\n'
     )
 
-    for key in [VMK.w, VMK.tdm, VMK.E]:
+    for key in [VMK.w, VMK.etdm, VMK.mtdm, VMK.E]:
         print(f"{key.value}  {model[key].shape}\n{model[key]}\n")
 
     if highest_order is None:

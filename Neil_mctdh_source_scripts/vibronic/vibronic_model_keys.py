@@ -10,8 +10,10 @@ class VibronicModelKeys(Enum):
     number_of_surfaces = "number of surfaces"
     energies = "energies"
     frequencies = "frequencies"
-    transition_dipole_moments = "transition dipole moments"
+    electronic_transition_dipole_moments = "electronic transition dipole moments"
+    magnetic_transition_dipole_moments = "magnetic transition dipole moments"
     linear_couplings = "linear couplings"
+    bi_linear_couplings = "bi linear couplings"
     quadratic_couplings = "quadratic couplings"
     cubic_couplings = "cubic couplings"
     quartic_couplings = "quartic couplings"
@@ -21,8 +23,10 @@ class VibronicModelKeys(Enum):
     A = number_of_surfaces
     E = energies
     w = frequencies
-    tdm = transition_dipole_moments
+    etdm = electronic_transition_dipole_moments
+    mtdm = magnetic_transition_dipole_moments
     G1 = linear_couplings
+    G1b = bi_linear_couplings
     G2 = quadratic_couplings
     G3 = cubic_couplings
     G4 = quartic_couplings
@@ -56,3 +60,8 @@ class VibronicModelKeys(Enum):
 
         These are coefficients for the continues degrees of freedom."""
         return [cls.G1, cls.G2, cls.G3, cls.G4]
+
+    @classmethod
+    def max_order(cls):
+        """Return the maximal order of coupling terms currently implemented in the code."""
+        return len(cls.coupling_list())
