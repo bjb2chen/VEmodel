@@ -1520,7 +1520,8 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             if not suppress_zeros or not np.isclose(E0_array[row, col], 0.0)  # if you don't want to print the zeros;
         ])
 
-        string = diag_block + "\n" + off_diag_block
+        string = diag_block
+        #string += "\n" + off_diag_block
 
         if True:  # add fictious surface
             string += '\n'
@@ -1539,11 +1540,13 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         def make_xyz_blocks():
             block = ""
             """ Write the xyz component of each excitation as a single block """
-            for key in dipoles_dict.keys():
+            #for xyz_idx, op in enumerate(['x', 'y', 'z']):
+            for xyz_idx, op in enumerate(['x']):
                 src, dst = key[0], key[1]  # the #'s identifying the states between which the excitation is occuring
                 block += "".join([
                     make_line_au(label=f"E{op}_s{src:>02d}_s{dst:>02d}", value=dipoles_dict[key][xyz_idx])
-                    for xyz_idx, op in enumerate(['x', 'y', 'z'])
+                    #for xyz_idx, op in enumerate(['x', 'y', 'z']) 
+                    for xyz_idx, op in enumerate(['x'])
                     # always print all transition dipole moments out even if zero
                 ]) + "\n"
 
@@ -1574,8 +1577,51 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
         return block
 
-    def build_magnetic_moments():
-        raise Exception("Function not implemented yet")
+    def build_magnetic_moments(dipoles_dict):
+        """ Identical to build_electronic_moments, but set 0.1 arbitrary value since GMS
+            does not give magnetic transition dipole values.
+        """
+        M_moments = {key: [0.1] for key in dipoles_dict} # arbitrary fictitious magnetic dipoles
+
+        def make_xyz_blocks():
+            block = ""
+            """ Write the xyz component of each excitation as a single block """
+            for key in M_moments.keys():
+                src, dst = key[0], key[1]  # the #'s identifying the states between which the excitation is occuring
+                block += "".join([
+                    make_line_au(label=f"M{op}_s{src:>02d}_s{dst:>02d}", value=M_moments[key][xyz_idx])
+                    #for xyz_idx, op in enumerate(['x', 'y', 'z'])
+                    for xyz_idx, op in enumerate(['x'])
+                    # always print all transition dipole moments out even if zero
+                ])# + "\n"
+
+            return block
+
+        def make_state_blocks():
+            """ Write all Ex transitions as one block, then repeat with Ey, and then Ez"""
+            block = ""
+            #for xyz_idx, op in enumerate(['x', 'y', 'z']):
+            for xyz_idx, op in enumerate(['x']):
+                for key in M_moments.keys():
+                    src, dst = key[0], key[1]  # the #'s identifying the states between which the excitation is occuring
+                    block += "".join([
+                        make_line_au(label=f"M{op}_s{src:>02d}_s{dst:>02d}", value=M_moments[key][xyz_idx])
+                        # always print all transition dipole moments out even if zero
+                    ])
+                block += "\n"
+
+            return block
+
+        # just-in-case
+        for key in M_moments.keys():  # all keys are length 2 tuples
+            assert isinstance(key, tuple) and len(key) == 2
+
+        if True:  # xyz_blocks
+            block = make_xyz_blocks()
+        else:
+            block = make_state_blocks()
+
+        return block
 
     def build_linear_coupling(lin_dict, A, N):
         """Return a string containing the linear coupling constant information of a .op file.
@@ -1786,7 +1832,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             make_header('Frequencies'), build_frequencies(vibron_ev),
             make_header('Electronic Hamitonian'), build_E0(E0_array_eV),
             make_header('Electronic transition moments'), build_electronic_moments(dipoles),
-            # make_header('Magnetic transition moments'), build_magnetic_moments(M_moments),
+            make_header('Magnetic transition moments'), build_magnetic_moments(dipoles),
         ]
 
         # -----------------------------------------------------------
@@ -2204,7 +2250,8 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         block += f"{'-'*47}\n\n"
 
         for j in range(1, A+1):
-            block += f"1.0         |1 S{A+1}&{j}\n"  # A+1, set ground state as fictitious +1 state
+            #block += f"1.0         |1 S{A+1}&{j}\n"  # A+1, set ground state as fictitious +1 state
+            block += f"Ex_s00_s{j:>02d}         |1 S{A+1}&{j}\n"
 
         block += "\nend-hamiltonian-section\n"
 
@@ -2835,7 +2882,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             "end-operator\n"
         ])
 
-        if True:
+        if False: # VECC-compatible notation if False
             for i in range(N):
                 new_i = mode_map_dict[i]
                 file_contents = file_contents.replace(f'v{i+1:>02d}', f'v{new_i:>02d}')
