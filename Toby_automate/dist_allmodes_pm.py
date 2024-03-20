@@ -2214,7 +2214,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         key = 'BiLinear'
         if key in model.keys():
             if VECC_flag:
-                return_list += [label_bilinear_coupling(model[key], A, N)].replace('C1', 'C2')
+                return_list += [label_bilinear_coupling(model[key], A, N).replace('C1', 'C2')]
             else:
                 return_list += [label_bilinear_coupling(model[key], A, N)]
 
@@ -2268,8 +2268,8 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         block += f"{'-'*47}\n\n"
 
         for j in range(1, A+1):
-            #block += f"1.0         |1 S{A+1}&{j}\n"  # A+1, set ground state as fictitious +1 state
-            block += f"Ex_s00_s{j:>02d}         |1 S{A+1}&{j}\n"
+            block += f"1.0         |1 S{A+1}&{j}\n"  # A+1, set ground state as fictitious +1 state
+            #block += f"Ex_s00_s{j:>02d}         |1 S{A+1}&{j}\n"
 
         block += "\nend-hamiltonian-section\n"
 
@@ -2390,10 +2390,13 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                     state, pair = int(state), int(pair)
                     if pair == state:  # transition from the fictitious ground state (0) -> to `state` #
                         pair = 0
-                        if VECC_flag:
-                            dipoles[(pair, state)] = [float(x)] # VECC compatible
+                    if VECC_flag:
+                        if pair == 0:
+                            dipoles[(pair, state)] = [float(x)]
                         else:
-                            dipoles[(pair, state)] = [float(x), float(y), float(z)] # off-diagonal state-pairs
+                            continue
+                    else:
+                        dipoles[(pair, state)] = [float(x), float(y), float(z)] # off-diagonal state-pairs
  
                 except Exception as e:
                     print(f"Error processing line: {line} - {e}")
