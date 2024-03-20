@@ -20,7 +20,7 @@ python3 dist_allmodes_pm.py nh3_ccd_mp2_c3v_gh.out
 
 Video recording on how to run the diabatization code (assuming you have GAMESS with gmcpt module already): 
 
-- [x] D3H NH3 diabatization - [https://youtu.be/Aoo1mgy2H4A]
+- [x] C2v H2O diabatization - [https://www.youtube.com/watch?v=ILLrUSzR3YQ&ab_channel=BennyChen]
 
 - [x] D3H NH3 diabatization - [https://www.youtube.com/watch?v=zeKTlq3VHho&ab_channel=BennyChen]
 
