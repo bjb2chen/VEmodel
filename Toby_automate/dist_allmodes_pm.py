@@ -2258,13 +2258,11 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         block = f"\nHAMILTONIAN-SECTION_Ex\n"
 
         # Write modes and mode labels
-        mode_number_key = [selected_mode_list[i] for i in range(N)]
-        h_labels = ["modes", "el", ] + [
-            f"v{s:>02d}"
-            for s in mode_number_key
-        ]
-
-        block += " | ".join(h_labels) + "\n"
+        block += ''.join([
+            ' modes | el |',
+            ''.join([f" v{N+1:0>2d} |" for N in range(N)]),
+            '\n'
+        ])
         block += f"{'-'*47}\n\n"
 
         for j in range(1, A+1):
