@@ -240,7 +240,7 @@ def my_subgam(path, **kwargs):
         "\n",
         "export SLURM_CPUS_PER_TASK\n",
         'mkdir -p /home/$USER/.gamess_ascii_files/$SLURM_JOBID\n',
-        f"/home/$USER/LOCAL/runG_diab {input_no_ext}.inp {ncpus} \n",
+        f"/home/bjb2chen/LOCAL/runG_diab {input_no_ext}.inp {ncpus} \n",
     ])
 
     with open(f"{input_no_ext}.slurm", "w") as slurm_file:
