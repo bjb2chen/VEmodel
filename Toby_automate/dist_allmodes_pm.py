@@ -1859,7 +1859,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
         headers = {
             'Linear': 'Linear Coupling Constants',
-            'Quadratic': 'Quadratic Coupling Constants',
+            'Quadratic': 'Diagonal Quadratic Coupling Constants',
             'BiLinear': 'Bilinear Coupling Constants',
             'SOC': 'SOC',
         }
@@ -1876,7 +1876,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         key = 'BiLinear'
         if key in model.keys():
             if VECC_flag:
-                return_list += [make_header(headers[key]), build_bilinear_coupling(model[key], A, N).replace('C1', 'C1b')]
+                return_list += [build_bilinear_coupling(model[key], A, N).replace('C1', 'C2')]
             else:
                 return_list += [make_header(headers[key]),  build_bilinear_coupling(model[key], A, N)] # Toby hamiltonian
 
@@ -2214,7 +2214,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         key = 'BiLinear'
         if key in model.keys():
             if VECC_flag:
-                return_list += [label_bilinear_coupling(model[key], A, N).replace('C1', 'C1b')]
+                return_list += [label_bilinear_coupling(model[key], A, N).replace('C1', 'C2')]
             else:
                 return_list += [label_bilinear_coupling(model[key], A, N)]
 
