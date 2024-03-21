@@ -1540,9 +1540,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             By default all values in *.op files are in atomic units (au) but we want to explicitly label them
             for clarity.
         """
-        op_lst = ['x', 'y', 'z']
-        if VECC_flag:
-            op_lst = ['x']
+        op_lst = ['x', 'y', 'z'] # apparently VECC is compatible with multi-dimensional tdm now
 
         def make_xyz_blocks():
             block = ""
@@ -1553,12 +1551,14 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                     make_line_au(label=f"E{op}_s{src:>02d}_s{dst:>02d}", value=dipoles_dict[key][xyz_idx])
                     for xyz_idx, op in enumerate(op_lst)
                     # always print all transition dipole moments out even if zero
-                ])# + "\n"
+                ])
+                block += "\n"
 
             return block
 
         def make_state_blocks():
             """ Write all Ex transitions as one block, then repeat with Ey, and then Ez"""
+            """ !!! THIS IS VECC COMPATIBLE STYLE """
             block = ""
             for xyz_idx, op in enumerate(op_lst):
                 for key in dipoles_dict.keys():
@@ -1575,9 +1575,9 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         for key in dipoles_dict.keys():  # all keys are length 2 tuples
             assert isinstance(key, tuple) and len(key) == 2
 
-        if True:  # xyz_blocks
-            block = make_xyz_blocks()
-        else:
+        # xyz_blocks
+        block = make_xyz_blocks()
+        if VECC_flag or False:
             block = make_state_blocks()
 
         return block
@@ -1587,9 +1587,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         # only do this if you cannot find etdm
         #dipoles_dict = {key: [0.1] for key in dipoles_dict} # arbitrary fictitious magnetic dipoles
 
-        op_lst = ['x', 'y', 'z']
-        if VECC_flag:
-            op_lst = ['x']
+        op_lst = ['x', 'y', 'z'] # apparently VECC is compatible with multi-dimensional tdm now
 
         def make_xyz_blocks():
             block = ""
@@ -1600,7 +1598,8 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                     make_line_au(label=f"M{op}_s{src:>02d}_s{dst:>02d}", value=dipoles_dict[key][xyz_idx])
                     for xyz_idx, op in enumerate(op_lst)
                     # always print all transition dipole moments out even if zero
-                ])# + "\n"
+                ])
+                block += "\n"
 
             return block
 
@@ -1622,9 +1621,9 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         for key in dipoles_dict.keys():  # all keys are length 2 tuples
             assert isinstance(key, tuple) and len(key) == 2
 
-        if True:  # xyz_blocks
-            block = make_xyz_blocks()
-        else:
+        # xyz_blocks
+        block = make_xyz_blocks()
+        if VECC_flag or False:
             block = make_state_blocks()
 
         return block
@@ -1816,7 +1815,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         return '\n'.join([
             build_linear_SOC(soc_dict['Linear'], A, N),
             build_quadratic_SOC(soc_dict['Quadratic'], A, N),
-            (build_BiLinear_SOC(soc_dict['BiLinear'], A, N).replace('C1', 'C2') if VECC_flag
+            (build_BiLinear_SOC(soc_dict['BiLinear'], A, N).replace('C1', 'C1b') if VECC_flag
             else build_BiLinear_SOC(soc_dict['BiLinear'], A, N)),
             build_Total_SOC(soc_dict['Total'], A, N),
         ]) + '\n'
@@ -1859,7 +1858,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
         headers = {
             'Linear': 'Linear Coupling Constants',
-            'Quadratic': 'Diagonal Quadratic Coupling Constants',
+            'Quadratic': 'Quadratic Coupling Constants',
             'BiLinear': 'Bilinear Coupling Constants',
             'SOC': 'SOC',
         }
@@ -1876,7 +1875,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         key = 'BiLinear'
         if key in model.keys():
             if VECC_flag:
-                return_list += [build_bilinear_coupling(model[key], A, N).replace('C1', 'C2')]
+                return_list += [make_header(headers[key]), build_bilinear_coupling(model[key], A, N).replace('C1', 'C1b')]
             else:
                 return_list += [make_header(headers[key]),  build_bilinear_coupling(model[key], A, N)] # Toby hamiltonian
 
@@ -2214,7 +2213,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         key = 'BiLinear'
         if key in model.keys():
             if VECC_flag:
-                return_list += [label_bilinear_coupling(model[key], A, N).replace('C1', 'C2')]
+                return_list += [label_bilinear_coupling(model[key], A, N).replace('C1', 'C1b')]
             else:
                 return_list += [label_bilinear_coupling(model[key], A, N)]
 
@@ -2390,7 +2389,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                         pair = 0
                     if VECC_flag:
                         if pair == 0:
-                            dipoles[(pair, state)] = [float(x)]
+                            dipoles[(pair, state)] = [float(x), float(y), float(z)]
                         else:
                             continue
                     else:
