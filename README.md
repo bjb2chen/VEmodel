@@ -22,9 +22,9 @@ Video recording on how to run the diabatization code (assuming you have GAMESS w
 
 - [x] C2v H2O diabatization - [https://www.youtube.com/watch?v=ILLrUSzR3YQ&ab_channel=BennyChen]
 
-- [x] D3H NH3 diabatization - [https://www.youtube.com/watch?v=zeKTlq3VHho&ab_channel=BennyChen]
+- [x] D3h NH3 diabatization - [https://www.youtube.com/watch?v=zeKTlq3VHho&ab_channel=BennyChen]
 
-- [x] D3H CoF3 diabatization - [https://www.youtube.com/watch?v=7tNUAFYKCQE&ab_channel=BennyChen]
+- [x] D3h CoF3 diabatization - [https://www.youtube.com/watch?v=7tNUAFYKCQE&ab_channel=BennyChen]
 
 - [x] [Project Poster Reference](https://github.com/bjb2chen/vmodels/files/10171706/SCP2022_bjc_20685630_White.pdf)
 
@@ -32,7 +32,7 @@ Video recording on how to run the diabatization code (assuming you have GAMESS w
 
 ## Spectra
 
-![Water_spectra](https://github.com/bjb2chen/vmodels/assets/51763900/4fb80100-99ca-4349-90be-90ca7f01cc85)
+![VECC_water_spectra_test](https://github.com/bjb2chen/VEmodel/assets/51763900/fca44662-64e8-48c6-8ba7-97095d89224d)
 
 ![NH3 spectrum](https://github.com/bjb2chen/vmodels/assets/51763900/0e81a86d-81f6-4a82-a29a-85708265afb2)
 
