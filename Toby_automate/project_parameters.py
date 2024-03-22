@@ -3,37 +3,6 @@ import socket
 import itertools as it
 from os.path import abspath, join
 
-
-# 30 pbf ~ 1GB
-# 100 pbf ~ 2GB
-# 500 pbf ~ 8GB
-# 1000 pbf ~ 15GB
-
-
-# pbfs = [10, 30, 40, 50]
-pbfs = [30, ]
-tfinal = [250.0, ]
-
-expression_list = [pbfs, tfinal, ]
-
-
-# root directory
-# parent_project = "ground_state_energies"
-
-
-# -------------------------------------------------------------------------
-#                       define all global flags
-# -------------------------------------------------------------------------
-SOC_flag = False
-
-VECC_flag = True
-
-# if True it doesn't run any subprocess.run() commands
-# instead it simply prints out what the commands would be to the terminal
-dry_run = False
-
-suppress_zeros = False
-
 # -------------------------------------------------------------------------
 #               set global project/calculation parameters
 # -------------------------------------------------------------------------
@@ -45,11 +14,8 @@ suppress_zeros = False
 # project_name, A, Z = "hcooh", 7, 5
 # project_name, A, Z = "furan", 9, 9
 # project_name, A, Z = "formamide", 7, 6
-# project_name, A, Z = "vcm", 7, 6
-# project_name, A, Z = "op_water3Q_4st", 4, 3
-# project_name, A, Z = "op_H2O3Q_3st", 3, 3
 # project_name, A, Z = "op_NH35Q_3st", 3, 4
-project_name, A, Z = "op_NH36Q_3st", 3, 4
+project_name, A, Z = "op_H2O3Q_3st", 3, 3
 
 # the total number of modes (including translational, rotational, vibrational)
 N_tot = 3 * Z
@@ -60,7 +26,7 @@ N_tot = 3 * Z
 """
 name, basis_set, calculation_type, point_group_symmetry, nof_excited_states = (
     # "H2Ocat", "ccd", "gmcpt", "C1", 3
-    "NH3cat", "ccd", "gmcpt", "C1", 3
+    "H2Ocat", "ccd","gmcpt", "C1", 3
 )
 file_name = str(
     f"{name}_"
@@ -77,38 +43,43 @@ filnam = file_name  # alias (remove later)
 # -------------------------------------------------------------------------
 #               set global project/calculation parameters
 # -------------------------------------------------------------------------
-
-# build mode label objects
-if False:  # if needed in future
-    _all_modes = set(range(1, N_tot+1))
-    if (select_modes := True):
-        _selected_modes = set([7, 8, 9])
-        _excluded_modes = _all_modes - _selected_modes
-    else:
-        _excluded_modes = set([1, 2, 3, 4, 5, 6, ] + [10, 11, 12, ])
-        _selected_modes = _all_modes - _excluded_modes
-
-    # sort the labels of the modes (sets are unordered)
-    selected_mode_list = sorted([*_selected_modes])
-
-else:
-    selected_mode_list = {
-        "H2Ocat": [7, 8, 9],
-        # "NH3cat": [8, 9, 10, 11, 12, ],
-        "NH3cat": [7, 8, 9, 10, 11, 12, ],
+selected_mode_list = {
+    "H2Ocat": [7, 8, 9],
+    # "NH3cat": [8, 9, 10, 11, 12, ],
+    "NH3cat": [7, 8, 9, 10, 11, 12, ],
     }[name]
 
-#  (ASSUMES YOUR MODES ARE IN INCREASING ORDER)
-assert sorted(selected_mode_list) == selected_mode_list, f"{selected_mode_list=} is not sorted"
-N = len(selected_mode_list)  # the number of modes should be
-
-
 nof_displacements_per_mode = {
-    "H2Ocat": [2, 2, 2],
+    "H2Ocat": [10, 4, 2],
     # "NH3cat": [8, 3, 2, 2, 2],
     "NH3cat": [2, 2, 2, 2, 2, 2],
 }[name]
 
+# -------------------------------------------------------------------------
+#                       define all global flags
+# -------------------------------------------------------------------------
+SOC_flag = False
+VECC_flag = True
+
+# if True it doesn't run any subprocess.run() commands
+# instead it simply prints out what the commands would be to the terminal
+dry_run = False
+
+suppress_zeros = False
+
+# -------------------------------------------------------------------------
+#                       define spectra parameters
+# -------------------------------------------------------------------------
+# pbfs = [10, 30, 40, 50]
+pbfs = [30, ]
+tfinal = [250.0, ]
+
+expression_list = [pbfs, tfinal, ]
+
+# 30 pbf ~ 1GB
+# 100 pbf ~ 2GB
+# 500 pbf ~ 8GB
+# 1000 pbf ~ 15GB
 
 # -------------------------------------------------------------------------
 #               useful indexing/mapping dictionaries
@@ -122,6 +93,25 @@ nof_displacements_per_mode = {
     then
     mode_map_dict = {0: 7, 1: 8, 2: 9}
 """
+# build mode label objects
+
+#  (ASSUMES YOUR MODES ARE IN INCREASING ORDER)
+assert sorted(selected_mode_list) == selected_mode_list, f"{selected_mode_list=} is not sorted"
+N = len(selected_mode_list)  # the number of modes should be
+
+if False:  # if needed in future
+    _all_modes = set(range(1, N_tot+1))
+    if (select_modes := True):
+        _selected_modes = set([7, 8, 9])
+        _excluded_modes = _all_modes - _selected_modes
+    else:
+        _excluded_modes = set([1, 2, 3, 4, 5, 6, ] + [10, 11, 12, ])
+        _selected_modes = _all_modes - _excluded_modes
+
+    # sort the labels of the modes (sets are unordered)
+    selected_mode_list = sorted([*_selected_modes])
+
+
 mode_map_dict = {k: v for k, v in enumerate(selected_mode_list)}
 
 
@@ -151,7 +141,8 @@ for key, value in ij_map.items():
 #                           Project Paths
 # -------------------------------------------------------------------------
 # user_root = abspath("/bjb2chen/gamess/vibronics/template_examples/NH3/SOC_9st/SOC_6st")        # format is /user/.../*
-user_root = abspath("/bjb2chen/gamess/vibronics/template_examples/NH3")        # format is /user/.../*
+#user_root = abspath("/bjb2chen/gamess/vibronics/template_examples/mar19")        # format is /user/.../*
+user_root = abspath(os.getcwd().replace('/home', '') if '/home' in os.getcwd() else os.getcwd()) # format is /user/.../*
 home_root = abspath(f"/home/{user_root}/home/{project_name}/")
 work_root = abspath(f"/work/{user_root}/mctdh/{project_name}/")
 
