@@ -2265,13 +2265,12 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         block += f"{'-'*47}\n\n"
 
         for j in range(1, A+1):
-            block += f"1.0         |1 S{A+1}&{j}\n"  # A+1, set ground state as fictitious +1 state
+            block += f"Ex_s00_s{j:>02d}         |1 S{A+1}&{j}\n"  # A+1, set ground state as fictitious +1 state
             #block += f"Ex_s00_s{j:>02d}         |1 S{A+1}&{j}\n"
 
         block += "\nend-hamiltonian-section\n"
         block += block.replace('Ex', 'Ey') + block.replace('Ex', 'Ez')
-        breakpoint()
-
+        
         return block
 
     # -------------------------------------------------------------------------
