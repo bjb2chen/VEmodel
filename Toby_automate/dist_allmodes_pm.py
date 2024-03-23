@@ -2269,6 +2269,8 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             #block += f"Ex_s00_s{j:>02d}         |1 S{A+1}&{j}\n"
 
         block += "\nend-hamiltonian-section\n"
+        block += block.replace('Ex', 'Ey') + block.replace('Ex', 'Ez')
+        breakpoint()
 
         return block
 
