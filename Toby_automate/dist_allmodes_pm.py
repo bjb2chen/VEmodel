@@ -1743,10 +1743,10 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
             return ''.join([
                 make_line_cm(
-                    label=f"C1_s{a1+1:0>2d}s{a2+1:0>2d}_v{i+1:0>2d}r",
+                    label=f"C1_s{a1+1:0>2d}_s{a2+1:0>2d}_v{i+1:0>2d}r",
                     value=linear_soc[i][a1, a2].real
                 ) + make_line_cm(
-                    label=f"C1_s{a1+1:0>2d}s{a2+1:0>2d}_v{i+1:0>2d}i",
+                    label=f"C1_s{a1+1:0>2d}_s{a2+1:0>2d}_v{i+1:0>2d}i",
                     value=linear_soc[i][a1, a2].imag
                 )
                 for a1, a2, i in it.product(range(A), range(A), range(N))
@@ -2086,11 +2086,11 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
             return '\n'.join([
                 (
-                    f" I*C2_s{a1:0>2d}s{a2:0>2d}_v{j1:0>2d}v{j2:0>2d}r" # C2 to align with VECC
+                    f" I*C1_s{a1:0>2d}s{a2:0>2d}_v{j1:0>2d}v{j2:0>2d}r" # C2 to align with VECC
                     f"{spacer:>9}1 S{a1:d}&{a2:d}"
                     f"{spacer:>4}{j1+1}  q{spacer:>6}{j2+1}  q"
                 ) + '\n' + (
-                    f"-I*C2_s{a1:0>2d}s{a2:0>2d}_v{j1:0>2d}v{j2:0>2d}i"
+                    f"-I*C1_s{a1:0>2d}s{a2:0>2d}_v{j1:0>2d}v{j2:0>2d}i"
                     f"{spacer:>9}1 S{a1:d}&{a2:d}"
                     f"{spacer:>4}{j1+1}  q{spacer:>6}{j2+1}  q"
                 )
@@ -2162,7 +2162,8 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             string = "\n".join([
                 label_linear_SOC(soc_dict['Linear'], A, N),
                 label_quadratic_SOC(soc_dict['Quadratic'], A, N),
-                label_BiLinear_SOC(soc_dict['BiLinear'], A, N),
+                (label_BiLinear_SOC(soc_dict['BiLinear'], A, N).replace('C1', 'C1b') if VECC_flag
+                else build_BiLinear_SOC(soc_dict['BiLinear'], A, N)),
                 label_Total_SOC(soc_dict['Total'], A, N),
             ]) + '\n'
 
@@ -2390,10 +2391,16 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                         pair = 0
                     if VECC_flag:
                         if pair == 0:
+                            x = float(x) if float(x) != 0 else 0.000000010
+                            y = float(y) if float(y) != 0 else 0.000000010
+                            z = float(z) if float(z) != 0 else 0.000000010
                             dipoles[(pair, state)] = [float(x), float(y), float(z)]
                         else:
                             continue
                     else:
+                        x = float(x) if float(x) != 0 else 0.000000010
+                        y = float(y) if float(y) != 0 else 0.000000010
+                        z = float(z) if float(z) != 0 else 0.000000010
                         dipoles[(pair, state)] = [float(x), float(y), float(z)] # off-diagonal state-pairs
  
                 except Exception as e:
