@@ -41,7 +41,7 @@ Video recording on how to run the diabatization code (assuming you have GAMESS w
 (tf = 2000fs, tau = 2000, iexp = 1)
 ![RhF3_spectrum](https://github.com/bjb2chen/VEmodel/assets/51763900/97234174-5bd0-4f83-a691-374efb1cabd3)
 
-![CoF3 spectrum](https://github.com/bjb2chen/VEmodel/assets/51763900/780c155f-9136-418a-b337-974def80c28f)
+![CoF3_spectra](https://github.com/bjb2chen/VEmodel/assets/51763900/49773dc6-d3df-4afc-a31b-f67a4542d08c)
 
 ![CoF4](https://github.com/bjb2chen/vmodels/assets/51763900/eb5d7752-d0d4-4151-9af5-d399e079bf3a)
 
