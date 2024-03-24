@@ -38,7 +38,11 @@ order_dict = {
 root_directory = os.getcwd()
 # file_name = "3st_water_mar19"
 #file_name = "CoF3"
-file_name = "H2Ocat_ccd_gmcpt_C1_3st_diab"
+#file_name = "H2Ocat_ccd_gmcpt_C1_3st_diab"
+#file_name = "mar19"
+file_name = "NH3_mar22"
+#file_name = "water_xyz_uniquetdm"
+
 order = 1
 def process_data(filename):
     """ temporary formatted printing of profiling data """
@@ -193,8 +197,8 @@ def gnuplot_spectrum(*args):
     exec_name, normalized_path, model_name, order, t, FC = args
 
 
-    left_eV, right_eV = 21.0, 11.5
-    min_y, max_y = -3, 40
+    left_eV, right_eV = 21.0, 8.5
+    min_y, max_y = -3, 60
     nof_points = 5000
     tau = 40
     iexp = 1
@@ -216,19 +220,19 @@ def gnuplot_spectrum(*args):
     os.system(command)   # execute autospec84
 
     # same thing for MCTDH
-    command = project.spectra.generate_mctdh_pl(**{
-        # "output_filename": join(root_directory, exec_name + ".pl"),
-        "output_filename": f"./MCTDH_{fc_string}_{order_dict[order]}.pl",
-        "input_filename": f"./auto_{fc_string}_{order_dict[order]}",
-        # "output_filename": f"./SOS.pl",
-        # "input_filename": f"./ACF_SOS_h2o_FC_40BF_tf50.txt",
-        "nof_points": nof_points,
-        "left_eV": left_eV,
-        "right_eV": right_eV,
-        "tau": tau,
-        "iexp": iexp,
-    })
-    os.system(command)   # execute autospec84
+    # command = project.spectra.generate_mctdh_pl(**{
+    #     # "output_filename": join(root_directory, exec_name + ".pl"),
+    #     "output_filename": f"./MCTDH_{fc_string}_{order_dict[order]}.pl",
+    #     "input_filename": f"./auto_{fc_string}_{order_dict[order]}",
+    #     # "output_filename": f"./SOS.pl",
+    #     # "input_filename": f"./ACF_SOS_h2o_FC_40BF_tf50.txt",
+    #     "nof_points": nof_points,
+    #     "left_eV": left_eV,
+    #     "right_eV": right_eV,
+    #     "tau": tau,
+    #     "iexp": iexp,
+    # })
+    # os.system(command)   # execute autospec84
 
     # doctor the file name to make it look better in the plot
     plot_title = model_name.replace('_', ' ').replace('h2o', 'h_{2}o')
@@ -250,7 +254,7 @@ def gnuplot_spectrum(*args):
         # "set style line 1 lt 2 lw 4 lc 'black'",
         # "set style line 2 lt 3 lw 2 lc 'red'",
         f"plot \
-            '{root_directory}/MCTDH_{fc_string}_{order_dict[order]}.pl' using 1:3 with lines ls 1 lc 'black' title 'MCTDH ({fc_string})',\
+            '{root_directory}/op_NH36Q_3st_PBF30_tf250.00_auto_total' using 1:2 with lines ls 1 lc 'black' title 'MCTDH ({fc_string})',\
             '{root_directory}/{exec_name}.pl' using 1:3 linetype 3 title 'CC',\
         ",
             # '{root_directory}/{exec_name}_6.pl' every 6 using 1:3 linetype 4 title '1E-6 1E-9 CC',\
@@ -338,7 +342,7 @@ def write_acf_plotting_file(cc_file, cc_file2, FC, t_final, nof_points=5000):
 
 if (__name__ == '__main__'):
 
-    t_final = 100.0
+    t_final = 200.0
     FC = False
     model_name = f"{file_name}_FC" if FC else f"{file_name}_vibronic"
 
@@ -371,21 +375,21 @@ if (__name__ == '__main__'):
             mctdh_t_final = t_final*0.5,
             mctdh_dt = 0.1
         )
-    # print('Do you want to plot the ABS spectra? Press c to continue.')
-    # breakpoint()
-    #     # # plot
-    # print("-"*40 + "\nPlotting Spectrum\n" + "-"*40 + "\n")
-    # gnuplot_spectrum(
-    #      f"{model_name}_{order_dict[order]}_tf{int(t_final):}",
-    #      basename(normalized_path),
-    #      f"{model_name}_{order_dict[order]}",
-    #      order,
-    #      t_final,
-    #      FC,
-    #  )
+    print('Do you want to plot the ABS spectra? Press c to continue.')
+    breakpoint()
+        # # plot
+    print("-"*40 + "\nPlotting Spectrum\n" + "-"*40 + "\n")
+    gnuplot_spectrum(
+         f"{model_name}_{order_dict[order]}_tf{int(t_final):}",
+         basename(normalized_path),
+         f"{model_name}_{order_dict[order]}",
+         order,
+         t_final,
+         FC,
+     )
 
-    # os.system(f"gnuplot spectrum_plotting.pl")
+    os.system(f"gnuplot spectrum_plotting.pl")
 
 
-        # write_acf_plotting_file(output_path, normalized_path, FC, int(t_final))
-        # os.system(f"gnuplot acf_plotting.pl")
+    # write_acf_plotting_file(output_path_ABS, normalized_path, FC, int(t_final))
+    # os.system(f"gnuplot acf_plotting.pl")
