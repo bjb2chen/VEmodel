@@ -15,7 +15,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 # import the path to the package
-project_dir = abspath(join(dirname(__file__), '/home/bsonghao/t-amplitudes/'))
+#project_dir = abspath(join(dirname(__file__), '/home/bsonghao/t-amplitudes/'))
+project_dir = abspath(join(dirname(__file__), '/home/bjb2chen/VECC/'))
 sys.path.insert(0, project_dir)
 
 import project
@@ -40,8 +41,11 @@ root_directory = os.getcwd()
 #file_name = "CoF3"
 #file_name = "H2Ocat_ccd_gmcpt_C1_3st_diab"
 #file_name = "mar19"
-file_name = "NH3_mar22"
+#file_name = "NH3_mar22"
 #file_name = "water_xyz_uniquetdm"
+#file_name = "RhF3_SOC_15st"
+file_name = "NH3_XONLY"
+
 
 order = 1
 def process_data(filename):
@@ -194,7 +198,7 @@ def gnuplot_spectrum(*args):
     """ a """
 
     # unpack arguments
-    exec_name, normalized_path, model_name, order, t, FC = args
+    exec_name, normalized_path_ABS, model_name, order, t, FC = args
 
 
     left_eV, right_eV = 21.0, 8.5
@@ -206,18 +210,29 @@ def gnuplot_spectrum(*args):
     fc_string = "FC" if FC else "vibronic"
 
     # fourier transform
-    command = project.spectra.generate_cc_pl(**{
-        # "output_filename": join(root_directory, exec_name + ".pl"),
-        "output_filename": "./" + exec_name + ".pl",
-        "input_filename": "./" + normalized_path,
-        "nof_points": nof_points,
-        "left_eV": left_eV,
-        "right_eV": right_eV,
-        "tau": tau,
-        "iexp": iexp,
-        # 'g3': True
-    })
-    os.system(command)   # execute autospec84
+    command = (
+        "#autospec84 "
+        # "-g 1 "  # to print gnuplot commands or not
+        f"-o {exec_name:s}.pl "
+        f"-f {normalized_path_ABS:s} "
+        f"-p {nof_points:d} "
+        # f"-EP "
+        # f"-e {harmonic_ground_state} eV " # x axis shift (left/right) to account for H.O. G.S.
+        f"{left_eV} {right_eV} eV "  # x axis limits (in eV)
+        f"{tau:d} "   # tau value
+        f"{iexp:d} "  # iexp value
+    )
+    #     # "output_filename": join(root_directory, exec_name + ".pl"),
+    #     "output_filename": "./" + exec_name + ".pl",
+    #     "input_filename": "./" + normalized_path,
+    #     "nof_points": nof_points,
+    #     "left_eV": left_eV,
+    #     "right_eV": right_eV,
+    #     "tau": tau,
+    #     "iexp": iexp,
+    #     # 'g3': True
+    # })
+    #os.system(command)   # execute autospec84
 
     # same thing for MCTDH
     # command = project.spectra.generate_mctdh_pl(**{
@@ -232,7 +247,8 @@ def gnuplot_spectrum(*args):
     #     "tau": tau,
     #     "iexp": iexp,
     # })
-    # os.system(command)   # execute autospec84
+    print(command)
+    #os.system(command)   # execute autospec84
 
     # doctor the file name to make it look better in the plot
     plot_title = model_name.replace('_', ' ').replace('h2o', 'h_{2}o')
@@ -253,9 +269,9 @@ def gnuplot_spectrum(*args):
         f"set title '{plot_title:s} spectrum, n-cos = 1, tau: {tau:d}.0 1, {int(t):d}fs'",
         # "set style line 1 lt 2 lw 4 lc 'black'",
         # "set style line 2 lt 3 lw 2 lc 'red'",
+        f"#plot '{root_directory}/op_NH36Q_3st_PBF30_tf250.00_auto_total' using 1:2 with lines ls 1 lc 'black' title 'MCTDH ({fc_string})'",
         f"plot \
-            '{root_directory}/op_NH36Q_3st_PBF30_tf250.00_auto_total' using 1:2 with lines ls 1 lc 'black' title 'MCTDH ({fc_string})',\
-            '{root_directory}/{exec_name}.pl' using 1:3 linetype 3 title 'CC',\
+            '{root_directory}/{exec_name}.pl' using 1:3 with lines ls 1 lc 'red' title 'CC',\
         ",
             # '{root_directory}/{exec_name}_6.pl' every 6 using 1:3 linetype 4 title '1E-6 1E-9 CC',\
             # '{root_directory}/{exec_name}_9.pl' every 6 using 1:3 linetype 3 title '1E-9 1E-12 CC',\
@@ -267,9 +283,11 @@ def gnuplot_spectrum(*args):
 
     # write the plotting commands to a file
     with open(path_plotting_file, 'w') as fp:
+        fp.write(command)
+        fp.writte("\n")
         fp.write(plotting_command)
 
-    return path_plotting_file, output_file
+    return path_plotting_file
 
 
 def write_acf_plotting_file(cc_file, cc_file2, FC, t_final, nof_points=5000):
@@ -342,7 +360,7 @@ def write_acf_plotting_file(cc_file, cc_file2, FC, t_final, nof_points=5000):
 
 if (__name__ == '__main__'):
 
-    t_final = 200.0
+    t_final = 250.0
     FC = False
     model_name = f"{file_name}_FC" if FC else f"{file_name}_vibronic"
 
@@ -359,7 +377,7 @@ if (__name__ == '__main__'):
 
     # interpolate for ACF(ABS)
     print("-"*40 + "\nInterpolating ABS\n" + "-"*40 + "\n")
-    normalized_path = project.spectra.generate_normalized_acf_results(
+    normalized_path_ABS = project.spectra.generate_normalized_acf_results(
             dirname(output_path_ABS),
             basename(output_path_ABS),
             None,
@@ -368,7 +386,7 @@ if (__name__ == '__main__'):
         )
     # interpolate for ACF(ECD)
     print("-"*40 + "\nInterpolating ECD\n" + "-"*40 + "\n")
-    normalized_path = project.spectra.generate_normalized_acf_results(
+    normalized_path_ECD = project.spectra.generate_normalized_acf_results(
             dirname(output_path_ECD),
             basename(output_path_ECD),
             None,
@@ -381,14 +399,14 @@ if (__name__ == '__main__'):
     print("-"*40 + "\nPlotting Spectrum\n" + "-"*40 + "\n")
     gnuplot_spectrum(
          f"{model_name}_{order_dict[order]}_tf{int(t_final):}",
-         basename(normalized_path),
+         basename(normalized_path_ABS),
          f"{model_name}_{order_dict[order]}",
          order,
          t_final,
          FC,
      )
 
-    os.system(f"gnuplot spectrum_plotting.pl")
+    #os.system(f"gnuplot spectrum_plotting.pl")
 
 
     # write_acf_plotting_file(output_path_ABS, normalized_path, FC, int(t_final))
