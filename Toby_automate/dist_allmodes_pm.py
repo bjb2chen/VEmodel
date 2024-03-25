@@ -1577,7 +1577,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
         # xyz_blocks
         block = make_xyz_blocks()
-        if VECC_flag or False:
+        if VECC_flag or True:
             block = make_state_blocks()
 
         return block
@@ -1623,7 +1623,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
         # xyz_blocks
         block = make_xyz_blocks()
-        if VECC_flag or False:
+        if VECC_flag or True:
             block = make_state_blocks()
 
         return block
@@ -2266,11 +2266,14 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         block += f"{'-'*47}\n\n"
 
         for j in range(1, A+1):
-            block += f"Ex_s00_s{j:>02d}         |1 S{A+1}&{j}\n"  # A+1, set ground state as fictitious +1 state
-            #block += f"Ex_s00_s{j:>02d}         |1 S{A+1}&{j}\n"
+            if VECC_flag:
+                block += f"Ex_s00_s{j:>02d}         |1 S{A+1}&{j}\n"  # A+1, set ground state as fictitious +1 state
+            else:
+                block += f"1.0         |1 S{A+1}&{j}\n"
 
         block += "\nend-hamiltonian-section\n"
-        block += block.replace('Ex', 'Ey') + block.replace('Ex', 'Ez')
+        if VECC_flag:
+            block += block.replace('Ex', 'Ey') + block.replace('Ex', 'Ez')
         
         return block
 
@@ -2391,6 +2394,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                         pair = 0
                     if VECC_flag:
                         if pair == 0:
+                            # = float(x) if float(x) != 0 else 0.000000010
                             x = float(x) if float(x) != 0 else 0.000000010
                             y = float(y) if float(y) != 0 else 0.000000010
                             z = float(z) if float(z) != 0 else 0.000000010
