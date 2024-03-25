@@ -2163,7 +2163,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 label_linear_SOC(soc_dict['Linear'], A, N),
                 label_quadratic_SOC(soc_dict['Quadratic'], A, N),
                 (label_BiLinear_SOC(soc_dict['BiLinear'], A, N).replace('C1', 'C1b') if VECC_flag
-                else build_BiLinear_SOC(soc_dict['BiLinear'], A, N)),
+                else label_BiLinear_SOC(soc_dict['BiLinear'], A, N)),
                 label_Total_SOC(soc_dict['Total'], A, N),
             ]) + '\n'
 
