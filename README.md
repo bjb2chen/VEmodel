@@ -32,9 +32,9 @@ Video recording on how to run the diabatization code (assuming you have GAMESS w
 
 ## Spectra
 
-![VECC_water_spectra_test](https://github.com/bjb2chen/VEmodel/assets/51763900/fca44662-64e8-48c6-8ba7-97095d89224d)
+![H2O_waterfall](https://github.com/bjb2chen/VEmodel/assets/51763900/f01cc671-b5e7-4bbd-9f38-be7a30756994)
 
-![NH3 spectrum](https://github.com/bjb2chen/vmodels/assets/51763900/0e81a86d-81f6-4a82-a29a-85708265afb2)
+![NH3_waterfall](https://github.com/bjb2chen/VEmodel/assets/51763900/5831817f-7516-41fc-b5e7-c968615593a2)
 
 ### Transition metal spectra
 
