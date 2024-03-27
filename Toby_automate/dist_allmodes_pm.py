@@ -1014,7 +1014,7 @@ def diabatization(**kwargs):
             if (ref_geom_flag_exists and gamess_calculation_not_run) or pp.dry_run:
                 print(f"Running calculations for {games_filename}")
                 try:
-                    output_filename = my_subgam(games_filename+'.inp', ncpus=3, ngb=2, nhour=3)
+                    output_filename = my_subgam(games_filename+'.inp', ncpus=3, ngb=4, nhour=24)
                     os_system_wrapper(f"sbatch {output_filename}")
                 except Exception as e:
                     print(f"Error running diabatization calculation: {str(e)}")
@@ -1056,7 +1056,7 @@ def diabatization(**kwargs):
             if (ref_geom_flag_exists and gamess_calculation_not_run) or pp.dry_run:
                 print(f"Running calculations for {games_filename}!")
                 try:
-                    output_filename = my_subgam(games_filename+'.inp', ncpus=3, ngb=2, nhour=3)
+                    output_filename = my_subgam(games_filename+'.inp', ncpus=3, ngb=4, nhour=24)
                     os_system_wrapper(f"sbatch {output_filename}")
                 except Exception as e:
                     print(f"Error running diabatization calculation: {str(e)}")
@@ -3225,7 +3225,7 @@ def refG_calc(ref_geom_path, **kwargs):
 
     # Finally we submit and run the refG calculation (you may need to customize this command based on your setup)
     # refG_job_result = subprocess_run_wrapper(["./subgam.diab", input_path, "4", "0", "1"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    job_path = my_subgam(input_path, ncpus=4, ngb=3, nhour=3)
+    job_path = my_subgam(input_path, ncpus=10, ngb=5, nhour=24)
     os_system_wrapper(f"sbatch -W {job_path}")
 
     # At this point, refG calculation has completed successfully.
