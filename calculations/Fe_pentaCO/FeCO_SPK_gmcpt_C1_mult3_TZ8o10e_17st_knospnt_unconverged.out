@@ -1,0 +1,2373 @@
+----- GAMESS execution script 'rungms' -----
+This job is running on host io003
+under operating system Linux at Thu 28 Mar 2024 11:42:03 PM EDT
+Available scratch disk space (Kbyte units) at beginning of the job is
+Filesystem             1K-blocks       Used Available Use% Mounted on
+helmholtz.nlogn:/home 6391504896 5405020160 664345600  90% /home
+GAMESS temporary binary files will be written to /home/bjb2chen/gmsscr/
+GAMESS supplementary output files will be written to /home/bjb2chen/gamess/vibronics/template_examples/Fe_pentaCO
+Copying input file FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.inp to your run's scratch directory...
+cp FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.inp /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F05
+unset echo
+ 
+Assuming a single but multicore node.
+ 
+/home/bjb2chen/gamess/ddikick.x /home/bjb2chen/gamess/gamess.00.x FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt -ddi 1 10 io003:cpus=10 -scr /home/bjb2chen/gmsscr/
+
+ Distributed Data Interface kickoff program.
+ Initiating 10 compute processes on 1 nodes to run the following command:
+ /home/bjb2chen/gamess/gamess.00.x FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt 
+
+          ******************************************************
+          *         GAMESS VERSION = 02 AUG 2018 (R2)         *
+          *             FROM IOWA STATE UNIVERSITY             *
+          * M.W.SCHMIDT, K.K.BALDRIDGE, J.A.BOATZ, S.T.ELBERT, *
+          *   M.S.GORDON, J.H.JENSEN, S.KOSEKI, N.MATSUNAGA,   *
+          *          K.A.NGUYEN, S.J.SU, T.L.WINDUS,           *
+          *       TOGETHER WITH M.DUPUIS, J.A.MONTGOMERY       *
+          *         J.COMPUT.CHEM.  14, 1347-1363(1993)        *
+          **************** 64 BIT LINUX VERSION ****************
+
+  SINCE 1993, STUDENTS AND POSTDOCS WORKING AT IOWA STATE UNIVERSITY
+  AND ALSO IN THEIR VARIOUS JOBS AFTER LEAVING ISU HAVE MADE IMPORTANT
+  CONTRIBUTIONS TO THE CODE:
+     IVANA ADAMOVIC, CHRISTINE AIKENS, YURI ALEXEEV, POOJA ARORA,
+     ANDREY ASADCHEV, ROB BELL, PRADIPTA BANDYOPADHYAY, JONATHAN BENTZ,
+     BRETT BODE, KURT BRORSEN, CALEB CARLIN, GALINA CHABAN, WEI CHEN,
+     CHEOL HO CHOI, PAUL DAY, ALBERT DEFUSCO, NUWAN DESILVA, TIM DUDLEY,
+     DMITRI FEDOROV, ALEX FINDLATER, GRAHAM FLETCHER, MARK FREITAG,
+     KURT GLAESEMANN, ANASTASIA GUININA,
+     DAN KEMP, GRANT MERRILL, NORIYUKI MINEZAWA, JONATHAN MULLIN,
+     TAKESHI NAGATA, SEAN NEDD, HEATHER NETZLOFF, BOSILJKA NJEGIC, RYAN OLSON,
+     MIKE PAK, BUU PHAM,
+     SPENCER PRUITT, LUKE ROSKOP, JIM SHOEMAKER, LYUDMILA SLIPCHENKO,
+     TONY SMITH, SAROM SOK LEANG, JIE SONG, TETSUYA TAKETSUGU, SIMON WEBB,
+     PENG XU, SOOHAENG YOO, FEDERICO ZAHARIEV
+
+  ADDITIONAL CODE HAS BEEN PROVIDED BY COLLABORATORS IN OTHER GROUPS:
+     IOWA STATE UNIVERSITY:
+          JOE IVANIC, AARON WEST, LAIMUTIS BYTAUTAS, KLAUS RUEDENBERG
+     UNIVERSITY OF TOKYO: KIMIHIKO HIRAO, TAKAHITO NAKAJIMA,
+          TAKAO TSUNEDA, MUNEAKI KAMIYA, SUSUMU YANAGISAWA,
+          KIYOSHI YAGI, MAHITO CHIBA, SEIKEN TOKURA, NAOAKI KAWAKAMI
+     UNIVERSITY OF AARHUS: FRANK JENSEN
+     UNIVERSITY OF IOWA: VISVALDAS KAIRYS, HUI LI
+     NATIONAL INST. OF STANDARDS AND TECHNOLOGY: WALT STEVENS, DAVID GARMER
+     UNIVERSITY OF PISA: BENEDETTA MENNUCCI, JACOPO TOMASI
+     UNIVERSITY OF MEMPHIS: HENRY KURTZ, PRAKASHAN KORAMBATH
+     UNIVERSITY OF ALBERTA: TOBY ZENG, MARIUSZ KLOBUKOWSKI
+     UNIVERSITY OF NEW ENGLAND: MARK SPACKMAN
+     MIE UNIVERSITY: HIROAKI UMEDA
+     NAT. INST. OF ADVANCED INDUSTRIAL SCIENCE AND TECHNOLOGY: KAZUO KITAURA
+     MICHIGAN STATE UNIVERSITY:
+          KAROL KOWALSKI, MARTA WLOCH, JEFFREY GOUR, JESSE LUTZ,
+          WEI LI, JUN SHEN, J. EMILIANO DEUSTUA, PIOTR PIECUCH
+     UNIVERSITY OF MINNESOTA:
+          YINAN SHU
+     UNIVERSITY OF SILESIA: MONIKA MUSIAL, STANISLAW KUCHARSKI
+     FACULTES UNIVERSITAIRES NOTRE-DAME DE LA PAIX:
+          OLIVIER QUINET, BENOIT CHAMPAGNE
+     UNIVERSITY OF CALIFORNIA - SANTA BARBARA: BERNARD KIRTMAN
+     INSTITUTE FOR MOLECULAR SCIENCE:
+          KAZUYA ISHIMURA, MICHIO KATOUDA, AND SHIGERU NAGASE
+     UNIVERSITY OF NOTRE DAME: ANNA POMOGAEVA, DAN CHIPMAN
+     KYUSHU UNIVERSITY:
+          HARUYUKI NAKANO,
+          FENG LONG GU, JACEK KORCHOWIEC, MARCIN MAKOWSKI, AND YURIKO AOKI,
+          HIROTOSHI MORI AND EISAKU MIYOSHI
+     PENNSYLVANIA STATE UNIVERSITY:
+          TZVETELIN IORDANOV, CHET SWALINA, JONATHAN SKONE,
+          SHARON HAMMES-SCHIFFER
+     WASEDA UNIVERSITY:
+          MASATO KOBAYASHI, TOMOKO AKAMA, TSUGUKI TOUMA,
+          TAKESHI YOSHIKAWA, YASUHIRO IKABATA, JUNJI SEINO,
+          YUYA NAKAJIMA, HIROMI NAKAI
+     NANJING UNIVERSITY: SHUHUA LI
+     UNIVERSITY OF NEBRASKA:
+          PEIFENG SU, DEJUN SI, NANDUN THELLAMUREGE, YALI WANG, HUI LI
+     UNIVERSITY OF ZURICH: ROBERTO PEVERATI, KIM BALDRIDGE
+     N. COPERNICUS UNIVERSITY AND JACKSON STATE UNIVERSITY:
+          MARIA BARYSZ
+     UNIVERSITY OF COPENHAGEN: Jimmy Kromann, CASPER STEINMANN
+     TOKYO INSTITUTE OF TECHNOLOGY: HIROYA NAKATA
+     NAGOYA UNIVERSITY: YOSHIO NISHIMOTO, STEPHAN IRLE
+     MOSCOW STATE UNIVERSITY: VLADIMIR MIRONOV
+
+
+ PARALLEL VERSION RUNNING ON       10 PROCESSORS IN        1 NODES.
+
+ EXECUTION OF GAMESS BEGUN Thu Mar 28 23:42:03 2024
+
+            ECHO OF THE FIRST FEW INPUT CARDS -
+ INPUT CARD> !############################################################################# 
+ INPUT CARD> !                   D_3h RHF GEOMETRY OPTIMIZATION AND HESSIAN TEMPLATE        
+ INPUT CARD> ! ---------------------------------------------------------------------------  
+ INPUT CARD> ! Replace the symmetry-correct coordinates, should only be two atoms.          
+ INPUT CARD> ! The hydrogen or fluorine should have only one non-zero x,y,z coordinate.     
+ INPUT CARD> !                                                                              
+ INPUT CARD> ! Basis set?   gbasis=ccd for 2nd row,                                         
+ INPUT CARD> !                         cct 3rd/4th,                                         
+ INPUT CARD> !                   SPKrTZP for heavy,                                         
+ INPUT CARD> !                   SPKrTZC beyond 4th                                         
+ INPUT CARD> !                                                                              
+ INPUT CARD> !############################################################################# 
+ INPUT CARD> $system kdiag=3 mwords=1000 memddi=25000 parall=.t. $end                       
+ INPUT CARD> $contrl runtyp=energy ispher=1 $end                                            
+ INPUT CARD> $contrl icut=9 itol=20 inttyp=rysquad qmttol=1.0d-05 nosym=1 $end              
+ INPUT CARD> $contrl scftyp=mcscf  mult=3 maxit=200 icharg=0 mplevl=2 $end                  
+ INPUT CARD> $scf    npunch=2 conv=1.0d-06 dirscf=.t. $end                                  
+ INPUT CARD> $force  method=seminum $end                                                    
+ INPUT CARD> $trans  dirtrf=.t. $end                                                        
+ INPUT CARD> $statpt hssend=.t. $end                                                        
+ INPUT CARD> $basis  gbasis=SPKrTZP $end                                                    
+ INPUT CARD> !############################################################################# 
+ INPUT CARD> !                                                                              
+ INPUT CARD> !                       TURN ON THIS SECTION IF HEAVY ATOM                     
+ INPUT CARD> !                                                                              
+ INPUT CARD> !############################################################################# 
+ INPUT CARD> !                                                                              
+ INPUT CARD> $contrl relwfn=LUT-IOTC $end                                                   
+ INPUT CARD> $scf  diis=.t. soscf=.f. ethrsh=10.0 $end                                      
+ INPUT CARD> -guess iorder(43)=44 iorder(44)=43 $end                                        
+ INPUT CARD> $gmcpt nsolut=100 $end                                                         
+ INPUT CARD> !                                                                              
+ INPUT CARD> !############################################################################# 
+ INPUT CARD> !                                                                              
+ INPUT CARD> ! TURN ON THIS SECTION IF GMCPT, CHANGE runtyp=energy, scftyp=mcscf, change nos
+ INPUT CARD> !                                                                              
+ INPUT CARD> !############################################################################# 
+ INPUT CARD> $guess  guess=moread norb=369 purify=.t. norder=1 $end                         
+ INPUT CARD> $mcscf  cistep=gmcci fullnr=.t. finci=mos                                      
+ INPUT CARD>         acurcy=1.d-6 maxit=100 $end                                            
+ INPUT CARD> $mrmp   mrpt=gmcpt rdvecs=.f. $end                                             
+ INPUT CARD> $gmcpt  nmofzc=19 nmodoc=24 nmoact=8 nelact=10 stsym(1)=A                      
+ INPUT CARD>         reftyp=ormas nspace=1 mstart(1)=44 mine(1)=10 maxe(1)=10               
+ INPUT CARD>         kstate(1)=1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1                            
+ INPUT CARD>         wstate(1)=1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1                            
+ INPUT CARD>         iwgt=0 thrwgt=-1.0 krot=.f. kszdoe=.f. knospn=.t.                      
+ INPUT CARD>         thrde=-1.0 edshft=0.02 maxbas=800 $end                                 
+ INPUT CARD> !############################################################################# 
+ INPUT CARD> !                                                                              
+ INPUT CARD> !             TURN OFF THIS SECTION IF temp.inp, add C1                        
+ 1000000000 WORDS OF MEMORY AVAILABLE
+
+     $BASIS REQUESTS READING THE "SPKRTZP " BASIS SET FROM AN EXTERNAL FILE
+
+
+     RUN TITLE
+     ---------
+  Iron pentacarbonyl optimization                                                
+
+ THE POINT GROUP OF THE MOLECULE IS C1      
+ THE ORDER OF THE PRINCIPAL AXIS IS     0
+
+ THE EXTERNAL BASIS SET FILE BEING READ IS
+     "/home/bjb2chen/gamess/auxdata/BASES/SPKRTZP"
+
+ ATOM      ATOMIC                      COORDINATES (BOHR)
+           CHARGE         X                   Y                   Z
+ FE         26.0    -0.0000000000        0.0000000000        0.0000000000
+ C           6.0    -1.6675781301        2.8883300469        0.0000000000
+ C           6.0    -1.6675781301       -2.8883300469        0.0000000000
+ C           6.0     3.3351562601        0.0000000000        0.0000000000
+ O           8.0    -2.7565274144        4.7744455343        0.0000000000
+ O           8.0    -2.7565274144       -4.7744455343        0.0000000000
+ O           8.0     5.5130548290        0.0000000000        0.0000000000
+ C           6.0     0.0000000000        0.0000000000       -3.1711668130
+ C           6.0    -0.0000000000        0.0000000000        3.1711668130
+ O           8.0    -0.0000000000        0.0000000000       -5.3731288034
+ O           8.0    -0.0000000000        0.0000000000        5.3731288034
+
+          INTERNUCLEAR DISTANCES (ANGS.)
+          ------------------------------
+
+                1 FE         2 C          3 C          4 C          5 O     
+
+   1 FE      0.0000000    1.7648888 *  1.7648888 *  1.7648888 *  2.9173832 *
+   2 C       1.7648888 *  0.0000000    3.0568771    3.0568771    1.1524944 *
+   3 C       1.7648888 *  3.0568771    0.0000000    3.0568771    4.0957068  
+   4 C       1.7648888 *  3.0568771    3.0568771    0.0000000    4.0957068  
+   5 O       2.9173832 *  1.1524944 *  4.0957068    4.0957068    0.0000000  
+   6 O       2.9173832 *  4.0957068    1.1524944 *  4.0957068    5.0530559  
+   7 O       2.9173832 *  4.0957068    4.0957068    1.1524944 *  5.0530559  
+   8 C       1.6781093 *  2.4353405 *  2.4353405 *  2.4353405 *  3.3655870  
+   9 C       1.6781093 *  2.4353405 *  2.4353405 *  2.4353405 *  3.3655870  
+  10 O       2.8433375 *  3.3465506    3.3465506    3.3465506    4.0737812  
+  11 O       2.8433375 *  3.3465506    3.3465506    3.3465506    4.0737812  
+
+                6 O          7 O          8 C          9 C         10 O     
+
+   1 FE      2.9173832 *  2.9173832 *  1.6781093 *  1.6781093 *  2.8433375 *
+   2 C       4.0957068    4.0957068    2.4353405 *  2.4353405 *  3.3465506  
+   3 C       1.1524944 *  4.0957068    2.4353405 *  2.4353405 *  3.3465506  
+   4 C       4.0957068    1.1524944 *  2.4353405 *  2.4353405 *  3.3465506  
+   5 O       5.0530559    5.0530559    3.3655870    3.3655870    4.0737812  
+   6 O       0.0000000    5.0530559    3.3655870    3.3655870    4.0737812  
+   7 O       5.0530559    0.0000000    3.3655870    3.3655870    4.0737812  
+   8 C       3.3655870    3.3655870    0.0000000    3.3562187    1.1652282 *
+   9 C       3.3655870    3.3655870    3.3562187    0.0000000    4.5214469  
+  10 O       4.0737812    4.0737812    1.1652282 *  4.5214469    0.0000000  
+  11 O       4.0737812    4.0737812    4.5214469    1.1652282 *  5.6866750  
+
+               11 O     
+
+   1 FE      2.8433375 *
+   2 C       3.3465506  
+   3 C       3.3465506  
+   4 C       3.3465506  
+   5 O       4.0737812  
+   6 O       4.0737812  
+   7 O       4.0737812  
+   8 C       4.5214469  
+   9 C       1.1652282 *
+  10 O       5.6866750  
+  11 O       0.0000000  
+
+  * ... LESS THAN  3.000
+
+
+     ATOMIC BASIS SET
+     ----------------
+ THE CONTRACTED PRIMITIVE FUNCTIONS HAVE BEEN UNNORMALIZED
+ THE CONTRACTED BASIS FUNCTIONS ARE NOW NORMALIZED TO UNITY
+
+  SHELL TYPE  PRIMITIVE        EXPONENT          CONTRACTION COEFFICIENT(S)
+
+ FE        
+
+      1   S       1       1100791.5305010    0.000473999976
+      1   S       2        111958.3587060    0.002184999889
+      1   S       3         19185.3576710    0.008689999559
+      1   S       4          4445.3037100    0.032685998341
+      1   S       5          1266.9965100    0.110141994410
+      1   S       6           416.6310290    0.284031985586
+      1   S       7           150.8643160    0.454264876947
+      1   S       8            56.3399190    0.263064986650
+
+      2   S       9           359.6946140   -0.022463999939
+      2   S      10           108.1698330   -0.110348999698
+      2   S      11            16.2239570    0.581708898408
+      2   S      12             6.5680420    0.504839898618
+
+      3   S      13            10.7418790   -0.362092191734
+      3   S      14             1.7503840    1.164823573408
+
+      4   S      15             2.5115960    1.000000000000
+
+      5   S      16             0.7053330    1.000000000000
+
+      6   S      17             0.3621190    1.000000000000
+
+      7   S      18             0.1098870    1.000000000000
+
+      8   S      19             0.0389760    1.000000000000
+
+      9   P      20          3763.5373930    0.001033999945
+      9   P      21           777.6255800    0.008099999572
+      9   P      22           235.1625800    0.042150997771
+      9   P      23            85.2386240    0.150979992017
+      9   P      24            34.2178420    0.344345981793
+      9   P      25            14.4530580    0.445691976434
+      9   P      26             6.0108430    0.197984989532
+
+     10   P      27            29.2356570   -0.050671998602
+     10   P      28             3.8658850    1.015612071978
+
+     11   P      29             1.5321320    1.000000000000
+
+     12   P      30             0.6880240    1.000000000000
+
+     13   P      31             0.3377060    1.000000000000
+
+     14   P      32             0.1058510    1.000000000000
+
+     15   D      33           153.1499290    0.002483999928
+     15   D      34            39.2185330    0.024814999278
+     15   D      35            13.1241220    0.112497096729
+     15   D      36             4.9420130    0.294331191441
+     15   D      37             1.9182510    0.436439287309
+     15   D      38             0.7263080    0.400155288364
+
+     16   D      39             1.2013780    1.000000000000
+
+     17   D      40             0.4134800    1.000000000000
+
+     18   D      41             0.2769570    0.803321387841
+     18   D      42             0.1024240    0.267279095955
+
+     19   F      43             7.1173700    0.248360909500
+     19   F      44             2.0161170    0.867482733183
+
+     20   F      45             0.5734880    1.000000000000
+
+     21   G      46             3.1098950    0.428615975933
+     21   G      47             0.8477510    0.770538956734
+
+ C         
+
+     22   S      48          2806.9439975    0.002023800059
+     22   S      49           421.5775504    0.015441100454
+     22   S      50            95.8957402    0.075177402208
+     22   S      51            26.9445497    0.249027707314
+     22   S      52             8.5713784    0.482075214159
+     22   S      53             2.8716364    0.326878109601
+
+     23   S      54             4.9998841   -0.210680004154
+     23   S      55             0.5327613    1.077681121247
+
+     24   S      56             0.2075124    1.000000000000
+
+     25   S      57             0.0868337    1.000000000000
+
+     26   P      58            18.6818848    0.039471499719
+     26   P      59             4.1250373    0.244388698258
+     26   P      60             1.1979790    0.815218894188
+
+     27   P      61             0.3821592    1.000000000000
+
+     28   P      62             0.1206886    1.000000000000
+
+     29   D      63             3.0148490    0.111983997300
+     29   D      64             0.8820640    0.935464277443
+
+     30   D      65             0.2854600    1.000000000000
+
+     31   F      66             1.2468250    0.439684998371
+     31   F      67             0.4390430    0.686338997457
+
+ C         
+
+     32   S      68          2806.9439975    0.002023800059
+     32   S      69           421.5775504    0.015441100454
+     32   S      70            95.8957402    0.075177402208
+     32   S      71            26.9445497    0.249027707314
+     32   S      72             8.5713784    0.482075214159
+     32   S      73             2.8716364    0.326878109601
+
+     33   S      74             4.9998841   -0.210680004154
+     33   S      75             0.5327613    1.077681121247
+
+     34   S      76             0.2075124    1.000000000000
+
+     35   S      77             0.0868337    1.000000000000
+
+     36   P      78            18.6818848    0.039471499719
+     36   P      79             4.1250373    0.244388698258
+     36   P      80             1.1979790    0.815218894188
+
+     37   P      81             0.3821592    1.000000000000
+
+     38   P      82             0.1206886    1.000000000000
+
+     39   D      83             3.0148490    0.111983997300
+     39   D      84             0.8820640    0.935464277443
+
+     40   D      85             0.2854600    1.000000000000
+
+     41   F      86             1.2468250    0.439684998371
+     41   F      87             0.4390430    0.686338997457
+
+ C         
+
+     42   S      88          2806.9439975    0.002023800059
+     42   S      89           421.5775504    0.015441100454
+     42   S      90            95.8957402    0.075177402208
+     42   S      91            26.9445497    0.249027707314
+     42   S      92             8.5713784    0.482075214159
+     42   S      93             2.8716364    0.326878109601
+
+     43   S      94             4.9998841   -0.210680004154
+     43   S      95             0.5327613    1.077681121247
+
+     44   S      96             0.2075124    1.000000000000
+
+     45   S      97             0.0868337    1.000000000000
+
+     46   P      98            18.6818848    0.039471499719
+     46   P      99             4.1250373    0.244388698258
+     46   P     100             1.1979790    0.815218894188
+
+     47   P     101             0.3821592    1.000000000000
+
+     48   P     102             0.1206886    1.000000000000
+
+     49   D     103             3.0148490    0.111983997300
+     49   D     104             0.8820640    0.935464277443
+
+     50   D     105             0.2854600    1.000000000000
+
+     51   F     106             1.2468250    0.439684998371
+     51   F     107             0.4390430    0.686338997457
+
+ O         
+
+     52   S     108          5077.7107079    0.002005200049
+     52   S     109           762.6032479    0.015311300372
+     52   S     110           173.4747916    0.074816301816
+     52   S     111            48.8026730    0.249940906066
+     52   S     112            15.6087813    0.483164411726
+     52   S     113             5.2562810    0.324034307864
+
+     53   S     114             9.8167720   -0.213008798624
+     53   S     115             1.0626144    1.079351093025
+
+     54   S     116             0.4112889    1.000000000000
+
+     55   S     117             0.1672821    1.000000000000
+
+     56   P     118            34.4309698    0.041201500385
+     56   P     119             7.7428211    0.257878902408
+     56   P     120             2.2788395    0.802283507490
+
+     57   P     121             0.7151603    1.000000000000
+
+     58   P     122             0.2137722    1.000000000000
+
+     59   D     123             5.9603300    0.136289097514
+     59   D     124             1.7648530    0.919489483226
+
+     60   D     125             0.5756600    1.000000000000
+
+     61   F     126             2.4143370    0.424090301385
+     61   F     127             0.7676600    0.719405502349
+
+ O         
+
+     62   S     128          5077.7107079    0.002005200049
+     62   S     129           762.6032479    0.015311300372
+     62   S     130           173.4747916    0.074816301816
+     62   S     131            48.8026730    0.249940906066
+     62   S     132            15.6087813    0.483164411726
+     62   S     133             5.2562810    0.324034307864
+
+     63   S     134             9.8167720   -0.213008798624
+     63   S     135             1.0626144    1.079351093025
+
+     64   S     136             0.4112889    1.000000000000
+
+     65   S     137             0.1672821    1.000000000000
+
+     66   P     138            34.4309698    0.041201500385
+     66   P     139             7.7428211    0.257878902408
+     66   P     140             2.2788395    0.802283507490
+
+     67   P     141             0.7151603    1.000000000000
+
+     68   P     142             0.2137722    1.000000000000
+
+     69   D     143             5.9603300    0.136289097514
+     69   D     144             1.7648530    0.919489483226
+
+     70   D     145             0.5756600    1.000000000000
+
+     71   F     146             2.4143370    0.424090301385
+     71   F     147             0.7676600    0.719405502349
+
+ O         
+
+     72   S     148          5077.7107079    0.002005200049
+     72   S     149           762.6032479    0.015311300372
+     72   S     150           173.4747916    0.074816301816
+     72   S     151            48.8026730    0.249940906066
+     72   S     152            15.6087813    0.483164411726
+     72   S     153             5.2562810    0.324034307864
+
+     73   S     154             9.8167720   -0.213008798624
+     73   S     155             1.0626144    1.079351093025
+
+     74   S     156             0.4112889    1.000000000000
+
+     75   S     157             0.1672821    1.000000000000
+
+     76   P     158            34.4309698    0.041201500385
+     76   P     159             7.7428211    0.257878902408
+     76   P     160             2.2788395    0.802283507490
+
+     77   P     161             0.7151603    1.000000000000
+
+     78   P     162             0.2137722    1.000000000000
+
+     79   D     163             5.9603300    0.136289097514
+     79   D     164             1.7648530    0.919489483226
+
+     80   D     165             0.5756600    1.000000000000
+
+     81   F     166             2.4143370    0.424090301385
+     81   F     167             0.7676600    0.719405502349
+
+ C         
+
+     82   S     168          2806.9439975    0.002023800059
+     82   S     169           421.5775504    0.015441100454
+     82   S     170            95.8957402    0.075177402208
+     82   S     171            26.9445497    0.249027707314
+     82   S     172             8.5713784    0.482075214159
+     82   S     173             2.8716364    0.326878109601
+
+     83   S     174             4.9998841   -0.210680004154
+     83   S     175             0.5327613    1.077681121247
+
+     84   S     176             0.2075124    1.000000000000
+
+     85   S     177             0.0868337    1.000000000000
+
+     86   P     178            18.6818848    0.039471499719
+     86   P     179             4.1250373    0.244388698258
+     86   P     180             1.1979790    0.815218894188
+
+     87   P     181             0.3821592    1.000000000000
+
+     88   P     182             0.1206886    1.000000000000
+
+     89   D     183             3.0148490    0.111983997300
+     89   D     184             0.8820640    0.935464277443
+
+     90   D     185             0.2854600    1.000000000000
+
+     91   F     186             1.2468250    0.439684998371
+     91   F     187             0.4390430    0.686338997457
+
+ C         
+
+     92   S     188          2806.9439975    0.002023800059
+     92   S     189           421.5775504    0.015441100454
+     92   S     190            95.8957402    0.075177402208
+     92   S     191            26.9445497    0.249027707314
+     92   S     192             8.5713784    0.482075214159
+     92   S     193             2.8716364    0.326878109601
+
+     93   S     194             4.9998841   -0.210680004154
+     93   S     195             0.5327613    1.077681121247
+
+     94   S     196             0.2075124    1.000000000000
+
+     95   S     197             0.0868337    1.000000000000
+
+     96   P     198            18.6818848    0.039471499719
+     96   P     199             4.1250373    0.244388698258
+     96   P     200             1.1979790    0.815218894188
+
+     97   P     201             0.3821592    1.000000000000
+
+     98   P     202             0.1206886    1.000000000000
+
+     99   D     203             3.0148490    0.111983997300
+     99   D     204             0.8820640    0.935464277443
+
+    100   D     205             0.2854600    1.000000000000
+
+    101   F     206             1.2468250    0.439684998371
+    101   F     207             0.4390430    0.686338997457
+
+ O         
+
+    102   S     208          5077.7107079    0.002005200049
+    102   S     209           762.6032479    0.015311300372
+    102   S     210           173.4747916    0.074816301816
+    102   S     211            48.8026730    0.249940906066
+    102   S     212            15.6087813    0.483164411726
+    102   S     213             5.2562810    0.324034307864
+
+    103   S     214             9.8167720   -0.213008798624
+    103   S     215             1.0626144    1.079351093025
+
+    104   S     216             0.4112889    1.000000000000
+
+    105   S     217             0.1672821    1.000000000000
+
+    106   P     218            34.4309698    0.041201500385
+    106   P     219             7.7428211    0.257878902408
+    106   P     220             2.2788395    0.802283507490
+
+    107   P     221             0.7151603    1.000000000000
+
+    108   P     222             0.2137722    1.000000000000
+
+    109   D     223             5.9603300    0.136289097514
+    109   D     224             1.7648530    0.919489483226
+
+    110   D     225             0.5756600    1.000000000000
+
+    111   F     226             2.4143370    0.424090301385
+    111   F     227             0.7676600    0.719405502349
+
+ O         
+
+    112   S     228          5077.7107079    0.002005200049
+    112   S     229           762.6032479    0.015311300372
+    112   S     230           173.4747916    0.074816301816
+    112   S     231            48.8026730    0.249940906066
+    112   S     232            15.6087813    0.483164411726
+    112   S     233             5.2562810    0.324034307864
+
+    113   S     234             9.8167720   -0.213008798624
+    113   S     235             1.0626144    1.079351093025
+
+    114   S     236             0.4112889    1.000000000000
+
+    115   S     237             0.1672821    1.000000000000
+
+    116   P     238            34.4309698    0.041201500385
+    116   P     239             7.7428211    0.257878902408
+    116   P     240             2.2788395    0.802283507490
+
+    117   P     241             0.7151603    1.000000000000
+
+    118   P     242             0.2137722    1.000000000000
+
+    119   D     243             5.9603300    0.136289097514
+    119   D     244             1.7648530    0.919489483226
+
+    120   D     245             0.5756600    1.000000000000
+
+    121   F     246             2.4143370    0.424090301385
+    121   F     247             0.7676600    0.719405502349
+
+ TOTAL NUMBER OF BASIS SET SHELLS             =  121
+ NUMBER OF CARTESIAN GAUSSIAN BASIS FUNCTIONS =  435
+ NOTE: THIS RUN WILL RESTRICT THE MO VARIATION SPACE TO SPHERICAL HARMONICS.
+ THE NUMBER OF ORBITALS KEPT IN THE VARIATIONAL SPACE WILL BE PRINTED LATER.
+ NUMBER OF ELECTRONS                          =   96
+ CHARGE OF MOLECULE                           =    0
+ SPIN MULTIPLICITY                            =    3
+ NUMBER OF OCCUPIED ORBITALS (ALPHA)          =   49
+ NUMBER OF OCCUPIED ORBITALS (BETA )          =   47
+ TOTAL NUMBER OF ATOMS                        =   11
+ THE NUCLEAR REPULSION ENERGY IS      825.5537622493
+
+     ---------------------------------
+     RELATIVISTIC WAVEFUNCTION OPTIONS
+     ---------------------------------
+     METHOD=LUT-IOTC NORDER= 2       NESOC=  0      MODEQR=      1
+     NRATOM=  0      QMTTOL= 1.000E-10      QRTOL= 1.000E-10
+     CLIGHT=137.03598950     TAU= 3.500E+00
+
+ INTERNAL BASIS SET UNCONTRACTION FOR RESC/DK/IOTC/LUT-IOTC:
+   247 SHELLS AND    808 AOS ARE CONSTRUCTED, COMPARED TO
+   121 SHELLS AND    435 AOS IN THE CONTRACTED BASIS SET
+
+
+     $CONTRL OPTIONS
+     ---------------
+ SCFTYP=MCSCF        RUNTYP=ENERGY       EXETYP=RUN     
+ MPLEVL=       2     CITYP =NONE         CCTYP =NONE         VBTYP =NONE    
+ DFTTYP=NONE         TDDFT =NONE    
+ MULT  =       3     ICHARG=       0     NZVAR =       0     COORD =UNIQUE  
+ PP    =NONE         RELWFN=LUT-IOTC     LOCAL =NONE         NUMGRD=       F
+ ISPHER=       1     NOSYM =       1     MAXIT =     200     UNITS =ANGS    
+ PLTORB=       F     MOLPLT=       F     AIMPAC=       F     FRIEND=        
+ NPRINT=       7     IREST =       0     GEOM  =INPUT   
+ NORMF =       0     NORMP =       0     ITOL  =      20     ICUT  =       9
+ INTTYP=RYSQUAD      GRDTYP=BEST         QMTTOL= 1.0E-05
+
+     $SYSTEM OPTIONS
+     ---------------
+  REPLICATED MEMORY=  1000000000 WORDS (ON EVERY NODE).
+ DISTRIBUTED MEMDDI=       25000 MILLION WORDS IN AGGREGATE,
+ MEMDDI DISTRIBUTED OVER  10 PROCESSORS IS  2500000000 WORDS/PROCESSOR.
+ TOTAL MEMORY REQUESTED ON EACH PROCESSOR=  3500000000 WORDS.
+ TIMLIM=      525600.00 MINUTES, OR     365.0 DAYS.
+ PARALL= T  BALTYP=  DLB     KDIAG=    3  COREFL= F
+ MXSEQ2=     300 MXSEQ3=     150  mem10=         0
+
+          ----------------
+          PROPERTIES INPUT
+          ----------------
+
+     MOMENTS            FIELD           POTENTIAL          DENSITY
+ IEMOM =       1   IEFLD =       0   IEPOT =       0   IEDEN =       0
+ WHERE =COMASS     WHERE =NUCLEI     WHERE =NUCLEI     WHERE =NUCLEI  
+ OUTPUT=BOTH       OUTPUT=BOTH       OUTPUT=BOTH       OUTPUT=BOTH    
+ IEMINT=       0   IEFINT=       0                     IEDINT=       0
+                                                       MORB  =       0
+
+     -------------------------------
+     INTEGRAL TRANSFORMATION OPTIONS
+     -------------------------------
+     NWORD  =            0
+     CUTOFF = 1.0E-09     MPTRAN =       0
+     DIRTRF =       T     AOINTS =DUP     
+
+          ----------------------
+          MCSCF INPUT PARAMETERS
+          ----------------------
+ CONVERGER SELECTION: FOCAS = F  SOSCF = F  FULLNR = T  QUD = F  JACOBI = F
+ SECULAR EQUATION METHOD CISTEP = GMCCI   
+ --- GENERAL INPUT OPTIONS:
+ MAXIT =     100  MICIT =       1  ACURCY= 1.000E-06
+ DAMP  =   0.000  CANONC=       T  ENGTOL= 1.000E-10
+ EKT   =       F  NPUNCH=       2  NWORD =         0
+ REGENERATE CI AFTER CONVERGENCE = NONE    
+ DIABATIZATION AFTER CONVERGENCE =        F
+ --- INPUT FOR FULLNR CONVERGER:
+ METHOD=DM2       FORS  =       F  DROPC =       T
+ LINSER=       F  FCORE =       F  NORB  =     435
+
+          ----------------------
+          INTEGRAL INPUT OPTIONS
+          ----------------------
+ NOPK  =       1 NORDER=       0 SCHWRZ=       T
+
+ ------------------------------------------
+ MULTIREFERENCE PERTURBATION THEORY CONTROL
+ ------------------------------------------
+ MRPT=GMCPT    READ CONVERGED MCSCF VECTORS= F
+
+
+     ------------------------------------------
+     THE POINT GROUP IS C1 , NAXIS= 1, ORDER= 1
+     ------------------------------------------
+
+ -- VARIATIONAL SPACE WILL BE RESTRICTED TO PURE SPHERICAL HARMONICS ONLY --
+ AFTER EXCLUDING CONTAMINANT COMBINATIONS FROM THE CARTESIAN GAUSSIAN BASIS
+ SET, THE NUMBER OF SPHERICAL HARMONICS KEPT IN THE VARIATION SPACE IS  369
+
+     DIMENSIONS OF THE SYMMETRY SUBSPACES ARE
+ A   =  369
+
+ ..... DONE SETTING UP THE RUN .....
+ CPU     0: STEP CPU TIME=     0.93 TOTAL CPU TIME=          0.9 (      0.0 MIN)
+ TOTAL WALL CLOCK TIME=          1.1 SECONDS, CPU UTILIZATION IS    81.58%
+
+          ********************
+          1 ELECTRON INTEGRALS
+          ********************
+ TIME TO DO ORDINARY INTEGRALS=      0.01
+
+ ======================================================================
+      INFINITE-ORDER TWO-COMPONENT (IOTC) ONE-ELECTRON HAMILTONIAN
+      WITH LOCAL UNITARY TRANSFORMATION (LUT) SCHEME
+                                            CODED BY YUYA NAKAJIMA
+             J. SEINO, H. NAKAI, J. CHEM. PHYS. 136, 244102 (2012)
+             J. SEINO, H. NAKAI, J. CHEM. PHYS. 137, 144101 (2012)
+             J. SEINO, H. NAKAI, J. CHEM. PHYS. 139, 034109 (2013)
+        J. SEINO, H. NAKAI, INT. J. QUANTUM. CHEM. 115, 253 (2015)
+ ======================================================================
+
+ LUT-IOTC TRANSFORMATION FOR ATOM:    1
+ THE SMALLEST EIGENVALUE OF THE OVERLAP MATRIX IS   5.23E-12
+ THERE ARE     2 OVERLAP MATRIX EIGENVALUES LESS THAN   1.00E-10
+ THE NUMBER OF LINEARLY INDEPENDENT ORBITALS KEPT IS   176
+
+ LUT-IOTC TRANSFORMATION FOR ATOM:    2
+ LUT-IOTC TRANSFORMATION FOR ATOM:    3
+ LUT-IOTC TRANSFORMATION FOR ATOM:    4
+ LUT-IOTC TRANSFORMATION FOR ATOM:    5
+ LUT-IOTC TRANSFORMATION FOR ATOM:    6
+ LUT-IOTC TRANSFORMATION FOR ATOM:    7
+ LUT-IOTC TRANSFORMATION FOR ATOM:    8
+ LUT-IOTC TRANSFORMATION FOR ATOM:    9
+ LUT-IOTC TRANSFORMATION FOR ATOM:   10
+ LUT-IOTC TRANSFORMATION FOR ATOM:   11
+
+     -------------------------------------
+     LUT-IOTC TRANSFORMATION FOR ATOM-PAIR
+     -------------------------------------
+
+                1 FE         2 C          3 C          4 C          5 O     
+
+   1 FE      0.0000000    1.7648888 *  1.7648888 *  1.7648888 *  2.9173832 *
+   2 C       1.7648888 *  0.0000000    3.0568771 *  3.0568771 *  1.1524944 *
+   3 C       1.7648888 *  3.0568771 *  0.0000000    3.0568771 *  4.0957068  
+   4 C       1.7648888 *  3.0568771 *  3.0568771 *  0.0000000    4.0957068  
+   5 O       2.9173832 *  1.1524944 *  4.0957068    4.0957068    0.0000000  
+   6 O       2.9173832 *  4.0957068    1.1524944 *  4.0957068    5.0530559  
+   7 O       2.9173832 *  4.0957068    4.0957068    1.1524944 *  5.0530559  
+   8 C       1.6781093 *  2.4353405 *  2.4353405 *  2.4353405 *  3.3655870 *
+   9 C       1.6781093 *  2.4353405 *  2.4353405 *  2.4353405 *  3.3655870 *
+  10 O       2.8433375 *  3.3465506 *  3.3465506 *  3.3465506 *  4.0737812  
+  11 O       2.8433375 *  3.3465506 *  3.3465506 *  3.3465506 *  4.0737812  
+
+                6 O          7 O          8 C          9 C         10 O     
+
+   1 FE      2.9173832 *  2.9173832 *  1.6781093 *  1.6781093 *  2.8433375 *
+   2 C       4.0957068    4.0957068    2.4353405 *  2.4353405 *  3.3465506 *
+   3 C       1.1524944 *  4.0957068    2.4353405 *  2.4353405 *  3.3465506 *
+   4 C       4.0957068    1.1524944 *  2.4353405 *  2.4353405 *  3.3465506 *
+   5 O       5.0530559    5.0530559    3.3655870 *  3.3655870 *  4.0737812  
+   6 O       0.0000000    5.0530559    3.3655870 *  3.3655870 *  4.0737812  
+   7 O       5.0530559    0.0000000    3.3655870 *  3.3655870 *  4.0737812  
+   8 C       3.3655870 *  3.3655870 *  0.0000000    3.3562187 *  1.1652282 *
+   9 C       3.3655870 *  3.3655870 *  3.3562187 *  0.0000000    4.5214469  
+  10 O       4.0737812    4.0737812    1.1652282 *  4.5214469    0.0000000  
+  11 O       4.0737812    4.0737812    4.5214469    1.1652282 *  5.6866750  
+
+               11 O     
+
+   1 FE      2.8433375 *
+   2 C       3.3465506 *
+   3 C       3.3465506 *
+   4 C       3.3465506 *
+   5 O       4.0737812  
+   6 O       4.0737812  
+   7 O       4.0737812  
+   8 C       4.5214469  
+   9 C       1.1652282 *
+  10 O       5.6866750  
+  11 O       0.0000000  
+
+  * ... TRANSFORMED ATOM PAIR (LESS THAN   3.500 ANGS.)
+
+ TIME TO DO  RELATIVISTIC INTS=      0.35
+ TIME TO DO   DIPOLE INTEGRALS=      0.02
+ ...... END OF ONE-ELECTRON INTEGRALS ......
+ CPU     0: STEP CPU TIME=     0.38 TOTAL CPU TIME=          1.3 (      0.0 MIN)
+ TOTAL WALL CLOCK TIME=          1.9 SECONDS, CPU UTILIZATION IS    68.95%
+
+          -------------
+          GUESS OPTIONS
+          -------------
+          GUESS =MOREAD            NORB  =     369          NORDER=       1
+          MIX   =       F          PRTMO =       F          PUNMO =       F
+          TOLZ  = 1.0E-08          TOLE  = 1.0E-05
+          SYMDEN=       F          PURIFY=       T
+
+ INITIAL GUESS ORBITALS GENERATED BY MOREAD   ROUTINE.
+
+ STATISTICS FOR GENERATION OF SYMMETRY ORBITAL -Q- MATRIX
+ NUMBER OF CARTESIAN ATOMIC ORBITALS=        435
+ NUMBER OF SPHERICAL CONTAMINANTS DROPPED=    66
+ NUMBER OF LINEARLY DEPENDENT MOS DROPPED=     0
+ TOTAL NUMBER OF MOS IN VARIATION SPACE=     369
+ ORBITAL PURIFICATION WILL OCCUR
+
+ SYMMETRIES FOR INITIAL GUESS ORBITALS FOLLOW.   BOTH SET(S).
+    49 ORBITALS ARE OCCUPIED (   19 CORE ORBITALS).
+     1=A        2=A        3=A        4=A        5=A        6=A        7=A   
+     8=A        9=A       10=A       11=A       12=A       13=A       14=A   
+    15=A       16=A       17=A       18=A       19=A       20=A       21=A   
+    22=A       23=A       24=A       25=A       26=A       27=A       28=A   
+    29=A       30=A       31=A       32=A       33=A       34=A       35=A   
+    36=A       37=A       38=A       39=A       40=A       41=A       42=A   
+    43=A       44=A       45=A       46=A       47=A       48=A       49=A   
+    50=A       51=A       52=A       53=A       54=A       55=A       56=A   
+    57=A       58=A       59=A       60=A       61=A       62=A       63=A   
+    64=A       65=A       66=A       67=A       68=A       69=A       70=A   
+    71=A       72=A       73=A       74=A       75=A       76=A       77=A   
+    78=A       79=A       80=A       81=A       82=A       83=A       84=A   
+    85=A       86=A       87=A       88=A       89=A       90=A       91=A   
+    92=A       93=A       94=A       95=A       96=A       97=A       98=A   
+    99=A      100=A      101=A      102=A      103=A      104=A      105=A   
+   106=A      107=A      108=A      109=A      110=A      111=A      112=A   
+   113=A      114=A      115=A      116=A      117=A      118=A      119=A   
+   120=A      121=A      122=A      123=A      124=A      125=A      126=A   
+   127=A      128=A      129=A      130=A      131=A      132=A      133=A   
+   134=A      135=A      136=A      137=A      138=A      139=A      140=A   
+   141=A      142=A      143=A      144=A      145=A      146=A      147=A   
+   148=A      149=A      150=A      151=A      152=A      153=A      154=A   
+   155=A      156=A      157=A      158=A      159=A      160=A      161=A   
+   162=A      163=A      164=A      165=A      166=A      167=A      168=A   
+   169=A      170=A      171=A      172=A      173=A      174=A      175=A   
+   176=A      177=A      178=A      179=A      180=A      181=A      182=A   
+   183=A      184=A      185=A      186=A      187=A      188=A      189=A   
+   190=A      191=A      192=A      193=A      194=A      195=A      196=A   
+   197=A      198=A      199=A      200=A      201=A      202=A      203=A   
+   204=A      205=A      206=A      207=A      208=A      209=A      210=A   
+   211=A      212=A      213=A      214=A      215=A      216=A      217=A   
+   218=A      219=A      220=A      221=A      222=A      223=A      224=A   
+   225=A      226=A      227=A      228=A      229=A      230=A      231=A   
+   232=A      233=A      234=A      235=A      236=A      237=A      238=A   
+   239=A      240=A      241=A      242=A      243=A      244=A      245=A   
+   246=A      247=A      248=A      249=A      250=A      251=A      252=A   
+   253=A      254=A      255=A      256=A      257=A      258=A      259=A   
+   260=A      261=A      262=A      263=A      264=A      265=A      266=A   
+   267=A      268=A      269=A      270=A      271=A      272=A      273=A   
+   274=A      275=A      276=A      277=A      278=A      279=A      280=A   
+   281=A      282=A      283=A      284=A      285=A      286=A      287=A   
+   288=A      289=A      290=A      291=A      292=A      293=A      294=A   
+   295=A      296=A      297=A      298=A      299=A      300=A      301=A   
+   302=A      303=A      304=A      305=A      306=A      307=A      308=A   
+   309=A      310=A      311=A      312=A      313=A      314=A      315=A   
+   316=A      317=A      318=A      319=A      320=A      321=A      322=A   
+   323=A      324=A      325=A      326=A      327=A      328=A      329=A   
+   330=A      331=A      332=A      333=A      334=A      335=A      336=A   
+   337=A      338=A      339=A      340=A      341=A      342=A      343=A   
+   344=A      345=A      346=A      347=A      348=A      349=A      350=A   
+   351=A      352=A      353=A      354=A      355=A      356=A      357=A   
+   358=A      359=A      360=A      361=A      362=A      363=A      364=A   
+   365=A      366=A      367=A      368=A      369=A   
+ ...... END OF INITIAL ORBITAL SELECTION ......
+ CPU     0: STEP CPU TIME=     2.99 TOTAL CPU TIME=          4.3 (      0.1 MIN)
+ TOTAL WALL CLOCK TIME=          5.0 SECONDS, CPU UTILIZATION IS    85.49%
+
+                    ----------------------
+                    AO INTEGRAL TECHNOLOGY
+                    ----------------------
+     S,P,L SHELL ROTATED AXIS INTEGRALS, REPROGRAMMED BY
+        KAZUYA ISHIMURA (IMS) AND JOSE SIERRA (SYNSTAR).
+     S,P,D,L SHELL ROTATED AXIS INTEGRALS PROGRAMMED BY
+        KAZUYA ISHIMURA (INSTITUTE FOR MOLECULAR SCIENCE).
+     S,P,D,F,G SHELL TO TOTAL QUARTET ANGULAR MOMENTUM SUM 5,
+        ERIC PROGRAM BY GRAHAM FLETCHER (ELORET AND NASA ADVANCED
+        SUPERCOMPUTING DIVISION, AMES RESEARCH CENTER).
+     S,P,D,F,G,L SHELL GENERAL RYS QUADRATURE PROGRAMMED BY
+        MICHEL DUPUIS (PACIFIC NORTHWEST NATIONAL LABORATORY).
+
+          --------------------
+          2 ELECTRON INTEGRALS
+          --------------------
+
+ DIRECT SCF METHOD SKIPS INTEGRAL STORAGE ON DISK.
+ DIRECT TRANSFORMATION SKIPS AO INTEGRAL STORAGE ON DISK.
+  ...... END OF TWO-ELECTRON INTEGRALS .....
+ STEP CPU TIME =     0.01 TOTAL CPU TIME =          4.3 (      0.1 MIN)
+ TOTAL WALL CLOCK TIME=          5.0 SECONDS, CPU UTILIZATION IS    85.52%
+ DDI: Creating Array [0] - 189225 x 1326 = 250912350 words.
+ DDI: Creating Array [1] - 318 x 67626 = 21505068 words.
+ DDI: Creating Array [2] - 1326 x 1326 = 1758276 words.
+ DDI: Creating Array [3] - 94830 x 1326 = 125744580 words.
+
+          -----------------
+          MCSCF CALCULATION
+          -----------------
+
+ ----- NUCLEAR ENERGY ----- =       825.5537622493
+
+     -------------------------------------------------
+     GMC-PT/GMC-QDPT or general MCSCF input parameters
+     -------------------------------------------------
+ # of frozen core orbs. =        19 ->         0
+ # of doubly occ. orbs. =        24
+ # of active      orbs. =         8
+ # of virtual     orbs. =       318
+ # of active electrons  =        10
+ # of states in CI      =        17
+ Highest state in CI    =        17
+ kstate =  1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+ avecoe =  0.059 0.059 0.059 0.059 0.059 0.059 0.059 0.059 0.059 0.059
+           0.059 0.059 0.059 0.059 0.059 0.059 0.059
+ State symmetry           = A           
+ Assigned symmetry number = 1
+
+ <<<Act. MO sym.: 11111111
+
+ <<<Division of 1-ext.:  0 0 0 0 0 0 0 0 0 0
+ <<<Division of 2-ext.:  0 1 2 3 4 5 6 7 8 9
+
+ *** Reference space
+
+ Reference type: ORMAS (= Occupation restricted multiple active space)
+ # of orbitals          =  8
+ # of minimum electrons = 10
+ # of maximum electrons = 10
+ State symmetry    =    1 (input)
+ 2*Sz              =    - (general)
+ Spin multiplicity =    - (general)
+ Dimension of reference space =      8008  (from      8008 walks)
+
+ <<<Ionized spaces for Ref-CI:
+      0:         8008 /   -1-0:        11440 /  0-1-0:         8008
+
+ EVALUATING EXCHANGE INTEGRALS FOR DIRECT INTEGRAL TRANSFORMATION
+ SCHWARZ INEQUALITY OVERHEAD:     90407 INTEGRALS, T=        0.04
+
+     --------------------------------------------
+     PARTIAL TWO ELECTRON INTEGRAL TRANSFORMATION
+     --------------------------------------------
+
+ NUMBER OF CORE MOLECULAR ORBITALS     =   43
+ NUMBER OF OCCUPIED MOLECULAR ORBITALS =   51
+ TOTAL NUMBER OF MOLECULAR ORBITALS    =  369
+ TOTAL NUMBER OF ATOMIC ORBITALS       =  435
+ THRESHOLD FOR KEEPING TRANSFORMED 2E- INTEGRALS = 1.000E-09
+
+ -------------------------------     ------------------------------
+ DISTRIBUTED DATA TRANSFORMATION     PROGRAM WRITTEN BY G. FLETCHER
+ -------------------------------     ------------------------------
+
+ THE DISTRIBUTED MEMORY REQUIRED FOR THIS STEP IS MEMDDI=       400 MWORDS
+ CREATING DISTRIBUTED STORAGE FOR [VIR OCC|VIR OCC] INTEGRALS
+ CREATING DISTRIBUTED STORAGE FOR [VIR OCC|OCC OCC] INTEGRALS
+ CREATING DISTRIBUTED STORAGE FOR [OCC OCC|OCC OCC] INTEGRALS
+ CREATING DISTRIBUTED STORAGE FOR [VIR VIR|OCC OCC] INTEGRALS
+ FOR   10 PROCESSORS, THE REPLICATED MEMORY NEEDED IS    11733063 WORDS.
+ SCHWARZ INEQUALITY OVERHEAD:     90407 INTEGRALS, T=        0.04
+
+      DIRECT 4-INDEX TRANSFORMATION 
+      SCHWARZ INEQUALITY TEST SKIPPED   18211824 INTEGRAL BLOCKS
+ ----- FROZEN CORE ENERGY =     -2633.6076230290
+ ... END OF INTEGRAL TRANSFORMATION ...
+ CPU     0: STEP CPU TIME=   209.20 TOTAL CPU TIME=        213.5 (      3.6 MIN)
+ TOTAL WALL CLOCK TIME=        214.7 SECONDS, CPU UTILIZATION IS    99.44%
+
+     --------------------------------     -----------------------------
+     MCHF NEWTON-RAPHSON OPTIMIZATION     CODE WRITTEN BY MICHEL DUPUIS
+     --------------------------------     -----------------------------
+     PARALLEL VERSION WRITTEN BY G. FLETCHER (ELORET)
+     NASA ADVANCED SUPERCOMPUTING DIVISION, AMES RESEARCH CENTER
+
+ NUMBER OF INDEPENDENT ORBITAL ROTATION PARAMETERS =  8099
+ ..... DONE SOLVING NEWTON-RAPHSON EQUATIONS .....
+ CPU     0: STEP CPU TIME=   754.02 TOTAL CPU TIME=        967.5 (     16.1 MIN)
+ TOTAL WALL CLOCK TIME=       1014.5 SECONDS, CPU UTILIZATION IS    95.37%
+ ..... DONE WITH NTN-RPH ORBITAL ROTATIONS ..... 
+ CPU     0: STEP CPU TIME=     0.15 TOTAL CPU TIME=        967.7 (     16.1 MIN)
+ TOTAL WALL CLOCK TIME=       1014.6 SECONDS, CPU UTILIZATION IS    95.37%
+ MAXIMUM MEMORY USED BY NTN-RPH CODE WAS   1992646 WORDS.
+
+ ITER     TOTAL ENERGY      DEL(E)  LAGRANGIAN ASYMMETRY   SQCDF  MICIT   DAMP
+   1    -1835.207421691 -0.207421691  0.003090   49   16 2.316E-04  1   0.0000
+   2    -1835.207486272 -0.000064581  0.001316   54   45 4.665E-06  1   0.0000
+   3    -1835.207492395 -0.000006123  0.000955   54   45 1.127E-06  1   0.0000
+   4    -1835.207495508 -0.000003114  0.000693   54   45 6.659E-07  1   0.0000
+   5    -1835.207497174 -0.000001666  0.000506   55   46 3.765E-07  1   0.0000
+   6    -1835.207498068 -0.000000894  0.000370   55   46 2.063E-07  1   0.0000
+   7    -1835.207498547 -0.000000479  0.000270   55   46 1.116E-07  1   0.0000
+   8    -1835.207498804 -0.000000257  0.000198   54   45 6.003E-08  1   0.0000
+   9    -1835.207498942 -0.000000138  0.000145   54   45 3.223E-08  1   0.0000
+ *** Error stop in sub.os_davidson_method ***
+ # of iterations reached mxiter.
+ mxiter =       200
+ Approximate vectors were stored in file.
+
+ *** Main characters of lowest100 approximate CI wavefunctions ***
+
+ State #    1  Energy =   -1835.392133535  S =  0.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      231    0.947732  1111100011111000
+
+ State #    2  Energy =   -1835.211521362  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      234    0.243213  1101110011111000
+      235    0.251851  1011110011111000
+      736   -0.243213  1111100011011100
+      820   -0.251851  1111100010111100
+      934   -0.549272  1101100011111100
+      935   -0.569355  1011100011111100
+
+ State #    3  Energy =   -1835.211521362  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      139   -0.440959  1111110011011000
+      175   -0.456743  1111110010111000
+      234    0.297484  1101110011111000
+      235    0.308286  1011110011111000
+      736   -0.297484  1111100011011100
+      820   -0.308286  1111100010111100
+      934    0.225397  1101100011111100
+      935    0.233855  1011100011111100
+
+ State #    4  Energy =   -1835.211521362  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      139    0.475323  1111110011011000
+      175    0.491974  1111110010111000
+      234    0.251999  1101110011111000
+      235    0.261132  1011110011111000
+      736   -0.251999  1111100011011100
+      820   -0.261132  1111100010111100
+      934    0.263824  1101100011111100
+      935    0.273246  1011100011111100
+
+ State #    5  Energy =   -1835.211521362  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      139    0.655386  1111110011011000
+      175   -0.633009  1111110010111000
+
+ State #    6  Energy =   -1835.211521362  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      234    0.458338  1101110011111000
+      235   -0.442381  1011110011111000
+      736   -0.458338  1111100011011100
+      820    0.442381  1111100010111100
+
+ State #    7  Energy =   -1835.211521362  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      934    0.630816  1101100011111100
+      935   -0.608364  1011100011111100
+
+ State #    8  Energy =   -1835.198792889  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       39    0.637757  1111110011110000
+       94    0.203911  1111110011101000
+      232    0.368155  1111010011111000
+      451   -0.368155  1111100011110100
+      932   -0.380172  1111000011111100
+
+ State #    9  Energy =   -1835.198792889  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       39    0.533905  1111110011110000
+      232   -0.513506  1111010011111000
+      451    0.513506  1111100011110100
+
+ State #   10  Energy =   -1835.198792889  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       39   -0.361273  1111110011110000
+      932   -0.817525  1111000011111100
+      933   -0.260791  1110100011111100
+
+ State #   11  Energy =   -1835.198792889  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       94   -0.578801  1111110011101000
+      233    0.249717  1110110011111000
+      616   -0.249717  1111100011101100
+      933    0.602421  1110100011111100
+
+ State #   12  Energy =   -1835.198792889  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      233    0.522661  1110110011111000
+      616   -0.522661  1111100011101100
+      933   -0.517854  1110100011111100
+
+ State #   13  Energy =   -1835.198792889  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       39   -0.221550  1111110011110000
+       94    0.692535  1111110011101000
+      233    0.274913  1110110011111000
+      616   -0.274913  1111100011101100
+      933    0.437770  1110100011111100
+
+ State #   14  Energy =   -1835.178590017  S =  0.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      235   -0.664811  1011110011111000
+      820   -0.664811  1111100010111100
+
+ State #   15  Energy =   -1835.178590017  S =  0.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      234   -0.664811  1101110011111000
+      736   -0.664811  1111100011011100
+
+ State #   16  Energy =   -1835.158142099  S =  0.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      232    0.674124  1111010011111000
+      451    0.674124  1111100011110100
+
+ State #   17  Energy =   -1835.158142099  S =  0.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      233    0.674124  1110110011111000
+      616    0.674124  1111100011101100
+
+ State #   18  Energy =   -1835.149592280  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       40    0.264241  1111101011110000
+      101   -0.264241  1111100111101000
+     1647   -0.574784  1111000011111010
+     3650    0.574784  1110100011111001
+
+ State #   19  Energy =   -1835.149592280  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       40    0.507792  1111101011110000
+      101   -0.507792  1111100111101000
+      237   -0.313129  1111001011111000
+      253    0.313129  1110100111111000
+     1166    0.313129  1111100011110010
+     3333   -0.313129  1111100011101001
+
+ State #   20  Energy =   -1835.149592280  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       40   -0.358940  1111101011110000
+      101    0.358940  1111100111101000
+      237   -0.319453  1111001011111000
+      253    0.319453  1110100111111000
+     1166    0.319453  1111100011110010
+     1647   -0.351532  1111000011111010
+     3333   -0.319453  1111100011101001
+     3650    0.351532  1110100011111001
+
+ State #   21  Energy =   -1835.115644690  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+     1647   -0.676541  1111000011111010
+     3650   -0.676541  1110100011111001
+
+ State #   22  Energy =   -1835.115644690  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       40   -0.578182  1111101011110000
+      101   -0.578182  1111100111101000
+      237   -0.248593  1111001011111000
+      253   -0.248593  1110100111111000
+     1166    0.248593  1111100011110010
+     3333    0.248593  1111100011101001
+
+ State #   23  Energy =   -1835.115644690  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       40    0.351363  1111101011110000
+      101    0.351363  1111100111101000
+      237   -0.408869  1111001011111000
+      253   -0.408869  1110100111111000
+     1166    0.408869  1111100011110010
+     3333    0.408869  1111100011101001
+
+ State #   24  Energy =   -1835.115644689  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       46   -0.416648  1111100111110000
+       95    0.416648  1111101011101000
+     1648   -0.529664  1110100011111010
+     3649    0.529664  1111000011111001
+
+ State #   25  Energy =   -1835.115644689  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       46    0.295030  1111100111110000
+       95   -0.295030  1111101011101000
+      238    0.414883  1110101011111000
+      252   -0.414883  1111000111111000
+     1331   -0.414883  1111100011101010
+     3168    0.414883  1111100011110001
+
+ State #   26  Energy =   -1835.115644689  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       46    0.444244  1111100111110000
+       95   -0.444244  1111101011101000
+      238   -0.234394  1110101011111000
+      252    0.234394  1111000111111000
+     1331    0.234394  1111100011101010
+     1648   -0.388275  1110100011111010
+     3168   -0.234394  1111100011110001
+     3649    0.388275  1111000011111001
+
+ State #   27  Energy =   -1835.088973583  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       46    0.454537  1111100111110000
+       95    0.454537  1111101011101000
+     1648    0.492788  1110100011111010
+     3649    0.492788  1111000011111001
+
+ State #   28  Energy =   -1835.088973583  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       46   -0.501843  1111100111110000
+       95   -0.501843  1111101011101000
+     1648    0.446954  1110100011111010
+     3649    0.446954  1111000011111001
+
+ State #   29  Energy =   -1835.088973583  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      238    0.470426  1110101011111000
+      252    0.470426  1111000111111000
+     1331   -0.470426  1111100011101010
+     3168   -0.470426  1111100011110001
+
+ State #   30  Energy =   -1835.083027495  S =  0.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      238    0.482943  1110101011111000
+      252    0.482943  1111000111111000
+     1331    0.482943  1111100011101010
+     3168    0.482943  1111100011110001
+
+ State #   31  Energy =   -1835.078151067  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      240    0.470837  1011101011111000
+      254    0.470837  1101100111111000
+     1535   -0.470837  1111100010111010
+     3453   -0.470837  1111100011011001
+
+ State #   32  Energy =   -1835.078151067  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      146    0.514125  1111100111011000
+      176    0.514125  1111101010111000
+     1650   -0.424853  1011100011111010
+     3651   -0.424853  1101100011111001
+
+ State #   33  Energy =   -1835.078151067  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      146    0.429043  1111100111011000
+      176    0.429043  1111101010111000
+     1650    0.513358  1011100011111010
+     3651    0.513358  1101100011111001
+
+ State #   34  Energy =   -1835.074380969  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      240    0.335636  1011101011111000
+      254   -0.335636  1101100111111000
+     1535   -0.335636  1111100010111010
+     1650    0.432279  1011100011111010
+     3453    0.335636  1111100011011001
+     3651   -0.432279  1101100011111001
+
+ State #   35  Energy =   -1835.074380969  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      146   -0.430381  1111100111011000
+      176    0.430381  1111101010111000
+     1650   -0.443959  1011100011111010
+     3651    0.443959  1101100011111001
+
+ State #   36  Energy =   -1835.074380969  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      146   -0.476377  1111100111011000
+      176    0.476377  1111101010111000
+      240   -0.280201  1011101011111000
+      254    0.280201  1101100111111000
+     1535    0.280201  1111100010111010
+     1650    0.242444  1011100011111010
+     3453   -0.280201  1111100011011001
+     3651   -0.242444  1101100011111001
+
+ State #   37  Energy =   -1835.074380968  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      140   -0.482791  1111101011011000
+      182   -0.482790  1111100110111000
+     1649    0.418846  1101100011111010
+     3652    0.418846  1011100011111001
+
+ State #   38  Energy =   -1835.074380968  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      140   -0.427741  1111101011011000
+      182   -0.427741  1111100110111000
+     1649   -0.508491  1101100011111010
+     3652   -0.508491  1011100011111001
+
+ State #   39  Energy =   -1835.074380968  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      239    0.451275  1101101011111000
+      255    0.451275  1011100111111000
+     1451   -0.451275  1111100011011010
+     3537   -0.451275  1111100010111001
+
+ State #   40  Energy =   -1835.073221109  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      140    0.637770  1111101011011000
+      182   -0.637770  1111100110111000
+
+ State #   41  Energy =   -1835.073221109  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      239    0.338353  1101101011111000
+      255   -0.338353  1011100111111000
+     1451   -0.338353  1111100011011010
+     1649   -0.442222  1101100011111010
+     3537    0.338353  1111100010111001
+     3652    0.442222  1011100011111001
+
+ State #   42  Energy =   -1835.073221109  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      239    0.328966  1101101011111000
+      255   -0.328966  1011100111111000
+     1451   -0.328966  1111100011011010
+     1649    0.459698  1101100011111010
+     3537    0.328966  1111100010111001
+     3652   -0.459698  1011100011111001
+
+ State #   43  Energy =   -1835.064283581  S =  0.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      240    0.473641  1011101011111000
+      254    0.473641  1101100111111000
+     1535    0.473641  1111100010111010
+     3453    0.473641  1111100011011001
+
+ State #   44  Energy =   -1835.059501140  S =  0.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      237   -0.256414  1111001011111000
+      238    0.408428  1110101011111000
+      252   -0.408428  1111000111111000
+      253   -0.256414  1110100111111000
+     1166   -0.256414  1111100011110010
+     1331    0.408428  1111100011101010
+     3168   -0.408428  1111100011110001
+     3333   -0.256414  1111100011101001
+
+ State #   45  Energy =   -1835.059501139  S =  0.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      237   -0.408428  1111001011111000
+      238   -0.256414  1110101011111000
+      252    0.256414  1111000111111000
+      253   -0.408428  1110100111111000
+     1166   -0.408428  1111100011110010
+     1331   -0.256414  1111100011101010
+     3168    0.256414  1111100011110001
+     3333   -0.408428  1111100011101001
+
+ State #   46  Energy =   -1835.054967440  S =  0.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      239   -0.471790  1101101011111000
+      255    0.471790  1011100111111000
+     1451   -0.471790  1111100011011010
+     3537    0.471790  1111100010111001
+
+ State #   47  Energy =   -1835.040605407  S =  0.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      240   -0.460364  1011101011111000
+      254    0.460364  1101100111111000
+     1535   -0.460364  1111100010111010
+     3453    0.460364  1111100011011001
+
+ State #   48  Energy =   -1835.040605407  S =  0.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      239    0.460364  1101101011111000
+      255    0.460364  1011100111111000
+     1451    0.460364  1111100011011010
+     3537    0.460364  1111100010111001
+
+ State #   49  Energy =   -1834.999729813  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+
+ State #   50  Energy =   -1834.999729813  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       14    0.335606  1111111011010000
+       23    0.306676  1111111010110000
+       70   -0.324772  1111110111001000
+       79   -0.321113  1111110110101000
+
+ State #   51  Energy =   -1834.999729813  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+
+ State #   52  Energy =   -1834.999729813  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       14   -0.363217  1111111011010000
+       23   -0.331791  1111111010110000
+       70    0.351491  1111110111001000
+       79    0.347411  1111110110101000
+
+ State #   53  Energy =   -1834.999729813  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+     2949   -0.429201  1101000011111110
+     2950   -0.391870  1011000011111110
+     4954    0.415343  1100100011111101
+     4955    0.410320  1010100011111101
+
+ State #   54  Energy =   -1834.999729813  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+     2949   -0.225523  1101000011111110
+     2950    0.228069  1011000011111110
+     4954    0.215384  1100100011111101
+     4955   -0.235677  1010100011111101
+
+ State #   55  Energy =   -1834.999729813  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+
+ State #   56  Energy =   -1834.999729813  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+     2949    0.285641  1101000011111110
+     2950   -0.289138  1011000011111110
+     4954   -0.272797  1100100011111101
+     4955    0.298784  1010100011111101
+
+ State #   57  Energy =   -1834.999729813  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+     2949   -0.279447  1101000011111110
+     2950    0.282958  1011000011111110
+     4954    0.266882  1100100011111101
+     4955   -0.292399  1010100011111101
+
+ State #   58  Energy =   -1834.999729813  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       14   -0.433546  1111111011010000
+       23    0.438499  1111111010110000
+       70    0.414054  1111110111001000
+       79   -0.453127  1111110110101000
+
+ State #   59  Energy =   -1834.987303573  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      680   -0.539260  1111110010011100
+      944   -0.773034  1001110011111100
+
+ State #   60  Energy =   -1834.987303573  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      680    0.771547  1111110010011100
+      944   -0.537229  1001110011111100
+
+ State #   61  Energy =   -1834.987303573  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      740    0.664745  1011110011011100
+      823   -0.664745  1101110010111100
+
+ State #   62  Energy =   -1834.982731893  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+        4   -0.513529  1111111011100000
+        5   -0.255555  1111110111100000
+     2948   -0.677724  1110000011111110
+     4950   -0.337267  1110000011111101
+
+ State #   63  Energy =   -1834.982731893  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+        4    0.680214  1111111011100000
+        5    0.338566  1111110111100000
+     2948   -0.515731  1110000011111110
+     4950   -0.256635  1110000011111101
+
+ State #   64  Energy =   -1834.982731893  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      242    0.347981  1110011011111000
+      458   -0.347981  1110101011110100
+      622    0.347981  1111001011101100
+     1168    0.347981  1110110011110010
+     1332   -0.347981  1111010011101010
+     1826    0.347981  1111100011100110
+
+ State #   65  Energy =   -1834.982731893  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       42    0.404765  1110111011110000
+       48    0.201414  1110110111110000
+       96   -0.404765  1111011011101000
+      102   -0.201414  1111010111101000
+      315    0.404765  1111101011100100
+      321    0.201414  1111100111100100
+     1029   -0.404765  1111110011100010
+     3031   -0.201414  1111110011100001
+
+ State #   66  Energy =   -1834.982731893  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      947   -0.405358  1110001011111100
+      967   -0.201781  1110000111111100
+     1652    0.405358  1110010011111010
+     2143   -0.405358  1110100011110110
+     2472    0.405358  1111000011101110
+     3654    0.201781  1110010011111001
+     4145   -0.201781  1110100011110101
+     4474    0.201781  1111000011101101
+
+ State #   67  Energy =   -1834.982731893  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+        4    0.384309  1111111011100000
+        5   -0.772157  1111110111100000
+     4950   -0.364829  1110000011111101
+
+ State #   68  Energy =   -1834.982731893  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+        5   -0.360646  1111110111100000
+     2948   -0.378342  1110000011111110
+     4950    0.760238  1110000011111101
+
+ State #   69  Energy =   -1834.982731893  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      257   -0.346236  1110010111111000
+      473    0.346236  1110100111110100
+      637   -0.346236  1111000111101100
+     3170   -0.346236  1110110011110001
+     3334    0.346236  1111010011101001
+     3828   -0.346236  1111100011100101
+
+ State #   70  Energy =   -1834.982731893  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       48   -0.327630  1110110111110000
+      102    0.327630  1111010111101000
+      321   -0.327630  1111100111100100
+      967    0.264630  1110000111111100
+     3031    0.327630  1111110011100001
+     3654   -0.264630  1110010011111001
+     4145    0.264630  1110100011110101
+     4474   -0.264630  1111000011101101
+
+ State #   71  Energy =   -1834.982731893  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       48   -0.266954  1110110111110000
+      102    0.266954  1111010111101000
+      321   -0.266954  1111100111100100
+      967   -0.330592  1110000111111100
+     3031    0.266954  1111110011100001
+     3654    0.330592  1110010011111001
+     4145   -0.330592  1110100011110101
+     4474    0.330592  1111000011101101
+
+ State #   72  Energy =   -1834.969700326  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       49   -0.208119  1101110111110000
+      147    0.208119  1111010111011000
+      366   -0.208119  1111100111010100
+     3076    0.208119  1111110011010001
+
+ State #   73  Energy =   -1834.969700326  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+
+ State #   74  Energy =   -1834.969700326  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      258   -0.203114  1101010111111000
+      474    0.203114  1101100111110100
+      757   -0.203114  1111000111011100
+     3171   -0.203114  1101110011110001
+     3454    0.203114  1111010011011001
+     3948   -0.203114  1111100011010101
+
+ State #   75  Energy =   -1834.969700326  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       15    0.265412  1111110111010000
+       23    0.237938  1111111010110000
+       79    0.212565  1111110110101000
+     2950   -0.421490  1011000011111110
+     2952    0.327873  1100100011111110
+     4951   -0.470165  1101000011111101
+     4955   -0.376548  1010100011111101
+
+ State #   76  Energy =   -1834.969700326  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       15   -0.482412  1111110111010000
+       23   -0.432471  1111111010110000
+       69    0.336416  1111111011001000
+       79   -0.386357  1111110110101000
+     2950   -0.227173  1011000011111110
+     4951   -0.253411  1101000011111101
+     4955   -0.202952  1010100011111101
+
+ State #   77  Energy =   -1834.969700326  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+     2949    0.389181  1101000011111110
+     2953    0.485939  1010100011111110
+     4952   -0.338871  1011000011111101
+     4954    0.435629  1100100011111101
+
+ State #   78  Energy =   -1834.969700326  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       14   -0.280905  1111111011010000
+       24    0.244596  1111110110110000
+       70   -0.314434  1111110111001000
+       78   -0.350743  1111111010101000
+     2953    0.246198  1010100011111110
+     4954    0.220710  1100100011111101
+
+ State #   79  Energy =   -1834.969700326  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      948   -0.213285  1101001011111100
+      952   -0.266311  1010101011111100
+      971   -0.238741  1100100111111100
+     1653    0.213285  1101010011111010
+     1657    0.266311  1010110011111010
+     2144   -0.213285  1101100011110110
+     2475   -0.266311  1011100011101110
+     2682    0.213285  1111000011011110
+     2809    0.266311  1110100010111110
+     3658    0.238741  1100110011111001
+     4476   -0.238741  1101100011101101
+     4685    0.238741  1110100011011101
+
+ State #   80  Energy =   -1834.969700326  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       43    0.214141  1101111011110000
+       99    0.267380  1011111011101000
+      104    0.239698  1101110111101000
+      141   -0.214141  1111011011011000
+      148   -0.239698  1110110111011000
+      178   -0.267380  1110111010111000
+      360    0.214141  1111101011010100
+      531    0.239698  1111100111001100
+      561    0.267380  1111101010101100
+     1074   -0.214141  1111110011010010
+     1275   -0.267380  1111110010101010
+     3241   -0.239698  1111110011001001
+
+ State #   81  Energy =   -1834.969700326  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       14    0.310916  1111111011010000
+       24   -0.270727  1111110110110000
+       70    0.348027  1111110111001000
+       78    0.388216  1111111010101000
+
+ State #   82  Energy =   -1834.960096341  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      949   -0.207551  1011001011111100
+      951   -0.207551  1100101011111100
+      968    0.207551  1101000111111100
+      972   -0.207551  1010100111111100
+     1654    0.207551  1011010011111010
+     1656    0.207551  1100110011111010
+     2145   -0.207551  1011100011110110
+     2474   -0.207551  1101100011101110
+     2683    0.207551  1110100011011110
+     2808    0.207551  1111000010111110
+     3655   -0.207551  1101010011111001
+     3659    0.207551  1010110011111001
+     4146    0.207551  1101100011110101
+     4477   -0.207551  1011100011101101
+     4684   -0.207551  1111000011011101
+     4811    0.207551  1110100010111101
+
+ State #   83  Energy =   -1834.960096341  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+
+ State #   84  Energy =   -1834.960096341  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       44   -0.209706  1011111011110000
+       49    0.209706  1101110111110000
+       98   -0.209706  1101111011101000
+      105   -0.209706  1011110111101000
+      142    0.209706  1110111011011000
+      147   -0.209706  1111010111011000
+      177    0.209706  1111011010111000
+      184    0.209706  1110110110111000
+      366    0.209706  1111100111010100
+      396   -0.209706  1111101010110100
+      525   -0.209706  1111101011001100
+      567   -0.209706  1111100110101100
+     1110    0.209706  1111110010110010
+     1239    0.209706  1111110011001010
+     3076   -0.209706  1111110011010001
+     3277    0.209706  1111110010101001
+
+ State #   85  Energy =   -1834.960096341  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       15   -0.467295  1111110111010000
+       23    0.467295  1111111010110000
+       69    0.467295  1111111011001000
+       79    0.467295  1111110110101000
+
+ State #   86  Energy =   -1834.960096341  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+     2950    0.467445  1011000011111110
+     2952    0.467445  1100100011111110
+     4951   -0.467445  1101000011111101
+     4955    0.467445  1010100011111101
+
+ State #   87  Energy =   -1834.958491160  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       43    0.230238  1101111011110000
+       50    0.230238  1011110111110000
+       99   -0.230238  1011111011101000
+      104    0.230238  1101110111101000
+      141   -0.230238  1111011011011000
+      148   -0.230238  1110110111011000
+      178    0.230238  1110111010111000
+      183   -0.230238  1111010110111000
+      360    0.230238  1111101011010100
+      402    0.230238  1111100110110100
+      531    0.230238  1111100111001100
+      561   -0.230238  1111101010101100
+     1074   -0.230238  1111110011010010
+     1275    0.230238  1111110010101010
+     3112   -0.230238  1111110010110001
+     3241   -0.230238  1111110011001001
+
+ State #   88  Energy =   -1834.958491160  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+
+ State #   89  Energy =   -1834.958491160  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       14    0.297560  1111111011010000
+       24    0.297560  1111110110110000
+       70    0.297560  1111110111001000
+       78   -0.297560  1111111010101000
+
+ State #   90  Energy =   -1834.958491160  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+       14   -0.318906  1111111011010000
+       24   -0.318906  1111110110110000
+       70   -0.318906  1111110111001000
+       78    0.318906  1111111010101000
+
+ State #   91  Energy =   -1834.958491160  S =  2.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+     2949    0.441819  1101000011111110
+     2953   -0.441819  1010100011111110
+     4952    0.441819  1011000011111101
+     4954    0.441819  1100100011111101
+
+ State #   92  Energy =   -1834.958396598  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      359   -0.642362  1111110011010100
+      560   -0.642362  1111110010101100
+
+ State #   93  Energy =   -1834.958396598  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      454    0.457100  1101110011110100
+      620    0.457100  1011110011101100
+      737   -0.457100  1111010011011100
+      822   -0.457100  1110110010111100
+
+ State #   94  Energy =   -1834.958396598  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      938    0.642346  1101010011111100
+      942    0.642346  1010110011111100
+
+ State #   95  Energy =   -1834.954095547  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      395    0.535898  1111110010110100
+      524   -0.535898  1111110011001100
+
+ State #   96  Energy =   -1834.954095547  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      395   -0.254691  1111110010110100
+      455   -0.402034  1011110011110100
+      524    0.254691  1111110011001100
+      619    0.402034  1101110011101100
+      738   -0.402034  1110110011011100
+      821    0.402034  1111010010111100
+
+ State #   97  Energy =   -1834.954095547  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      395    0.220510  1111110010110100
+      524   -0.220510  1111110011001100
+      939   -0.593067  1011010011111100
+      941    0.593066  1100110011111100
+
+ State #   98  Energy =   -1834.950454540  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      454    0.404809  1101110011110100
+      460   -0.235773  1011101011110100
+      620   -0.404809  1011110011101100
+      640    0.210208  1011100111101100
+      737   -0.404809  1111010011011100
+      822    0.404809  1110110010111100
+     1536    0.235773  1111010010111010
+     3539   -0.210208  1110110010111001
+
+ State #   99  Energy =   -1834.950454540  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      359    0.320304  1111110011010100
+      560   -0.320304  1111110010101100
+      938   -0.474604  1101010011111100
+      942    0.474604  1010110011111100
+
+ State #  100  Energy =   -1834.950454540  S =  1.000
+
+      Det      Coef    Occupancy (Ignoring core)
+      ---      ----    --------- --------- -----
+      359   -0.475044  1111110011010100
+      560    0.475044  1111110010101100
+      938   -0.320176  1101010011111100
+      942    0.320176  1010110011111100
+
+ *** Residues in the previous cycle ***
+             1            2            3            4            5
+  1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00
+             6            7            8            9           10
+  1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00
+            11           12           13           14           15
+  1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00
+            16           17           18           19           20
+  1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00
+            21           22           23           24           25
+  1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00
+            26           27           28           29           30
+  1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00
+            31           32           33           34           35
+  1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00
+            36           37           38           39           40
+  1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00
+            41           42           43           44           45
+  1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00
+            46           47           48           49           50
+  1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00
+            51           52           53           54           55
+  1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00
+            56           57           58           59           60
+  1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00
+            61           62           63           64           65
+  1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00
+            66           67           68           69           70
+  1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00
+            71           72           73           74           75
+  1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00
+            76           77           78           79           80
+  1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00
+            81           82           83           84           85
+  1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00
+            86           87           88           89           90
+  1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00 1.000000D+00
+            91           92           93           94           95
+  1.000000D+00 1.189530D-10 1.363490D-10 2.528298D-10 2.869696D-10
+            96           97           98           99          100
+  1.831175D-10 1.013001D-10 1.118356D-08 4.025140D-10 1.928533D-10
+ EXECUTION OF GAMESS TERMINATED -ABNORMALLY- AT Fri Mar 29 02:54:24 2024
+             16142833  WORDS OF DYNAMIC MEMORY USED
+ CPU     0: STEP CPU TIME= 10002.62 TOTAL CPU TIME=      10970.3 (    182.8 MIN)
+ TOTAL WALL CLOCK TIME=      11540.9 SECONDS, CPU UTILIZATION IS    95.06%
+ DDI Process 0: error code 911
+ ddikick.x: application process 0 quit unexpectedly.
+ ddikick.x: Fatal error detected.
+ The error is most likely to be in the application, so check for
+ input errors, disk space, memory needs, application bugs, etc.
+ ddikick.x will now clean up all processes, and exit...
+ DDI Process 1: terminated upon request.
+ DDI Process 3: terminated upon request.
+ DDI Process 6: terminated upon request.
+ DDI Process 4: terminated upon request.
+ DDI Process 5: terminated upon request.
+ DDI Process 2: terminated upon request.
+ DDI Process 8: terminated upon request.
+ DDI Process 7: terminated upon request.
+ DDI Process 9: terminated upon request.
+ ddikick.x: Sending kill signal to DDI processes.
+ ddikick.x: Execution terminated due to error(s).
+unset echo
+----- accounting info -----
+Files used on the master node io003 were:
+-rwxr-xr-x 1 bjb2chen nooijen  2603595 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F05*
+-rw-r--r-- 1 bjb2chen nooijen   546128 Mar 29 02:36 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F09
+-rw-r--r-- 1 bjb2chen nooijen 25848800 Mar 29 02:36 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F10
+-rw-r--r-- 1 bjb2chen nooijen   250632 Mar 29 02:33 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F15
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F16
+-rw-r--r-- 1 bjb2chen nooijen    64072 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F70
+-rw-r--r-- 1 bjb2chen nooijen    64072 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F70.001
+-rw-r--r-- 1 bjb2chen nooijen    64072 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F70.002
+-rw-r--r-- 1 bjb2chen nooijen    64072 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F70.003
+-rw-r--r-- 1 bjb2chen nooijen    64072 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F70.004
+-rw-r--r-- 1 bjb2chen nooijen    64072 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F70.005
+-rw-r--r-- 1 bjb2chen nooijen    64072 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F70.006
+-rw-r--r-- 1 bjb2chen nooijen    64072 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F70.007
+-rw-r--r-- 1 bjb2chen nooijen    64072 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F70.008
+-rw-r--r-- 1 bjb2chen nooijen    64072 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F70.009
+-rw-r--r-- 1 bjb2chen nooijen    64072 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F71
+-rw-r--r-- 1 bjb2chen nooijen    64072 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F71.001
+-rw-r--r-- 1 bjb2chen nooijen    64072 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F71.002
+-rw-r--r-- 1 bjb2chen nooijen    64072 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F71.003
+-rw-r--r-- 1 bjb2chen nooijen    64072 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F71.004
+-rw-r--r-- 1 bjb2chen nooijen    64072 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F71.005
+-rw-r--r-- 1 bjb2chen nooijen    64072 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F71.006
+-rw-r--r-- 1 bjb2chen nooijen    64072 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F71.007
+-rw-r--r-- 1 bjb2chen nooijen    64072 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F71.008
+-rw-r--r-- 1 bjb2chen nooijen    64072 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F71.009
+-rw-r--r-- 1 bjb2chen nooijen   128136 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F72
+-rw-r--r-- 1 bjb2chen nooijen   128136 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F72.001
+-rw-r--r-- 1 bjb2chen nooijen   128136 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F72.002
+-rw-r--r-- 1 bjb2chen nooijen   128136 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F72.003
+-rw-r--r-- 1 bjb2chen nooijen   128136 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F72.004
+-rw-r--r-- 1 bjb2chen nooijen   128136 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F72.005
+-rw-r--r-- 1 bjb2chen nooijen   128136 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F72.006
+-rw-r--r-- 1 bjb2chen nooijen   128136 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F72.007
+-rw-r--r-- 1 bjb2chen nooijen   128136 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F72.008
+-rw-r--r-- 1 bjb2chen nooijen   128136 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F72.009
+-rw-r--r-- 1 bjb2chen nooijen   128136 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F73
+-rw-r--r-- 1 bjb2chen nooijen   128136 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F73.001
+-rw-r--r-- 1 bjb2chen nooijen   128136 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F73.002
+-rw-r--r-- 1 bjb2chen nooijen   128136 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F73.003
+-rw-r--r-- 1 bjb2chen nooijen   128136 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F73.004
+-rw-r--r-- 1 bjb2chen nooijen   128136 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F73.005
+-rw-r--r-- 1 bjb2chen nooijen   128136 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F73.006
+-rw-r--r-- 1 bjb2chen nooijen   128136 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F73.007
+-rw-r--r-- 1 bjb2chen nooijen   128136 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F73.008
+-rw-r--r-- 1 bjb2chen nooijen   128136 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F73.009
+-rw-r--r-- 1 bjb2chen nooijen  1527240 Mar 28 23:45 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F74
+-rw-r--r-- 1 bjb2chen nooijen  1521576 Mar 28 23:45 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F74.001
+-rw-r--r-- 1 bjb2chen nooijen  1523976 Mar 28 23:45 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F74.002
+-rw-r--r-- 1 bjb2chen nooijen  1523400 Mar 28 23:45 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F74.003
+-rw-r--r-- 1 bjb2chen nooijen  1526184 Mar 28 23:45 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F74.004
+-rw-r--r-- 1 bjb2chen nooijen  1527336 Mar 28 23:45 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F74.005
+-rw-r--r-- 1 bjb2chen nooijen  1522152 Mar 28 23:45 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F74.006
+-rw-r--r-- 1 bjb2chen nooijen  1524552 Mar 28 23:45 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F74.007
+-rw-r--r-- 1 bjb2chen nooijen  1524184 Mar 28 23:45 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F74.008
+-rw-r--r-- 1 bjb2chen nooijen  1526872 Mar 28 23:45 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F74.009
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F75
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F75.001
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F75.002
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F75.003
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F75.004
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F75.005
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F75.006
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F75.007
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F75.008
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F75.009
+-rw-r--r-- 1 bjb2chen nooijen  6406408 Mar 29 02:54 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F76
+-rw-r--r-- 1 bjb2chen nooijen  6406408 Mar 29 02:54 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F76.001
+-rw-r--r-- 1 bjb2chen nooijen  6406408 Mar 29 02:54 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F76.002
+-rw-r--r-- 1 bjb2chen nooijen  6406408 Mar 29 02:54 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F76.003
+-rw-r--r-- 1 bjb2chen nooijen  6406408 Mar 29 02:54 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F76.004
+-rw-r--r-- 1 bjb2chen nooijen  6406408 Mar 29 02:54 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F76.005
+-rw-r--r-- 1 bjb2chen nooijen  6406408 Mar 29 02:54 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F76.006
+-rw-r--r-- 1 bjb2chen nooijen  6406408 Mar 29 02:54 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F76.007
+-rw-r--r-- 1 bjb2chen nooijen  6406408 Mar 29 02:54 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F76.008
+-rw-r--r-- 1 bjb2chen nooijen  6406408 Mar 29 02:54 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F76.009
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F77
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F77.001
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F77.002
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F77.003
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F77.004
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F77.005
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F77.006
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F77.007
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F77.008
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F77.009
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F78
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F78.001
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F78.002
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F78.003
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F78.004
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F78.005
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F78.006
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F78.007
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F78.008
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F78.009
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F79
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F79.001
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F79.002
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F79.003
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F79.004
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F79.005
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F79.006
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F79.007
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F79.008
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F79.009
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F80
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F80.001
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F80.002
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F80.003
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F80.004
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F80.005
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F80.006
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F80.007
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F80.008
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F80.009
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F81
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F81.001
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F81.002
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F81.003
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F81.004
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F81.005
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F81.006
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F81.007
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F81.008
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F81.009
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F82
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F82.001
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F82.002
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F82.003
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F82.004
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F82.005
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F82.006
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F82.007
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F82.008
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F82.009
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F83
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F83.001
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F83.002
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F83.003
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F83.004
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F83.005
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F83.006
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F83.007
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F83.008
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F83.009
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F84
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F84.001
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F84.002
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F84.003
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F84.004
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F84.005
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F84.006
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F84.007
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F84.008
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F84.009
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F85
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F85.001
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F85.002
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F85.003
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F85.004
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F85.005
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F85.006
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F85.007
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F85.008
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F85.009
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F86
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F86.001
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F86.002
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F86.003
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F86.004
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F86.005
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F86.006
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F86.007
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F86.008
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F86.009
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F87
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F87.001
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F87.002
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F87.003
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F87.004
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F87.005
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F87.006
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F87.007
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F87.008
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F87.009
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F88
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F88.001
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F88.002
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F88.003
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F88.004
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F88.005
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F88.006
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F88.007
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F88.008
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F88.009
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F89
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F89.001
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F89.002
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F89.003
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F89.004
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F89.005
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F89.006
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F89.007
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F89.008
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F89.009
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F90
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F90.001
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F90.002
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F90.003
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F90.004
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F90.005
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F90.006
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F90.007
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F90.008
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F90.009
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F91
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F91.001
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F91.002
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F91.003
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F91.004
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F91.005
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F91.006
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F91.007
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F91.008
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F91.009
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F92
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F92.001
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F92.002
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F92.003
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F92.004
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F92.005
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F92.006
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F92.007
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F92.008
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F92.009
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F93
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F93.001
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F93.002
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F93.003
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F93.004
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F93.005
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F93.006
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F93.007
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F93.008
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F93.009
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F94
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F94.001
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F94.002
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F94.003
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F94.004
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F94.005
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F94.006
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F94.007
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F94.008
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F94.009
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F95
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F95.001
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F95.002
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F95.003
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F95.004
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F95.005
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F95.006
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F95.007
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F95.008
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F95.009
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F96
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F96.001
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F96.002
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F96.003
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F96.004
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F96.005
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F96.006
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F96.007
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F96.008
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F96.009
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F97
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F97.001
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F97.002
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F97.003
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F97.004
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F97.005
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F97.006
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F97.007
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F97.008
+-rw-r--r-- 1 bjb2chen nooijen        0 Mar 28 23:42 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F97.009
+-rw-r--r-- 1 bjb2chen nooijen    64072 Mar 29 02:54 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F98
+-rw-r--r-- 1 bjb2chen nooijen    64072 Mar 29 02:54 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F98.001
+-rw-r--r-- 1 bjb2chen nooijen    64072 Mar 29 02:54 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F98.002
+-rw-r--r-- 1 bjb2chen nooijen    64072 Mar 29 02:54 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F98.003
+-rw-r--r-- 1 bjb2chen nooijen    64072 Mar 29 02:54 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F98.004
+-rw-r--r-- 1 bjb2chen nooijen    64072 Mar 29 02:54 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F98.005
+-rw-r--r-- 1 bjb2chen nooijen    64072 Mar 29 02:54 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F98.006
+-rw-r--r-- 1 bjb2chen nooijen    64072 Mar 29 02:54 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F98.007
+-rw-r--r-- 1 bjb2chen nooijen    64072 Mar 29 02:54 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F98.008
+-rw-r--r-- 1 bjb2chen nooijen    64072 Mar 29 02:54 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F98.009
+-rw-r--r-- 1 bjb2chen nooijen   417112 Mar 29 02:54 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F99
+-rw-r--r-- 1 bjb2chen nooijen   417112 Mar 29 02:54 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F99.001
+-rw-r--r-- 1 bjb2chen nooijen   417112 Mar 29 02:54 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F99.002
+-rw-r--r-- 1 bjb2chen nooijen   417112 Mar 29 02:54 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F99.003
+-rw-r--r-- 1 bjb2chen nooijen   417112 Mar 29 02:54 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F99.004
+-rw-r--r-- 1 bjb2chen nooijen   417112 Mar 29 02:54 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F99.005
+-rw-r--r-- 1 bjb2chen nooijen   417112 Mar 29 02:54 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F99.006
+-rw-r--r-- 1 bjb2chen nooijen   417112 Mar 29 02:54 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F99.007
+-rw-r--r-- 1 bjb2chen nooijen   417112 Mar 29 02:54 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F99.008
+-rw-r--r-- 1 bjb2chen nooijen   417112 Mar 29 02:54 /home/bjb2chen/gmsscr//FeCO_SPK_gmcpt_C1_mult3_TZ8o10e_17st_knospnt.F99.009
+ls: No match.
+ls: No match.
+ls: No match.
+Fri 29 Mar 2024 02:54:27 AM EDT
+0.186u 0.109s 3:12:24.06 0.0%	0+0k 5088+5360io 0pf+0w
