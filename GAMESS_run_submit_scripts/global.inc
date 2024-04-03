@@ -150,7 +150,7 @@
 ! rpar(n)   : (real) value of nth parameter
 !-----------------------------------------------------------------------
       integer maxpar
-      parameter (maxpar=200000) !PRCS:500000
+      parameter (maxpar=1000000) !PRCS:500000
 
       integer npar
       real*8 rpar(maxpar)
