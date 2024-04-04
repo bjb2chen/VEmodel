@@ -143,9 +143,13 @@ for key, value in ij_map.items():
 # user_root = abspath("/bjb2chen/gamess/vibronics/template_examples/NH3/SOC_9st/SOC_6st")        # format is /user/.../*
 #user_root = abspath("/bjb2chen/gamess/vibronics/template_examples/mar19")        # format is /user/.../*
 user_root = abspath(os.getcwd().replace('/home', '') if '/home' in os.getcwd() else os.getcwd()) # format is /user/.../*
-home_root = abspath(f"/home/{user_root}/home/{project_name}/")
+home_root = abspath(f"/home/{user_root}/{project_name}/")
 work_root = abspath(f"/work/{user_root}/mctdh/{project_name}/")
 
+## COMPUTE CANADA SETTINGS
+#user_root = abspath(os.getcwd().replace('/scratch', '') if '/scratch' in os.getcwd() else os.getcwd())
+#home_root = abspath(f"/scratch/{user_root}/{project_name}/")
+#work_root = abspath(f"/scratch/{user_root}/mctdh/{project_name}/")
 
 # server_flag = (socket.gethostname() == "nlogn") or (socket.gethostname() == "feynman")
 # assert server_flag  # make sure we are on server
