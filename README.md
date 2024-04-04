@@ -18,6 +18,10 @@
 python3 dist_allmodes_pm.py nh3_ccd_mp2_c3v_gh.out
 ```
 
+__nlogn__: change GAMESS submission script path to _/home/bjb2chen/LOCAL/subgam.diab_
+
+__ComputeCanada(Graham)__: change path to _/home/bjb2chen/LOCAL/subgam.mrsftd_ (or contact tzeng@yorku.ca)
+
 Video recording on how to run the diabatization code (assuming you have GAMESS with gmcpt module already): 
 
 - [x] C2v H2O diabatization - [https://www.youtube.com/watch?v=ILLrUSzR3YQ&ab_channel=BennyChen]
