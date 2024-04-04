@@ -235,7 +235,7 @@ def my_subgam(path, **kwargs):
         f"#SBATCH --ntasks={ncpus}\n",
         f"#SBATCH --mem-per-cpu={ngb}G\n",
         f"#SBATCH --time={nhour}:00:00\n",
-        #"#SBATCH --account=def-mnooijen\n," # COMPUTECANADA
+        #"#SBATCH --account=def-mnooijen\n", # COMPUTECANADA
         "\n",
         "cd $SLURM_SUBMIT_DIR\n",
         "\n",
