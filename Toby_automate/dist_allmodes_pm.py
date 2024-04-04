@@ -235,12 +235,14 @@ def my_subgam(path, **kwargs):
         f"#SBATCH --ntasks={ncpus}\n",
         f"#SBATCH --mem-per-cpu={ngb}G\n",
         f"#SBATCH --time={nhour}:00:00\n",
+        #"#SBATCH --account=def-mnooijen\n," # COMPUTECANADA
         "\n",
         "cd $SLURM_SUBMIT_DIR\n",
         "\n",
         "export SLURM_CPUS_PER_TASK\n",
         'mkdir -p /home/$USER/.gamess_ascii_files/$SLURM_JOBID\n',
         f"/home/bjb2chen/LOCAL/runG_diab {input_no_ext}.inp {ncpus} \n",
+        #f"/home/bjb2chen/LOCAL/runG_mrsftd {input_no_ext}.inp {ncpus} \n", # COMPUTECANADA
     ])
 
     with open(f"{input_no_ext}.slurm", "w") as slurm_file:
