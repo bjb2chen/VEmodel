@@ -3304,9 +3304,22 @@ def main(ref_geom_path="ref_structure", ncols=5, **kwargs):
     disp_coord = diabatization(**diabatization_kwargs)
     # turns out we don't actually use the `disp_coord` for anything?
 
-    print("Diabatization successfully modified? If you continue you will do mctdh and fitting")
-
-    breakpoint() 
+    while True:
+        print("\nDiabatization successfully modified.")
+        print("(c) Press 'c' to continue and perform MCTDH and fitting.")
+        print("(q) Press 'q' to quit the program.")
+        
+        user_input = input("Enter your choice: ")
+    
+        if user_input == 'c':
+            print("Performing MCTDH and fitting...")
+            break
+        elif user_input == 'q':
+            print("Exiting the program. Goodbye!")
+            sys.exit()
+        else:
+            print("Invalid choice. Please enter 'c' or 'q'.")
+            
     # -------------------------------------------------------------------------
     op_file_name = "mctdh.op"
     op_path = join("./", op_file_name)
