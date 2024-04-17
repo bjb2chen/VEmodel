@@ -70,6 +70,46 @@ SOC_flag = False
 VECC_flag = True
 
 # -------------------------------------------------------------------------
+#                           Project Paths
+# -------------------------------------------------------------------------
+base_dir = os.getcwd() # pwd
+username = os.getlogin() # $USER
+
+user_root = abspath(base_dir.split(username)[1]) # format is /user/(.../*) <- obtain (this)
+home_root = abspath(f"/home/{username}/{user_root}/{project_name}/")
+work_root = abspath(f"/work/{username}/{user_root}/mctdh/{project_name}/")
+
+## COMPUTE CANADA SETTINGS
+if is_compute_canada:
+    home_root = abspath(f"/scratch/{username}/{user_root}/{project_name}/")
+    work_root = abspath(f"/scratch/{username}/{user_root}/mctdh/{project_name}/")
+
+os.makedirs(work_root, exist_ok=True)  # make sure the root directory exists
+
+# Example user paths:
+# nlogn: '/home/bjb2chen/gamess/vibronics/template_examples/Fe_pentaCO'
+# cedar: '/scratch/bjb2chen/vibronics/8o9e/fastLagrangian/Apr17_SOC_8o9e'
+# narval: '/lustre07/scratch/bjb2chen/vibronics/8o9e/fastLagrangian/Apr15_SOC_TZ'
+
+# -------------------------------------------------------------------------
+#                   path/filename  definitions/conventions
+# -------------------------------------------------------------------------
+# the source files are located in the home directory by convention
+op_file_name = f"{project_name}.op"
+# inp_file_name = f"{project_name}.inp"
+execution_script = "submit.sh"
+
+
+root_path_op_files = home_root
+os.makedirs(root_path_op_files, exist_ok=True)
+
+src_path_original_op_file = join(home_root, op_file_name)
+src_path_execution_script = join('./', execution_script)
+
+# -------------------------------------------------------------------------
+dir_string = "{:s}_PBF{:d}_tf{:.2f}"
+
+# -------------------------------------------------------------------------
 #                       define spectra parameters
 # -------------------------------------------------------------------------
 # pbfs = [10, 30, 40, 50]
@@ -138,47 +178,6 @@ used commonly when accessing upper triangle indices of 2-D arrays/tensors
 reverse_ij_map = {}
 for key, value in ij_map.items():
     reverse_ij_map[value] = key
-
-# -------------------------------------------------------------------------
-#                           Project Paths
-# -------------------------------------------------------------------------
-base_dir = os.getcwd() # pwd
-username = os.getlogin() # $USER
-
-user_root = abspath(base_dir.split(username)[1]) # format is /user/(.../*)
-home_root = abspath(f"/home/{username}/{user_root}/{project_name}/")
-work_root = abspath(f"/work/{username}/{user_root}/mctdh/{project_name}/")
-
-## COMPUTE CANADA SETTINGS
-if is_compute_canada:
-    home_root = abspath(f"/scratch/{username}/{user_root}/{project_name}/")
-    work_root = abspath(f"/scratch/{username}/{user_root}/mctdh/{project_name}/")
-
-os.makedirs(work_root, exist_ok=True)  # make sure the root directory exists
-
-# Example user paths:
-# nlogn: '/home/bjb2chen/gamess/vibronics/template_examples/Fe_pentaCO'
-# cedar: '/scratch/bjb2chen/vibronics/8o9e/fastLagrangian/Apr17_SOC_8o9e'
-# narval: '/lustre07/scratch/bjb2chen/vibronics/8o9e/fastLagrangian/Apr15_SOC_TZ'
-
-# -------------------------------------------------------------------------
-#                   path/filename  definitions/conventions
-# -------------------------------------------------------------------------
-# the source files are located in the home directory by convention
-op_file_name = f"{project_name}.op"
-# inp_file_name = f"{project_name}.inp"
-execution_script = "submit.sh"
-
-
-root_path_op_files = home_root
-os.makedirs(root_path_op_files, exist_ok=True)
-
-src_path_original_op_file = join(home_root, op_file_name)
-src_path_execution_script = join('./', execution_script)
-
-# -------------------------------------------------------------------------
-dir_string = "{:s}_PBF{:d}_tf{:.2f}"
-
 
 # -------------------------------------------------------------------------
 # define constant values
