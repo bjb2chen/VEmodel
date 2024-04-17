@@ -38,6 +38,9 @@ file_name = str(
 )
 print(f"Our {file_name=}")
 
+# Compute settings
+ncpus, ngb, nhour = 2, 4, 24
+
 # -------------------------------------------------------------------------
 filnam = file_name  # alias (remove later)
 # -------------------------------------------------------------------------
@@ -58,14 +61,13 @@ nof_displacements_per_mode = {
 # -------------------------------------------------------------------------
 #                       define all global flags
 # -------------------------------------------------------------------------
-SOC_flag = False
-VECC_flag = True
-
 # if True it doesn't run any subprocess.run() commands
 # instead it simply prints out what the commands would be to the terminal
 dry_run = False
-
+is_compute_canada = True
 suppress_zeros = False
+SOC_flag = False
+VECC_flag = True
 
 # -------------------------------------------------------------------------
 #                       define spectra parameters

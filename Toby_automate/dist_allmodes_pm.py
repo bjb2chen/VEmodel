@@ -26,8 +26,6 @@ import pprint
 # local packages
 import project_parameters as pp
 from project_parameters import *  # eventually remove this
-SOC_flag = pp.SOC_flag  # initialize globally
-VECC_flag = pp.VECC_flag
 # ---------------------------------------------------------------------------------------
 
 
@@ -207,11 +205,6 @@ def my_subgam(path, **kwargs):
     """ Create our own GAMESS job submission script
         Recording the script inside .slurm helps for recordkeeping """
 
-    # if its easier to just change project parameters i would recommend doing
-    # ncpus = pp.ncpus
-    # nhour = pp.nhour
-    # ngb = pp.ngb
-
     # nlogn compute resources
     # bjb2chen@nlogn: sinfo -o "%20N %20f %6c %6m"
     # NODELIST             AVAIL_FEATURES       CPUS   MEMORY
@@ -220,8 +213,8 @@ def my_subgam(path, **kwargs):
     # io[001-002]          intel,westmere,X5670 12     48000 
 
     ncpus = kwargs.get('ncpus', 2)
-    nhour = kwargs.get('nhour', 1)
-    ngb = kwargs.get('ngb', 2)
+    nhour = kwargs.get('nhour', 24)
+    ngb = kwargs.get('ngb', 4)
 
     # Remove the ".inp" extension from the filename
     input_no_ext, extension = splitext(path)
@@ -1016,7 +1009,7 @@ def diabatization(**kwargs):
             if (ref_geom_flag_exists and gamess_calculation_not_run) or pp.dry_run:
                 print(f"Running calculations for {games_filename}")
                 try:
-                    output_filename = my_subgam(games_filename+'.inp', ncpus=3, ngb=4, nhour=24)
+                    output_filename = my_subgam(games_filename+'.inp', ncpus=pp.ncpus, ngb=pp.ngb, nhour=pp.nhour)
                     os_system_wrapper(f"sbatch {output_filename}")
                 except Exception as e:
                     print(f"Error running diabatization calculation: {str(e)}")
@@ -1058,7 +1051,7 @@ def diabatization(**kwargs):
             if (ref_geom_flag_exists and gamess_calculation_not_run) or pp.dry_run:
                 print(f"Running calculations for {games_filename}!")
                 try:
-                    output_filename = my_subgam(games_filename+'.inp', ncpus=3, ngb=4, nhour=24)
+                    output_filename = my_subgam(games_filename+'.inp', ncpus=pp.ncpus, ngb=pp.ngb, nhour=pp.nhour)
                     os_system_wrapper(f"sbatch {output_filename}")
                 except Exception as e:
                     print(f"Error running diabatization calculation: {str(e)}")
@@ -3227,7 +3220,7 @@ def refG_calc(ref_geom_path, **kwargs):
 
     # Finally we submit and run the refG calculation (you may need to customize this command based on your setup)
     # refG_job_result = subprocess_run_wrapper(["./subgam.diab", input_path, "4", "0", "1"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    job_path = my_subgam(input_path, ncpus=10, ngb=5, nhour=24)
+    job_path = my_subgam(input_path, ncpus=pp.ncpus, ngb=pp.ngb, nhour=pp.nhour)
     os_system_wrapper(f"sbatch -W {job_path}")
 
     # At this point, refG calculation has completed successfully.
