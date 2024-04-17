@@ -224,18 +224,17 @@ def my_subgam(path, **kwargs):
 
     file_contents = "".join([
         "#!/bin/bash\n",
-        "#SBATCH --nodes=1\n",
+        "#SBATCH --nodes=1\n", 
+        f"{'#SBATCH --account=def-mnooijen' if is_compute_canada else ''}\n",
         f"#SBATCH --ntasks={ncpus}\n",
         f"#SBATCH --mem-per-cpu={ngb}G\n",
         f"#SBATCH --time={nhour}:00:00\n",
-        #"#SBATCH --account=def-mnooijen\n", # COMPUTECANADA
         "\n",
         "cd $SLURM_SUBMIT_DIR\n",
         "\n",
         "export SLURM_CPUS_PER_TASK\n",
         'mkdir -p /home/$USER/.gamess_ascii_files/$SLURM_JOBID\n',
-        f"/home/bjb2chen/LOCAL/runG_diab {input_no_ext}.inp {ncpus} \n",
-        #f"/home/bjb2chen/LOCAL/runG_mrsftd {input_no_ext}.inp {ncpus} \n", # COMPUTECANADA
+        f"/home/bjb2chen/LOCAL/{'runG_mrsftd' if is_compute_canada else 'runG_diab'} {input_no_ext}.inp {ncpus} \n"
     ])
 
     with open(f"{input_no_ext}.slurm", "w") as slurm_file:
@@ -1709,7 +1708,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 make_line(
                     # Bilinear is technically order=1, but C2 for VECC compatibility
                     # Bilinear will go under Quadratic banner to align with VECC hamiltonian
-                    label=f"C1_s{a+1:0>2d}s{a+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}", 
+                    label=f"C1b_s{a+1:0>2d}s{a+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}", 
                     # value=0.0
                     value=bi_lin[(j1, j2)][a, a]
                 )
@@ -1719,7 +1718,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             ]),
             ''.join([
                 make_line(
-                    label=f"C1_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}",
+                    label=f"C1b_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}",
                     # value=0.0
                     value=bi_lin[(j1, j2)][a1, a2]
                 )
@@ -1776,10 +1775,10 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
             return ''.join([
                 make_line_cm(
-                    label=f"C1_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}r", # C2 for VECC compatibility
+                    label=f"C1b_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}r", # C2 for VECC compatibility
                     value=bi_lin[(j1, j2)][a1, a2].real
                 ) + make_line_cm(
-                    label=f"C1_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}i",
+                    label=f"C1b_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}i",
                     value=bi_lin[(j1, j2)][a1, a2].imag
                 )
                 for a1, a2, j1, j2 in it.product(range(A), range(A), range(N), range(N))
@@ -1810,8 +1809,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         return '\n'.join([
             build_linear_SOC(soc_dict['Linear'], A, N),
             build_quadratic_SOC(soc_dict['Quadratic'], A, N),
-            (build_BiLinear_SOC(soc_dict['BiLinear'], A, N).replace('C1', 'C1b') if VECC_flag
-            else build_BiLinear_SOC(soc_dict['BiLinear'], A, N)),
+            build_BiLinear_SOC(soc_dict['BiLinear'], A, N),
             build_Total_SOC(soc_dict['Total'], A, N),
         ]) + '\n'
 
@@ -1869,10 +1867,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
         key = 'BiLinear'
         if key in model.keys():
-            if VECC_flag:
-                return_list += [make_header(headers[key]), build_bilinear_coupling(model[key], A, N).replace('C1', 'C1b')]
-            else:
-                return_list += [make_header(headers[key]),  build_bilinear_coupling(model[key], A, N)] # Toby hamiltonian
+            return_list += [make_header(headers[key]),  build_bilinear_coupling(model[key], A, N)]
 
         key = 'SOC'
         if key in model.keys():
@@ -1992,7 +1987,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
         return '\n'.join([
             (
-                f"C1_s{a:0>2d}s{a:0>2d}_v{j1:0>2d}v{j2:0>2d}" # C2 to align with VECC
+                f"C1b_s{a:0>2d}s{a:0>2d}_v{j1:0>2d}v{j2:0>2d}" # C2 to align with VECC
                 f"{spacer:>9}1 S{a:d}&{a:d}"
                 f"{spacer:>4}{j1+1}  q{spacer:>6}{j2+1}  q"
             )
@@ -2003,7 +1998,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 ''  # creates a blank line between the (surface) diagonal and off-diagonal linear terms
         ] + [
             (
-                f"C1_s{a1:0>2d}s{a2:0>2d}_v{j1:0>2d}v{j2:0>2d}"
+                f"C1b_s{a1:0>2d}s{a2:0>2d}_v{j1:0>2d}v{j2:0>2d}"
                 f"{spacer:>9}1 S{a1:d}&{a2:d}"
                 f"{spacer:>4}{j1+1}  q{spacer:>6}{j2+1}  q"
             )
@@ -2081,11 +2076,11 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
             return '\n'.join([
                 (
-                    f" I*C1_s{a1:0>2d}s{a2:0>2d}_v{j1:0>2d}v{j2:0>2d}r" # C2 to align with VECC
+                    f" I*C1b_s{a1:0>2d}s{a2:0>2d}_v{j1:0>2d}v{j2:0>2d}r" # C2 to align with VECC
                     f"{spacer:>9}1 S{a1:d}&{a2:d}"
                     f"{spacer:>4}{j1+1}  q{spacer:>6}{j2+1}  q"
                 ) + '\n' + (
-                    f"-I*C1_s{a1:0>2d}s{a2:0>2d}_v{j1:0>2d}v{j2:0>2d}i"
+                    f"-I*C1b_s{a1:0>2d}s{a2:0>2d}_v{j1:0>2d}v{j2:0>2d}i"
                     f"{spacer:>9}1 S{a1:d}&{a2:d}"
                     f"{spacer:>4}{j1+1}  q{spacer:>6}{j2+1}  q"
                 )
@@ -2157,8 +2152,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             string = "\n".join([
                 label_linear_SOC(soc_dict['Linear'], A, N),
                 label_quadratic_SOC(soc_dict['Quadratic'], A, N),
-                (label_BiLinear_SOC(soc_dict['BiLinear'], A, N).replace('C1', 'C1b') if VECC_flag
-                else label_BiLinear_SOC(soc_dict['BiLinear'], A, N)),
+                label_BiLinear_SOC(soc_dict['BiLinear'], A, N),
                 label_Total_SOC(soc_dict['Total'], A, N),
             ]) + '\n'
 
@@ -2208,10 +2202,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
         key = 'BiLinear'
         if key in model.keys():
-            if VECC_flag:
-                return_list += [label_bilinear_coupling(model[key], A, N).replace('C1', 'C1b')]
-            else:
-                return_list += [label_bilinear_coupling(model[key], A, N)]
+            return_list += [label_bilinear_coupling(model[key], A, N)]
 
         key = 'SOC'
         if key in model.keys():

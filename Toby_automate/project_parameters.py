@@ -26,7 +26,7 @@ N_tot = 3 * Z
 """
 name, basis_set, calculation_type, point_group_symmetry, nof_excited_states = (
     # "H2Ocat", "ccd", "gmcpt", "C1", 3
-    "H2Ocat", "ccd","gmcpt", "C1", 3
+    "H2Ocat", "ccd","gmcpt", "C1", A
 )
 file_name = str(
     f"{name}_"
@@ -142,20 +142,24 @@ for key, value in ij_map.items():
 # -------------------------------------------------------------------------
 #                           Project Paths
 # -------------------------------------------------------------------------
-# user_root = abspath("/bjb2chen/gamess/vibronics/template_examples/NH3/SOC_9st/SOC_6st")        # format is /user/.../*
-#user_root = abspath("/bjb2chen/gamess/vibronics/template_examples/mar19")        # format is /user/.../*
-user_root = abspath(os.getcwd().replace('/home', '') if '/home' in os.getcwd() else os.getcwd()) # format is /user/.../*
-home_root = abspath(f"/home/{user_root}/{project_name}/")
-work_root = abspath(f"/work/{user_root}/mctdh/{project_name}/")
+base_dir = os.getcwd() # pwd
+username = os.getlogin() # $USER
+
+user_root = abspath(base_dir.split(username)[1]) # format is /user/(.../*)
+home_root = abspath(f"/home/{username}/{user_root}/{project_name}/")
+work_root = abspath(f"/work/{username}/{user_root}/mctdh/{project_name}/")
 
 ## COMPUTE CANADA SETTINGS
-#user_root = abspath(os.getcwd().replace('/scratch', '') if '/scratch' in os.getcwd() else os.getcwd())
-#home_root = abspath(f"/scratch/{user_root}/{project_name}/")
-#work_root = abspath(f"/scratch/{user_root}/mctdh/{project_name}/")
+if is_compute_canada:
+    home_root = abspath(f"/scratch/{username}/{user_root}/{project_name}/")
+    work_root = abspath(f"/scratch/{username}/{user_root}/mctdh/{project_name}/")
 
-# server_flag = (socket.gethostname() == "nlogn") or (socket.gethostname() == "feynman")
-# assert server_flag  # make sure we are on server
 os.makedirs(work_root, exist_ok=True)  # make sure the root directory exists
+
+# Example user paths:
+# nlogn: '/home/bjb2chen/gamess/vibronics/template_examples/Fe_pentaCO'
+# cedar: '/scratch/bjb2chen/vibronics/8o9e/fastLagrangian/Apr17_SOC_8o9e'
+# narval: '/lustre07/scratch/bjb2chen/vibronics/8o9e/fastLagrangian/Apr15_SOC_TZ'
 
 # -------------------------------------------------------------------------
 #                   path/filename  definitions/conventions
