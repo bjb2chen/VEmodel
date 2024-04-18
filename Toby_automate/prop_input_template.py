@@ -237,7 +237,8 @@ def _generate_basic_wavefunction(basic_HO_wavepacket, nof_electronic_states, ope
         initial_state_spec.format(operate_string),
         basic_HO_wavepacket,
         build_end,
-        operate_spec.format("Ex, Ey, Ez"),
+        #operate_spec.format("Ex, Ey, Ez"),
+        operate_spec.format("Ex"),
         int_wf_end,
     ])
 
