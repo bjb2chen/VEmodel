@@ -13,6 +13,7 @@ import itertools as it
 import functools
 import cProfile
 import pstats
+import mmap
 
 # -----------------------------------------------
 # third party imports
@@ -624,6 +625,7 @@ def search_file(filename, pattern):
             
             # If a match is found
             if match:
+                print(match.group().decode())
                 return match.group().decode()
             else:
                 return None
@@ -976,8 +978,9 @@ def diabatization(**kwargs):
 
         # Check if the reference geometry calculation is done?
         refG_out = f"{filename}_refG.out"
-        grace0 = subprocess_run_wrapper(["grep -a", "DONE WITH MP2 ENERGY", refG_out])
-        ref_geom_flag_exists = bool(grace0.returncode == 0)
+        #grace0 = subprocess_run_wrapper(["grep", "-a", "DONE WITH MP2 ENERGY", refG_out])
+        grace0 = search_file(refG_out, "DONE WITH MP2 ENERGY")
+        ref_geom_flag_exists = bool(grace0)
 
         for key in linear_disp_keys:
 
@@ -1001,8 +1004,9 @@ def diabatization(**kwargs):
                 fp.write(data)  # can you just do data + ' $END' in one write?
                 fp.write('\n $END')
 
-            grace1 = subprocess_run_wrapper(["grep -a", "DONE WITH MP2 ENERGY", games_filename+'.out'])
-            gamess_calculation_not_run = bool(grace1.returncode != 0)
+            #grace1 = subprocess_run_wrapper(["grep", "-a", "DONE WITH MP2 ENERGY", games_filename+'.out'])
+            grace1 = search_file(games_filename+'.out', "DONE WITH MP2 ENERGY")
+            gamess_calculation_not_run = bool(grace1)
 
             # This means that refG completed successfully and `diabmode*.out` not completed
             if (ref_geom_flag_exists and gamess_calculation_not_run) or pp.dry_run:
@@ -1022,8 +1026,9 @@ def diabatization(**kwargs):
 
         # Check if the reference geometry calculation is done?
         refG_out = f"{filename}_refG.out"
-        grace0 = subprocess_run_wrapper(["grep -a", "DONE WITH MP2 ENERGY", refG_out])
-        ref_geom_flag_exists = bool(grace0.returncode == 0)
+        #grace0 = subprocess_run_wrapper(["grep", "-a", "DONE WITH MP2 ENERGY", refG_out])
+        grace0 = search_file(refG_out, "DONE WITH MP2 ENERGY")
+        ref_geom_flag_exists = bool(grace0)
 
         for key in bi_linear_disp_keys:
 
@@ -1043,8 +1048,9 @@ def diabatization(**kwargs):
                 fp.write('\n $END')
 
             # Check if the calculation is done already
-            grace2 = subprocess_run_wrapper(["grep -a", "DONE WITH MP2 ENERGY", games_filename+'.out'])
-            gamess_calculation_not_run = bool(grace2.returncode != 0)
+            #grace2 = subprocess_run_wrapper(["grep", "-a", "DONE WITH MP2 ENERGY", games_filename+'.out'])
+            grace2 = search_file(games_filename+'.out', "DONE WITH MP2 ENERGY")
+            gamess_calculation_not_run = bool(grace2)
 
             # this will never work? grace0 is not defined
             if (ref_geom_flag_exists and gamess_calculation_not_run) or pp.dry_run:
@@ -2924,13 +2930,16 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                     if not (order <= max_order):
                         continue  # skip this combination
 
-                    grace_code[key] = subprocess_call_wrapper([
-                        "grep -a", "DONE WITH MP2 ENERGY",
-                        linear_displacement_filenames[(key, i)]
-                    ])
+                    # grace_code[key] = subprocess_call_wrapper([
+                    #     "grep", "-a", "DONE WITH MP2 ENERGY",
+                    #     linear_displacement_filenames[(key, i)]
+                    # ])
+
+                    grace_code[key] = bool(search_file(
+                        linear_displacement_filenames[(key, i)], "DONE WITH MP2 ENERGY"))
                     print(f" ..... in file {linear_displacement_filenames[(key, i)]}")
 
-                if not all(code == 0 for code in grace_code.values()):
+                if not all(code == True for code in grace_code.values()):
                     mode_label = pp.mode_map_dict[i]
                     print(f"Linear/Quad mode {mode_label} not good to extract.\n")
                     bad_mode = True
@@ -2942,13 +2951,15 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             for i, j in upper_triangle_loop_indices(N, 2):
                 grace_code = {}
                 for key in bi_linear_disp_keys:
-                    grace_code[key] = subprocess_call_wrapper([
-                        "grep -a", "DONE WITH MP2 ENERGY",
-                        bi_linear_displacement_filenames[(key, i, j)]
-                    ])
+                    # grace_code[key] = subprocess_call_wrapper([
+                    #     "grep", "-a", "DONE WITH MP2 ENERGY",
+                    #     bi_linear_displacement_filenames[(key, i, j)]
+                    # ])
+                    grace_code[key] = bool(search_file(
+                        bi_linear_displacement_filenames[(key, i, j)], "DONE WITH MP2 ENERGY"))
                     print(f" ..... in file {bi_linear_displacement_filenames[(key, i, j)]}")
 
-                if not all(code == 0 for code in grace_code.values()):
+                if not all(code == True for code in grace_code.values()):
                     mode_label = (pp.mode_map_dict[i], pp.mode_map_dict[j])
                     print(f"Bilinear mode {mode_label} not good to extract.\n")
                     bad_mode = True
@@ -3193,7 +3204,8 @@ def refG_calc(ref_geom_path, **kwargs):
     output_path = kwargs['refG_out']
 
     # Check if the calculation has already been run
-    grace_exists = subprocess_call_wrapper(["grep -a", "DONE WITH MP2 ENERGY", output_path]) == 0
+    #grace_exists = subprocess_call_wrapper(["grep", "-a", "DONE WITH MP2 ENERGY", output_path]) == 0
+    grace_exists = bool(search_file(output_path, "DONE WITH MP2 ENERGY"))
     if grace_exists:
         print("Calculation at the reference structure has already been done.")
         return
