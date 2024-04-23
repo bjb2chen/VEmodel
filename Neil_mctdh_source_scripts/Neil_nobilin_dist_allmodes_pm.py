@@ -2603,7 +2603,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             bilinear_dictionary = {}
             for i, j in upper_triangle_loop_indices(N, 2):
                 key = ij_map[(i, j)]
-                bilinear_dictionary[key] = 0.0
+                bilinear_dictionary[key] = 0j
             return bilinear_dictionary
 
         def extract_energy_at_displaced_geometry(path, key):
@@ -2672,7 +2672,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             # need to add logic to skip some modes
             if (i, j) not in special_bilin_terms:
                 key = ij_map[(i, j)]
-                bilinear_dictionary[key] = 0.0
+                bilinear_dictionary[key] = 0j
                 continue
 
             # ----------------------------------------------------------
@@ -2809,7 +2809,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 bilin_dict = {}
                 for i, j in upper_triangle_loop_indices(N, 2):
                     key = ij_map[(i, j)]
-                    bilin_dict[key] = 0.0
+                    bilin_dict[key] = 0j
                 return bilin_dict
 
             def _compute_using_array_style(temp_dict):
@@ -2838,7 +2838,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 # need to add logic to skip some modes
                 if (i, j) not in special_bilin_terms:
                     key = ij_map[(i, j)]
-                    bilin_dict[key] = 0.0
+                    bilin_dict[key] = 0j
                     continue
 
                 # ----------------------------------------------------------
