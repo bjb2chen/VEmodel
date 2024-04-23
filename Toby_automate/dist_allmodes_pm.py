@@ -1006,10 +1006,10 @@ def diabatization(**kwargs):
 
             #grace1 = subprocess_run_wrapper(["grep", "-a", "DONE WITH MP2 ENERGY", games_filename+'.out'])
             grace1 = search_file(games_filename+'.out', "DONE WITH MP2 ENERGY")
-            gamess_calculation_not_run = bool(grace1)
+            gamess_calculation_run = bool(grace1)
 
             # This means that refG completed successfully and `diabmode*.out` not completed
-            if (ref_geom_flag_exists and gamess_calculation_not_run) or pp.dry_run:
+            if (ref_geom_flag_exists and (not gamess_calculation_run)) or pp.dry_run:
                 print(f"Running calculations for {games_filename}")
                 try:
                     output_filename = my_subgam(games_filename+'.inp', ncpus=pp.ncpus, ngb=pp.ngb, nhour=pp.nhour)
@@ -1050,10 +1050,10 @@ def diabatization(**kwargs):
             # Check if the calculation is done already
             #grace2 = subprocess_run_wrapper(["grep", "-a", "DONE WITH MP2 ENERGY", games_filename+'.out'])
             grace2 = search_file(games_filename+'.out', "DONE WITH MP2 ENERGY")
-            gamess_calculation_not_run = bool(grace2)
+            gamess_calculation_run = bool(grace2)
 
             # this will never work? grace0 is not defined
-            if (ref_geom_flag_exists and gamess_calculation_not_run) or pp.dry_run:
+            if (ref_geom_flag_exists and (not gamess_calculation_run)) or pp.dry_run:
                 print(f"Running calculations for {games_filename}!")
                 try:
                     output_filename = my_subgam(games_filename+'.inp', ncpus=pp.ncpus, ngb=pp.ngb, nhour=pp.nhour)
