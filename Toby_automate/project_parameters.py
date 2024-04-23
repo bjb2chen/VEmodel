@@ -49,13 +49,13 @@ filnam = file_name  # alias (remove later)
 selected_mode_list = {
     "H2Ocat": [7, 8, 9],
     # "NH3cat": [8, 9, 10, 11, 12, ],
-    "NH3cat": [7, 8, 9, 10, 11, 12, ],
+    f"{name}t": [7, 8, 9, 10, 11, 12, ],
     }[name]
 
 nof_displacements_per_mode = {
     "H2Ocat": [10, 4, 2],
     # "NH3cat": [8, 3, 2, 2, 2],
-    "NH3cat": [2, 2, 2, 2, 2, 2],
+    f"{name}": [2, 2, 2, 2, 2, 2],
 }[name]
 
 # -------------------------------------------------------------------------
