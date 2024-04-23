@@ -2901,7 +2901,8 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             "end-operator\n"
         ])
 
-        if not VECC_flag: # VECC-compatible notation if True
+        #if not VECC_flag: # VECC-compatible notation if True
+        if False:
             for i in range(N):
                 new_i = mode_map_dict[i]
                 file_contents = file_contents.replace(f'v{i+1:>02d}', f'v{new_i:>02d}')

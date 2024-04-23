@@ -50,7 +50,8 @@ def create_input_file(source_dir, *args):
             "end-input\n"
         ])
 
-        if VECC_flag: # VECC-compatible notation if True
+        #if VECC_flag: # VECC-compatible notation if True
+        if True:
             for i in range(N):
                 new_i = mode_map_dict[i]
                 input_string = input_string.replace(f'v{new_i:>02d}', f'v{i+1:>02d}')
