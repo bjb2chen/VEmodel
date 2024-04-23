@@ -976,7 +976,7 @@ def diabatization(**kwargs):
 
         # Check if the reference geometry calculation is done?
         refG_out = f"{filename}_refG.out"
-        grace0 = subprocess_run_wrapper(["grep", "DONE WITH MP2 ENERGY", refG_out])
+        grace0 = subprocess_run_wrapper(["grep -a", "DONE WITH MP2 ENERGY", refG_out])
         ref_geom_flag_exists = bool(grace0.returncode == 0)
 
         for key in linear_disp_keys:
@@ -1001,7 +1001,7 @@ def diabatization(**kwargs):
                 fp.write(data)  # can you just do data + ' $END' in one write?
                 fp.write('\n $END')
 
-            grace1 = subprocess_run_wrapper(["grep", "DONE WITH MP2 ENERGY", games_filename+'.out'])
+            grace1 = subprocess_run_wrapper(["grep -a", "DONE WITH MP2 ENERGY", games_filename+'.out'])
             gamess_calculation_not_run = bool(grace1.returncode != 0)
 
             # This means that refG completed successfully and `diabmode*.out` not completed
@@ -1022,7 +1022,7 @@ def diabatization(**kwargs):
 
         # Check if the reference geometry calculation is done?
         refG_out = f"{filename}_refG.out"
-        grace0 = subprocess_run_wrapper(["grep", "DONE WITH MP2 ENERGY", refG_out])
+        grace0 = subprocess_run_wrapper(["grep -a", "DONE WITH MP2 ENERGY", refG_out])
         ref_geom_flag_exists = bool(grace0.returncode == 0)
 
         for key in bi_linear_disp_keys:
@@ -1043,7 +1043,7 @@ def diabatization(**kwargs):
                 fp.write('\n $END')
 
             # Check if the calculation is done already
-            grace2 = subprocess_run_wrapper(["grep", "DONE WITH MP2 ENERGY", games_filename+'.out'])
+            grace2 = subprocess_run_wrapper(["grep -a", "DONE WITH MP2 ENERGY", games_filename+'.out'])
             gamess_calculation_not_run = bool(grace2.returncode != 0)
 
             # this will never work? grace0 is not defined
@@ -2924,7 +2924,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                         continue  # skip this combination
 
                     grace_code[key] = subprocess_call_wrapper([
-                        "grep", "DONE WITH MP2 ENERGY",
+                        "grep -a", "DONE WITH MP2 ENERGY",
                         linear_displacement_filenames[(key, i)]
                     ])
                     print(f" ..... in file {linear_displacement_filenames[(key, i)]}")
@@ -2942,7 +2942,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 grace_code = {}
                 for key in bi_linear_disp_keys:
                     grace_code[key] = subprocess_call_wrapper([
-                        "grep", "DONE WITH MP2 ENERGY",
+                        "grep -a", "DONE WITH MP2 ENERGY",
                         bi_linear_displacement_filenames[(key, i, j)]
                     ])
                     print(f" ..... in file {bi_linear_displacement_filenames[(key, i, j)]}")
@@ -3192,7 +3192,7 @@ def refG_calc(ref_geom_path, **kwargs):
     output_path = kwargs['refG_out']
 
     # Check if the calculation has already been run
-    grace_exists = subprocess_call_wrapper(["grep", "DONE WITH MP2 ENERGY", output_path]) == 0
+    grace_exists = subprocess_call_wrapper(["grep -a", "DONE WITH MP2 ENERGY", output_path]) == 0
     if grace_exists:
         print("Calculation at the reference structure has already been done.")
         return
