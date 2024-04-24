@@ -16,11 +16,17 @@ def find_byte_begin_and_end(path, memmap, begin_string, end_string_list):
         else:
             # find the occurrence of `begin` closest to the start of the file
             memmap.seek(0)  # start looking from the begining of the file
-            begin = helper.rfind_string_in_file(memmap, path, begin_string)
+            begin = helper.find_string_in_file(memmap, path, begin_string)
 
         for end_string in end_string_list:
             try:
-                end = helper.rfind_string_in_file(memmap, path, end_string)
+                location = memmap.find(end_string.encode(encoding="utf-8"), begin)
+            
+                if location == -1:
+                    raise StringNotFoundError(targetString, filePath)
+                else:
+                    end = location
+
             except StringNotFoundError as e:
                 continue
             else:
@@ -62,13 +68,13 @@ def extract_string_list(path, memmap, begin_string, end_string, nof_line_skip=1)
 
     # decode it
     stringData = byteData.decode(encoding="utf-8")
-    # print(stringData); breakpoint()
+    #print(stringData); breakpoint()
 
     # clean it up
-    stringData = stringData.strip().replace('=', '').replace(', ev', '')
+    stringData = stringData.strip()
 
     # return the list of strings (not including empty strings and comments)
-    return [line.split() for line in stringData.splitlines() if line != "" and 'STATE' in line]
+    return [line.split() for line in stringData.splitlines() if line != ""]
 
 
 def _example_processing_function(path, memmap):

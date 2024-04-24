@@ -698,13 +698,11 @@ def process_func_1(path, memmap, pattern):
     if 'TOTAL ENERGY =' in pattern:
         ''' TOTAL ENERGY =     -76.2286665045 '''
         begin_string = " TOTAL ENERGY = "
-        end_string = " ELECTRON-ELECTRON POTENTIAL ENERGY "
-        #G1E_line = extract_string_list(path, memmap, begin_string, end_string, nof_line_skip=0)
-        G1E_start, G1E_end = find_byte_begin_and_end(path, memmap, begin_string, end_string)
-        print('G1E Line:', G1E_start, 'G1E_end:', G1E_end)
-        breakpoint()
-        return #float(G1E_line.split())[3]
-
+        end_string = " ELECTRON-ELECTRON POTENTIAL ENERGY"
+        lines = extract_string_list(path, memmap, begin_string, end_string, nof_line_skip=0)
+        G1E_line = lines[0]
+        total_energy = float(G1E_line[-1])
+        return total_energy
 
     if 'GMC-PT-LEVEL DIABATIC ENERGY' in pattern:
         ''' "STATE #.* 1.S GMC-PT-LEVEL DIABATIC ENERGY= '''
@@ -768,7 +766,8 @@ def _extract_energy_from_gamessoutput_memap(path, pattern):
     print(string)
     return string
 
-_extract_energy_from_gamessoutput_memap('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', 'STATE #.* 1.S GMC-PT-LEVEL DIABATIC ENERGY=')
+_extract_energy_from_gamessoutput_memap('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', 'STATE #.* 7.S GMC-PT-LEVEL DIABATIC ENERGY=')
+_extract_energy_from_gamessoutput_memap('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', 'TOTAL ENERGY =')
 search_file_v2('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', 'TOTAL ENERGY =')
 search_file_v2('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', 'STATE #.* 1.S GMC-PT-LEVEL DIABATIC ENERGY=')
 breakpoint()
