@@ -2034,6 +2034,17 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         -I*C1_s##_s##_v##_v##i |1 Z#&# | # q | # q
          I*SOC_s##_s##_v##_v##r |1 Z#&# | # q
         -I*SOC_s##_s##_v##_v##i |1 Z#&# | # q
+
+        Correction TZ on Apr 24 for hermiticity:
+
+         I*SOC_s09s15_v01v02r        |1 S9&15   |2  q     |3  q
+        -I*SOC_s09s15_v01v02i        |1 S9&15   |2  q     |3  q
+        
+        to
+        
+           SOC_s09s15_v01v02r        |1 S9&15   |2  q     |3  q
+         I*SOC_s09s15_v01v02i        |1 Z9&15   |2  q     |3  q
+        -I*SOC_s09s15_v01v02i        |1 Z15&9   |2  q     |3  q
         """
 
         def label_linear_SOC(lin_dict, A, N):
@@ -2044,12 +2055,16 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
             return '\n'.join([
                 (
-                    f"I*C1_s{a1:0>2d}_s{a2:0>2d}_v{i:0>2d}r"
+                    f"   C1_s{a1:0>2d}_s{a2:0>2d}_v{i:0>2d}r"
                     f"{spacer:>11}1 S{a1:d}&{a2:d}"
                     f"{spacer:>4}{i+1}  q"
                 ) + '\n' + (
+                    f" I*C1_s{a1:0>2d}_s{a2:0>2d}_v{i:0>2d}i"
+                    f"{spacer:>11}1 Z{a1:d}&{a2:d}"
+                    f"{spacer:>4}{i+1}  q"
+                ) +'\n' + (
                     f"-I*C1_s{a1:0>2d}_s{a2:0>2d}_v{i:0>2d}i"
-                    f"{spacer:>11}1 S{a1:d}&{a2:d}"
+                    f"{spacer:>11}1 Z{a2:d}&{a1:d}"
                     f"{spacer:>4}{i+1}  q"
                 )
                 for a1, a2, i in it.product(range(1, A+1), range(1, A+1), range(1, N+1))
@@ -2065,12 +2080,16 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
             return '\n'.join([
                 (
-                    f"I*C2_s{a1:0>2d}s{a2:0>2d}_v{i:0>2d}v{i:0>2d}r"
+                    f"   C2_s{a1:0>2d}s{a2:0>2d}_v{i:0>2d}v{i:0>2d}r"
                     f"{spacer:>9}1 S{a1:d}&{a2:d}"
                     f"{spacer:>4}{i+1}  q^2"
                 ) + '\n' + (
+                    f" I*C2_s{a1:0>2d}s{a2:0>2d}_v{i:0>2d}v{i:0>2d}i"
+                    f"{spacer:>9}1 Z{a1:d}&{a2:d}"
+                    f"{spacer:>4}{i+1}  q^2"
+                ) + '\n' + (
                     f"-I*C2_s{a1:0>2d}s{a2:0>2d}_v{i:0>2d}v{i:0>2d}i"
-                    f"{spacer:>9}1 S{a1:d}&{a2:d}"
+                    f"{spacer:>9}1 Z{a2:d}&{a1:d}"
                     f"{spacer:>4}{i+1}  q^2"
                 )
                 for a1, a2, i in it.product(range(1, A+1), range(1, A+1), range(1, N+1))
@@ -2088,12 +2107,16 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
             return '\n'.join([
                 (
-                    f" I*C1b_s{a1:0>2d}s{a2:0>2d}_v{j1:0>2d}v{j2:0>2d}r" # C2 to align with VECC
+                    f"   C1b_s{a1:0>2d}s{a2:0>2d}_v{j1:0>2d}v{j2:0>2d}r" # C2 to align with VECC
                     f"{spacer:>9}1 S{a1:d}&{a2:d}"
                     f"{spacer:>4}{j1+1}  q{spacer:>6}{j2+1}  q"
                 ) + '\n' + (
+                    f" I*C1b_s{a1:0>2d}s{a2:0>2d}_v{j1:0>2d}v{j2:0>2d}i"
+                    f"{spacer:>9}1 Z{a1:d}&{a2:d}"
+                    f"{spacer:>4}{j1+1}  q{spacer:>6}{j2+1}  q"
+                ) + '\n' + (
                     f"-I*C1b_s{a1:0>2d}s{a2:0>2d}_v{j1:0>2d}v{j2:0>2d}i"
-                    f"{spacer:>9}1 S{a1:d}&{a2:d}"
+                    f"{spacer:>9}1 Z{a2:d}&{a1:d}"
                     f"{spacer:>4}{j1+1}  q{spacer:>6}{j2+1}  q"
                 )
                 for a1, a2, j1, j2 in it.product(range(1, A+1), range(1, A+1), range(1, N+1), range(1, N+1))
@@ -2111,12 +2134,16 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
             return '\n'.join([
                 (
-                    f" I*SOC_s{a1:0>2d}s{a2:0>2d}_v{j1:0>2d}v{j2:0>2d}r"
+                    f"   SOC_s{a1:0>2d}s{a2:0>2d}_v{j1:0>2d}v{j2:0>2d}r"
                     f"{spacer:>9}1 S{a1:d}&{a2:d}"
                     f"{spacer:>4}{j1+1}  q{spacer:>6}{j2+1}  q"
                 ) + '\n' + (
+                    f" I*SOC_s{a1:0>2d}s{a2:0>2d}_v{j1:0>2d}v{j2:0>2d}i"
+                    f"{spacer:>9}1 Z{a1:d}&{a2:d}"
+                    f"{spacer:>4}{j1+1}  q{spacer:>6}{j2+1}  q"
+                ) + '\n' + (
                     f"-I*SOC_s{a1:0>2d}s{a2:0>2d}_v{j1:0>2d}v{j2:0>2d}i"
-                    f"{spacer:>9}1 S{a1:d}&{a2:d}"
+                    f"{spacer:>9}1 Z{a2:d}&{a1:d}"
                     f"{spacer:>4}{j1+1}  q{spacer:>6}{j2+1}  q"
                 )
                 for a1, a2, j1, j2 in it.product(range(1, A+1), range(1, A+1), range(1, N+1), range(1, N+1))
