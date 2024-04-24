@@ -25,6 +25,7 @@ import pprint
 
 # -----------------------------------------------
 # local packages
+import memorymap_extract
 import project_parameters as pp
 from project_parameters import *  # eventually remove this
 # ---------------------------------------------------------------------------------------
@@ -633,9 +634,11 @@ def search_file(filename, pattern):
 def _example_processing_function(path, memmap):
 
     # if processing block 1
-    begin_string, end_string = "block_1_begin", "block_1_end"
+    begin_string, end_string = 'STATE #.* {col}.S GMC-PT-LEVEL DIABATIC ENERGY=', "\n"
     # here is where you call extract string
     lines = extract_string_list(path, memmap, begin_string, end_string, nof_line_skip=1)
+    print(lines)
+    breakpoint()
 
     def process_block_1(): return
     b1_out = process_block_1(lines)
@@ -659,6 +662,8 @@ def process_func_1(path, memmap, pattern):
         begin_string = " - DM DIABT PT HAMILTONIAN MATRIX ELEMENTS -"
         end_string = " --- DIABATIC COUPLINGS (OFF DIAGONAL ELEMENTS)---"
         lines = extract_string_list(path, memmap, begin_string, end_string, nof_line_skip=4)
+        print(lines)
+        breakpoint()
 
         print("Ingested:")
         for i, l in enumerate(lines): print(f"Line {i:02d}: ", l)
@@ -713,6 +718,7 @@ def _extract_energy_from_gamessoutput_memap(path, pattern):
     string = extract_from_file(path, process_func_1, pattern)
     return string
 
+_extract_energy_from_gamessoutput_memap(path,'GMC-PT-LEVEL DIABATIC ENERGY')
 # ---------------------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------------------
