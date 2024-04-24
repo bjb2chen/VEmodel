@@ -25,7 +25,7 @@ import pprint
 
 # -----------------------------------------------
 # local packages
-import memorymap_extract
+from memorymap_extract import *
 import project_parameters as pp
 from project_parameters import *  # eventually remove this
 # ---------------------------------------------------------------------------------------
@@ -631,6 +631,44 @@ def search_file(filename, pattern):
             else:
                 return None
 
+def search_file_v2(filename, pattern):
+
+    with open(filename, 'r+b') as file:
+
+        with mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ) as mmapped_file:
+        
+            # Search for the pattern
+            match = re.search(pattern.encode(), mmapped_file)
+            
+            # If a match is found
+            if match:
+                print(match.group().decode())
+                # b'\n' is subsequence of newline byte, trying to find from beginning of file
+                # to match.start(), basically first newline before the match
+                start = mmapped_file.rfind(b'\n', 0, match.start()) + 1
+                end = mmapped_file.find(b'\n', match.end())
+            
+                # Extract the line
+                line = mmapped_file[start:end].decode()
+                print(line)
+
+                if 'DONE WITH MP2' in pattern:
+                    output = line
+                    print(output)
+                    return output  
+                
+                if 'TOTAL ENERGY =' in pattern:
+                    output = float(line.split()[3])
+                    print(output)
+                    return output
+
+                elif 'GMC-PT-LEVEL DIABATIC ENERGY' in pattern:
+                    output = float(line.split()[7])
+                    print(output)
+                    return output
+            else:
+               return None
+
 def _example_processing_function(path, memmap):
 
     # if processing block 1
@@ -657,16 +695,27 @@ def _example_processing_function(path, memmap):
 
 def process_func_1(path, memmap, pattern):
 
+    if 'TOTAL ENERGY =' in pattern:
+        ''' TOTAL ENERGY =     -76.2286665045 '''
+        begin_string = " TOTAL ENERGY = "
+        end_string = " ELECTRON-ELECTRON POTENTIAL ENERGY "
+        #G1E_line = extract_string_list(path, memmap, begin_string, end_string, nof_line_skip=0)
+        G1E_start, G1E_end = find_byte_begin_and_end(path, memmap, begin_string, end_string)
+        print('G1E Line:', G1E_start, 'G1E_end:', G1E_end)
+        breakpoint()
+        return #float(G1E_line.split())[3]
+
+
     if 'GMC-PT-LEVEL DIABATIC ENERGY' in pattern:
         ''' "STATE #.* 1.S GMC-PT-LEVEL DIABATIC ENERGY= '''
         begin_string = " - DM DIABT PT HAMILTONIAN MATRIX ELEMENTS -"
         end_string = " --- DIABATIC COUPLINGS (OFF DIAGONAL ELEMENTS)---"
         lines = extract_string_list(path, memmap, begin_string, end_string, nof_line_skip=4)
         print(lines)
-        breakpoint()
 
         print("Ingested:")
         for i, l in enumerate(lines): print(f"Line {i:02d}: ", l)
+        breakpoint()
 
         hartree_list = [float(l[6]) for l in lines]
         hartree_array = np.array(hartree_list)
@@ -716,9 +765,13 @@ def process_func_1(path, memmap, pattern):
 def _extract_energy_from_gamessoutput_memap(path, pattern):
     """ use memory map to extract data  """
     string = extract_from_file(path, process_func_1, pattern)
+    print(string)
     return string
 
-_extract_energy_from_gamessoutput_memap(path,'GMC-PT-LEVEL DIABATIC ENERGY')
+_extract_energy_from_gamessoutput_memap('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', 'STATE #.* 1.S GMC-PT-LEVEL DIABATIC ENERGY=')
+search_file_v2('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', 'TOTAL ENERGY =')
+search_file_v2('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', 'STATE #.* 1.S GMC-PT-LEVEL DIABATIC ENERGY=')
+breakpoint()
 # ---------------------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------------------
@@ -3238,7 +3291,7 @@ def refG_calc(ref_geom_path, **kwargs):
 
     # Check if the calculation has already been run
     #grace_exists = subprocess_call_wrapper(["grep", "-a", "DONE WITH MP2 ENERGY", output_path]) == 0
-    grace_exists = bool(search_file(output_path, "DONE WITH MP2 ENERGY"))
+    grace_exists = bool(search_file_v2(output_path, "DONE WITH MP2 ENERGY"))
     if grace_exists:
         print("Calculation at the reference structure has already been done.")
         return
