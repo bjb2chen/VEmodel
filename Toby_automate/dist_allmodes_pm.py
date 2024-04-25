@@ -382,7 +382,7 @@ def _extract_energy_from_gamessoutput_grep(file_path, pattern, column_specificat
         return None
 
 
-def extract_in_Hartrees(file_path, pattern):
+def extract_in_Hartrees(file_path, pattern, cheat=False):
     """ This picks up the energy in Hartrees.
 
     Lines in the file might look like this:
@@ -394,7 +394,7 @@ def extract_in_Hartrees(file_path, pattern):
     This function gets the numbers from the HARTREE column
     """
     if True:
-        return search_IN_file(file_path, pattern, unit='HARTREE')
+        return _extract_energy_from_gamessoutput_memmap(file_path, pattern, unit='HARTREE', cheat=cheat)
     else:
         column_specification_string = "tail -1 | cut -c44-61"
         backup_line_idx = slice(44, 62)  # equivalent to `array[62:]`
@@ -410,7 +410,7 @@ def extract_diabatic_energy(file_path, pattern):
     return extract_in_Hartrees(file_path, pattern)
 
 
-def extract_in_eV(file_path, pattern):
+def extract_in_eV(file_path, pattern, cheat=False):
     """ This picks up the energy in eV.
 
     Lines in the file might look like this:
@@ -422,7 +422,7 @@ def extract_in_eV(file_path, pattern):
     This function gets the numbers from the EV column
     """
     if True:
-        return search_IN_file(file_path, pattern, unit='EV')
+        return _extract_energy_from_gamessoutput_memmap(file_path, pattern, unit='EV', cheat=cheat)
     else:
         column_specification_string = "tail -1 | cut -c62-"
         backup_line_idx = slice(62, None)  # equivalent to `array[62:]`
@@ -630,20 +630,20 @@ def search_IN_file(path, pattern, unit):
         It uses REGEX, so be careful! Escape the parens. '''
 
     with open(path, 'r+b') as file:
-
         with mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ) as mmapped_file:
-        
             # Search for the pattern
-            match = re.search(pattern.encode(), mmapped_file)
+            # We want to find the last possible occurrence of pattern
+            matches = [match for match in re.finditer(pattern.encode(), mmapped_file)]
             
             # If a match is found
-            if match:
-                #print('match.group().decode():', match.group().decode())
-                # b'\n' is subsequence of newline byte, trying to find from beginning of file
-                # to match.start(), basically first newline before the match
-                start = mmapped_file.rfind(b'\n', 0, match.start()) + 1
-                end = mmapped_file.find(b'\n', match.end())
-            
+            if matches:
+                # Get the last match
+                last_match = matches[-1]
+                
+                # Find the start of the line
+                start = mmapped_file.rfind(b'\n', 0, last_match.start()) + 1
+                end = mmapped_file.find(b'\n', last_match.end())
+                
                 # Extract the line
                 line = mmapped_file[start:end].decode()
 
@@ -667,18 +667,9 @@ def search_IN_file(path, pattern, unit):
                     print(output)
                     return output
 
-                elif 'HSO MATRIX IN DIABATIC REPRESENTATION \\(DIRECT MAXIMIZATION\\)' in pattern:
-                    output = line
-                    print(output)
-                    return output
-
-                elif 'SOC EIG. VALUES and VECTORS IN DIABATS \\(DIRECT MAX.\\)' in pattern:
-                    output = line
-                    print(output)
-                    return output
-
             else:
                return None
+
 
 def selected_lines_mmap(path, start_pattern, end_pattern):
 
@@ -710,7 +701,10 @@ def selected_lines_mmap(path, start_pattern, end_pattern):
                 print('here2')
                 return None
 
-def pattern_processing_routing(path, memmap, pattern):
+def pattern_processing_routing(path, memmap, pattern, unit=None, cheat=False):
+
+    if unit is None:
+        raise Exception(f'No {unit=} provided')
 
     if 'DONE WITH MP2' in pattern:
         begin_string = "DONE WITH MP2"
@@ -729,14 +723,14 @@ def pattern_processing_routing(path, memmap, pattern):
 
     if 'GMC-PT-LEVEL DIABATIC ENERGY' in pattern:
         ''' "STATE #.* 1.S GMC-PT-LEVEL DIABATIC ENERGY= '''
-        begin_string = " - DM DIABT PT HAMILTONIAN MATRIX ELEMENTS -"
+        begin_string = " --- DIABATIC ENERGIES (DIAGONAL ELEMENT) ---"
         end_string = " --- DIABATIC COUPLINGS (OFF DIAGONAL ELEMENTS)---"
-        lines = extract_string_list(path, memmap, begin_string, end_string, nof_line_skip=4)
+        lines = extract_string_list(path, memmap, begin_string, end_string, nof_line_skip=1)
         #print(lines)
 
-        print("Ingested:")
-        for i, l in enumerate(lines): print(f"Line {i:02d}: ", l)
-        breakpoint()
+        if False: 
+            print("Ingested:")
+            for i, l in enumerate(lines): print(f"Line {i:02d}: ", l)
 
         hartree_list = [float(l.split()[6]) for l in lines]
         hartree_array = np.array(hartree_list)
@@ -746,40 +740,49 @@ def pattern_processing_routing(path, memmap, pattern):
         eV_array = np.array(eV_list)
         if False: print("eV array\n", eV_array)
 
-        n = int(pattern.replace('.S GMC-PT-LEVEL DIABATIC ENERGY=', '').replace('STATE #.* ', ''))
-        return eV_array[n-1]
+        if not cheat:
+            n = int(pattern.replace('.S GMC-PT-LEVEL DIABATIC ENERGY=', '').replace('STATE #.* ', ''))
+            return eV_array[n-1] if unit == 'EV' else hartree_array[n-1]
+        else:
+            return eV_array
 
     elif 'GMC-PT-LEVEL COUPLING' in pattern:
         ''' STATE #.* 1 &.* 2.S GMC-PT-LEVEL COUPLING '''
         begin_string = " --- DIABATIC COUPLINGS (OFF DIAGONAL ELEMENTS)---  HATREE            EV"
         end_string = "     - ROTATION TO DIABATIC STATES -    "
         lines = extract_string_list(path, memmap, begin_string, end_string, nof_line_skip=1)
-        breakpoint()
+        #skip the last two lines b/c dashed lines
+        lines = [l for l in lines if '&' in l]
 
-        print("Ingested:\n")
-        for i, l in enumerate(lines): print(f"Line {i:02d}: ", l)
+        if False: 
+            print("Ingested:\n")
+            for i, l in enumerate(lines): print(f"Line {i:02d}: ", l)
 
-        hartree_list = [float(l.split()[7]) for l in lines]
+        hartree_list = [float(l.split()[8]) for l in lines]
+        hartree_list = [hartree_list[i:i+pp.A] for i in range(pp.A+1)]
         hartree_array = np.array(hartree_list)
-        print("Hartree array\n", hartree_array)
+        if False: print("Hartree array\n", hartree_array)
 
-        eV_list = [float(l.split()[8]) for l in lines]
+        eV_list = [float(l.split()[9]) for l in lines]
+        eV_list = [eV_list[i:i+pp.A] for i in range(pp.A+1)]
         eV_array = np.array(eV_list)
-        print("eV array\n", eV_array)
+        if False: print("eV array\n", eV_array)
 
-        breakpoint()
-        s1, s2 = map(int, pattern.replace('.S GMC-PT-LEVEL COUPLING', '').replace('STATE #.*', '').split('&.*'))
-
+        #breakpoint()
         # match the s1/s2 with the appropriate line in `lines`
-        return eV_array[n-1]
+        if not cheat:    
+            s1, s2 = map(int, pattern.replace(".S GMC-PT-LEVEL COUPLING", '').replace('STATE #.*', '').split('&.*'))
+            return eV_array[s1-1,s2-1] if unit == 'EV' else hartree_array[s1-1,s2-1]
+        else:
+            return eV_array
 
     elif 'DSOME' in pattern:
         begin_string = "HSO MATRIX IN DIABATIC REPRESENTATION (DIRECT MAXIMIZATION)"
         end_string = 'SOC EIG. VALUES and VECTORS IN DIABATS (DIRECT MAX.)'
         lines = extract_string_list(path, memmap, begin_string, end_string, nof_line_skip=7)
 
-        print("Ingested:\n")
-        for i, l in enumerate(lines): print(f"Line {i:02d}: ", l)
+        # print("Ingested:\n")
+        # for i, l in enumerate(lines): print(f"Line {i:02d}: ", l)
 
         return lines
 
@@ -793,10 +796,10 @@ def pattern_processing_routing(path, memmap, pattern):
     return
 
 
-def _extract_energy_from_gamessoutput_memmap(path, pattern):
+def _extract_energy_from_gamessoutput_memmap(path, pattern, unit=None, cheat=False):
     """ use memory map to extract data  """
-    string = extract_from_file(path, pattern_processing_routing, pattern)
-    print(string)
+    string = extract_from_file(path, pattern_processing_routing, pattern, unit, cheat=cheat)
+    if False: print(string)
     return string
 
 def extract_ground_state_energy_memmap(hessian_path, pattern):
@@ -808,7 +811,6 @@ def extract_DSOME_memmap(path, pattern):
     string = extract_from_file(path, pattern_processing_routing, pattern)
     return string
 
-breakpoint()
 # search_IN_file('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', \
 #     "HSO MATRIX IN DIABATIC REPRESENTATION \\(DIRECT MAXIMIZATION\\)")
 # search_IN_file('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', \
@@ -816,14 +818,16 @@ breakpoint()
 # selected_lines_mmap('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', \
 #     "HSO MATRIX IN DIABATIC REPRESENTATION \\(DIRECT MAXIMIZATION\\)", \
 #      'SOC EIG. VALUES and VECTORS IN DIABATS \\(DIRECT MAX.\\)')
-# _extract_energy_from_gamessoutput_memmap('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', 'STATE #.* 7.S GMC-PT-LEVEL DIABATIC ENERGY=')
-# _extract_energy_from_gamessoutput_memmap('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', 'TOTAL ENERGY =')
-# extract_from_file('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', pattern_processing_routing, 'TOTAL ENERGY =')
-# extract_from_file('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', pattern_processing_routing, 'STATE #.* 1.S GMC-PT-LEVEL DIABATIC ENERGY=')
-# extract_ground_state_energy_memmap('RhF3_SPK_mp2_rohf_D3h_mult5_diis_gh.out', 'TOTAL ENERGY =')
-extract_DSOME_memmap('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', 'DSOME')
+# _extract_energy_from_gamessoutput_memmap('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', "STATE #.* 7.S GMC-PT-LEVEL DIABATIC ENERGY=")
+# _extract_energy_from_gamessoutput_memmap('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', "STATE #  2 &  8'S GMC-PT-LEVEL COUPLING  =")
+# # extract_from_file('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', pattern_processing_routing, 'TOTAL ENERGY =')
+# # extract_from_file('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', pattern_processing_routing, 'STATE #.* 1.S GMC-PT-LEVEL DIABATIC ENERGY=')
+# # extract_ground_state_energy_memmap('RhF3_SPK_mp2_rohf_D3h_mult5_diis_gh.out', 'TOTAL ENERGY =')
+# breakpoint()
+# extract_DSOME_memmap('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', 'DSOME')
+# search_IN_file('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', "STATE #  6'S GMC-PT-LEVEL DIABATIC ENERGY=", unit='HARTREE')
+# search_IN_file('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', " STATE #  2 &  8'S GMC-PT-LEVEL COUPLING  =", unit='EV')
 
-breakpoint()
 # ---------------------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------------------
@@ -2462,12 +2466,14 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
         def _row_first_style(E0_array):
             """ x """
+            extracted_eV_1D = extract_in_eV(ref_geom_path, a_pattern.format(col=0+1), cheat=True)
             for a in range(A):
-                E0_array[a, a] = extract_in_eV(ref_geom_path, a_pattern.format(col=a+1))
+                E0_array[a, a] = extracted_eV_1D[a]
                 E0_array[a, a] += linear_shift
 
+            extracted_eV_2D = extract_in_eV(ref_geom_path, ba_pattern.format(row=0+1, col=1+1), cheat=True)
             for a, b in upper_triangle_loop_indices(A, 2):
-                E0_array[a, b] = extract_in_eV(ref_geom_path, ba_pattern.format(row=a+1, col=b+1))
+                E0_array[a, b] = extracted_eV_2D[a,b]
 
             # for row, col in upper_triangle_loop_indices(A, 2):
             #     E0_array[row, col] = extract_in_eV(ref_geom_path, ba_pattern.format(row=row+1, col=col+1))
@@ -2496,11 +2502,13 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         E0_array_au = np.zeros(shape)
 
         # now also get the array in atomic units (Hartrees)
+        extracted_eV_1D = extract_in_Hartrees(ref_geom_path, a_pattern.format(col=0+1), cheat=True)
         for a in range(A):
-            E0_array_au[a, a] = extract_in_Hartrees(ref_geom_path, a_pattern.format(col=a+1))
+            E0_array_au[a, a] = extracted_eV_1D[a]
 
+        extracted_eV_2D = extract_in_Hartrees(ref_geom_path, ba_pattern.format(row=0+1, col=1+1), cheat=True)
         for a, b in upper_triangle_loop_indices(A, 2):
-            E0_array_au[a, b] = extract_in_Hartrees(ref_geom_path, ba_pattern.format(row=a+1, col=b+1))
+            E0_array_au[a, b] = extracted_eV_2D[a,b]
 
         return E0_array_ev, E0_array_au
 
@@ -2582,11 +2590,13 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             """
             array = np.zeros(shape)
 
+            extracted_Hartree_1D = extract_in_Hartrees(path, a_pattern.format(col=0+1), cheat=True)
             for a in range(A):
-                array[a, a] = extract_in_Hartrees(path, a_pattern.format(col=a+1))
+                array[a, a] = extracted_Hartree_1D[a]
 
+            extracted_eV_2D = extract_in_eV(path, ba_pattern.format(row=0+1, col=1+1), cheat=True)
             for a, b in upper_triangle_loop_indices(A, 2):
-                array[a, b] = extract_in_eV(path, ba_pattern.format(row=a+1, col=b+1))
+                array[a, b] = extracted_eV_2D[a, b]
 
             if False and __debug__:  # debug printing
                 for a in range(A):
@@ -2649,11 +2659,13 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             """ x """
             array = np.zeros(shape)
 
+            extracted_Hartree_1D = extract_in_Hartrees(path, a_pattern.format(col=0+1), cheat=True)
             for a in range(A):
-                array[a, a] = extract_in_Hartrees(path, a_pattern.format(col=a+1))
+                array[a, a] = extracted_Hartree_1D[a]
 
+            extracted_eV_2D = extract_in_eV(path, ba_pattern.format(row=0+1, col=1+1), cheat=True)
             for a, b in upper_triangle_loop_indices(A, 2):
-                array[a, b] = extract_in_eV(path, ba_pattern.format(row=a+1, col=b+1))
+                array[a, b] = extracted_eV_2D[a, b]
 
             if False and __debug__:  # debug printing
                 for a in range(A):
@@ -2737,11 +2749,13 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             """ x """
             array = np.zeros(shape)
 
+            extracted_Hartree_1D = extract_in_Hartrees(path, a_pattern.format(col=0+1), cheat=True)
             for a in range(A):
-                array[a, a] = extract_in_Hartrees(path, a_pattern.format(col=a+1))
+                array[a, a] = extracted_Hartree_1D[a]
 
+            extracted_eV_2D = extract_in_eV(path, ba_pattern.format(row=0+1, col=1+1), cheat=True)
             for a, b in upper_triangle_loop_indices(A, 2):
-                array[a, b] = extract_in_eV(path, ba_pattern.format(row=a+1, col=b+1))
+                array[a, b] = extracted_eV_2D[a, b]
 
             if False and __debug__:  # debug printing
                 for a in range(A):
@@ -2874,7 +2888,6 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 lin_dict[pp.mode_map_dict[i]] = soc_ev
 
             print("Finished extracting linear SOC")
-            breakpoint()
             return lin_dict
 
         def _extract_quadratic_soc(SOC_E0):
@@ -2922,7 +2935,6 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 quad_dict[pp.mode_map_dict[i]] = soc_ev
 
             print("Finished extracting quadratic SOC")
-            breakpoint()
             return quad_dict
 
         def _extract_bilinear_soc():
