@@ -541,6 +541,8 @@ def extract_DSOME(path, nof_states, nof_electron_couplings=2):
         "Check\n" + "\n".join(selected_lines)
     )
 
+    print(selected_lines); breakpoint()
+
     # check for stars in lines? this means Gamess calculation failed/is bad
     for line in selected_lines:
         assert '*' not in line, "You probably messed up REFDET section! Gamess calculated failed?"
@@ -627,22 +629,6 @@ def search_file(filename, pattern):
             # If a match is found
             if match:
                 print(match.group().decode())
-                return match.group().decode()
-            else:
-                return None
-
-def search_file_v2(filename, pattern):
-
-    with open(filename, 'r+b') as file:
-
-        with mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ) as mmapped_file:
-        
-            # Search for the pattern
-            match = re.search(pattern.encode(), mmapped_file)
-            
-            # If a match is found
-            if match:
-                print(match.group().decode())
                 # b'\n' is subsequence of newline byte, trying to find from beginning of file
                 # to match.start(), basically first newline before the match
                 start = mmapped_file.rfind(b'\n', 0, match.start()) + 1
@@ -650,7 +636,6 @@ def search_file_v2(filename, pattern):
             
                 # Extract the line
                 line = mmapped_file[start:end].decode()
-                print(line)
 
                 if 'DONE WITH MP2' in pattern:
                     output = line
@@ -693,12 +678,18 @@ def _example_processing_function(path, memmap):
     return stuff
 
 
-def process_func_1(path, memmap, pattern):
+def pattern_processing_routing(path, memmap, pattern):
+
+    if 'DONE WITH MP2' in pattern:
+        begin_string = "DONE WITH MP2"
+        end_string = "\n"
+        lines = extract_string_list(path, memmap, begin_string, end_string, nof_line_skip=0)
+        return lines
 
     if 'TOTAL ENERGY =' in pattern:
         ''' TOTAL ENERGY =     -76.2286665045 '''
-        begin_string = " TOTAL ENERGY = "
-        end_string = " ELECTRON-ELECTRON POTENTIAL ENERGY"
+        begin_string = "TOTAL ENERGY ="
+        end_string = "ELECTRON-ELECTRON POTENTIAL ENERGY"
         lines = extract_string_list(path, memmap, begin_string, end_string, nof_line_skip=0)
         G1E_line = lines[0]
         total_energy = float(G1E_line[-1])
@@ -750,6 +741,16 @@ def process_func_1(path, memmap, pattern):
         # match the s1/s2 with the appropriate line in `lines`
         return eV_array[n-1]
 
+    elif 'DSOME' in pattern:
+        begin_string = "HSO MATRIX IN DIABATIC REPRESENTATION (DIRECT MAXIMIZATION)"
+        end_string = 'SOC EIG. VALUES and VECTORS IN DIABATS (DIRECT MAX.)'
+        lines = extract_string_list(path, memmap, begin_string, end_string, nof_line_skip=7)
+
+        print("Ingested:\n")
+        for i, l in enumerate(lines): print(f"Line {i:02d}: ", l)
+
+        return lines
+
     else:
         print(pattern)
         breakpoint()
@@ -760,16 +761,28 @@ def process_func_1(path, memmap, pattern):
     return
 
 
-def _extract_energy_from_gamessoutput_memap(path, pattern):
+def _extract_energy_from_gamessoutput_memmap(path, pattern):
     """ use memory map to extract data  """
-    string = extract_from_file(path, process_func_1, pattern)
+    string = extract_from_file(path, pattern_processing_routing, pattern)
     print(string)
     return string
 
-_extract_energy_from_gamessoutput_memap('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', 'STATE #.* 7.S GMC-PT-LEVEL DIABATIC ENERGY=')
-_extract_energy_from_gamessoutput_memap('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', 'TOTAL ENERGY =')
-search_file_v2('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', 'TOTAL ENERGY =')
-search_file_v2('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', 'STATE #.* 1.S GMC-PT-LEVEL DIABATIC ENERGY=')
+def extract_ground_state_energy_memmap(hessian_path, pattern):
+    string = extract_from_file(hessian_path, pattern_processing_routing, pattern)
+    print(string)
+    return string
+
+def extract_DSOME_memmap(path, pattern):
+    string = extract_from_file(path, pattern_processing_routing, pattern)
+    return string
+
+_extract_energy_from_gamessoutput_memmap('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', 'STATE #.* 7.S GMC-PT-LEVEL DIABATIC ENERGY=')
+_extract_energy_from_gamessoutput_memmap('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', 'TOTAL ENERGY =')
+extract_from_file('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', pattern_processing_routing, 'TOTAL ENERGY =')
+extract_from_file('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', pattern_processing_routing, 'STATE #.* 1.S GMC-PT-LEVEL DIABATIC ENERGY=')
+extract_ground_state_energy_memmap('RhF3_SPK_mp2_rohf_D3h_mult5_diis_gh.out', 'TOTAL ENERGY =')
+extract_DSOME_memmap('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', 'DSOME')
+
 breakpoint()
 # ---------------------------------------------------------------------------------------
 
@@ -3290,7 +3303,7 @@ def refG_calc(ref_geom_path, **kwargs):
 
     # Check if the calculation has already been run
     #grace_exists = subprocess_call_wrapper(["grep", "-a", "DONE WITH MP2 ENERGY", output_path]) == 0
-    grace_exists = bool(search_file_v2(output_path, "DONE WITH MP2 ENERGY"))
+    grace_exists = bool(search_file(output_path, "DONE WITH MP2 ENERGY"))
     if grace_exists:
         print("Calculation at the reference structure has already been done.")
         return
