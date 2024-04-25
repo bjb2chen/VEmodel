@@ -393,13 +393,16 @@ def extract_in_Hartrees(file_path, pattern):
 
     This function gets the numbers from the HARTREE column
     """
-    column_specification_string = "tail -1 | cut -c44-61"
-    backup_line_idx = slice(44, 62)  # equivalent to `array[62:]`
-    return _extract_energy_from_gamessoutput_grep(
-        file_path, pattern,
-        column_specification_string,
-        backup_line_idx
-    )
+    if True:
+        return search_IN_file(file_path, pattern, unit='HARTREE')
+    else:
+        column_specification_string = "tail -1 | cut -c44-61"
+        backup_line_idx = slice(44, 62)  # equivalent to `array[62:]`
+        return _extract_energy_from_gamessoutput_grep(
+            file_path, pattern,
+            column_specification_string,
+            backup_line_idx
+        )
 
 
 def extract_diabatic_energy(file_path, pattern):
@@ -418,8 +421,8 @@ def extract_in_eV(file_path, pattern):
 
     This function gets the numbers from the EV column
     """
-    if False:
-        return _extract_energy_from_gamessoutput_memap(file_path, pattern)
+    if True:
+        return search_IN_file(file_path, pattern, unit='EV')
     else:
         column_specification_string = "tail -1 | cut -c62-"
         backup_line_idx = slice(62, None)  # equivalent to `array[62:]`
@@ -499,38 +502,44 @@ def extract_DSOME(path, nof_states, nof_electron_couplings=2):
     nof_transitions = np.sum(range(A)) * max_nof_electron_couplings
 
     def get_line_list():
-        start_pattern = "HSO MATRIX IN DIABATIC REPRESENTATION (DIRECT MAXIMIZATION)"
-        end_pattern = 'SOC EIG. VALUES and VECTORS IN DIABATS (DIRECT MAX.)'
 
-        sed_command = f"sed -n '/{start_pattern}/,/{end_pattern}/p' {path}"
-        result = subprocess_run_wrapper(sed_command, shell=True, text=True, capture_output=True)
-        # i believe there is another way to check if the result is empty?
-        # I think the `result` object has error codes or some such?
+        reduced_line_list = extract_DSOME_memmap(path, 'DSOME')
 
-        line_list = result.stdout.splitlines()
+        if not (isinstance(reduced_line_list, list) and reduced_line_list != []):
 
-        # check if extraction worked
-        if not (isinstance(line_list, list) and line_list != []):
-            print('Cannot use sed to extract')
-            line_list = extract_lines_between_patterns(  # fallback to slow pythonic extraction
-                f'{path}',
-                f'{start_pattern}',
-                f'{end_pattern}',
-            )
-            print(f'Using selected lines from {path}, opened via python')
+            # old style using sed, maybe for fallback
+            start_pattern = "HSO MATRIX IN DIABATIC REPRESENTATION (DIRECT MAXIMIZATION)"
+            end_pattern = 'SOC EIG. VALUES and VECTORS IN DIABATS (DIRECT MAX.)'
 
-        if False and __debug__:
-            for i, l in enumerate(line_list): print(i, l); breakpoint()
+            sed_command = f"sed -n '/{start_pattern}/,/{end_pattern}/p' {path}"
+            result = subprocess_run_wrapper(sed_command, shell=True, text=True, capture_output=True)
+            # i believe there is another way to check if the result is empty?
+            # I think the `result` object has error codes or some such?
 
-        # remove unnecessary headers (first 7 lines and last 2 lines)
-        s, e = 7, -2
-        reduced_line_list = line_list[s:e]
+            line_list = result.stdout.splitlines()
 
-        if True and __debug__:  # old style line list from sed
-            assert 'STATE #' not in line_list[s-1]  # lines we don't need
-            assert 'STATE #' in line_list[s]
-            assert 'STATE #' in line_list[e-1]
-            assert 'STATE #' not in line_list[e]  # lines we don't need
+            # check if extraction worked
+            if not (isinstance(line_list, list) and line_list != []):
+                print('Cannot use sed to extract')
+                line_list = extract_lines_between_patterns(  # fallback to slow pythonic extraction
+                    f'{path}',
+                    f'{start_pattern}',
+                    f'{end_pattern}',
+                )
+                print(f'Using selected lines from {path}, opened via python')
+
+            if False and __debug__:
+                for i, l in enumerate(line_list): print(i, l); breakpoint()
+
+            # remove unnecessary headers (first 7 lines and last 2 lines)
+            s, e = 7, -2
+            reduced_line_list = line_list[s:e]
+
+            if True and __debug__:  # old style line list from sed
+                assert 'STATE #' not in line_list[s-1]  # lines we don't need
+                assert 'STATE #' in line_list[s]
+                assert 'STATE #' in line_list[e-1]
+                assert 'STATE #' not in line_list[e]  # lines we don't need
 
         return reduced_line_list
 
@@ -540,8 +549,6 @@ def extract_DSOME(path, nof_states, nof_electron_couplings=2):
         f"There should be {nof_transitions}"
         "Check\n" + "\n".join(selected_lines)
     )
-
-    print(selected_lines); breakpoint()
 
     # check for stars in lines? this means Gamess calculation failed/is bad
     for line in selected_lines:
@@ -617,9 +624,12 @@ def extract_DSOME(path, nof_states, nof_electron_couplings=2):
     return spin_orbit_array
 
 # ---------------------------------------------------------------------------------------
-def search_file(filename, pattern):
+def search_IN_file(path, pattern, unit):
+    ''' Using mmap to grep a file and see if regex pattern hits or not.
+        Basically the in operator. Returns the full line of text 'pattern' is located in. 
+        It uses REGEX, so be careful! Escape the parens. '''
 
-    with open(filename, 'r+b') as file:
+    with open(path, 'r+b') as file:
 
         with mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ) as mmapped_file:
         
@@ -628,7 +638,7 @@ def search_file(filename, pattern):
             
             # If a match is found
             if match:
-                print(match.group().decode())
+                #print('match.group().decode():', match.group().decode())
                 # b'\n' is subsequence of newline byte, trying to find from beginning of file
                 # to match.start(), basically first newline before the match
                 start = mmapped_file.rfind(b'\n', 0, match.start()) + 1
@@ -637,46 +647,68 @@ def search_file(filename, pattern):
                 # Extract the line
                 line = mmapped_file[start:end].decode()
 
-                if 'DONE WITH MP2' in pattern:
+                if unit == 'GRACE':
                     output = line
                     print(output)
                     return output  
                 
-                if 'TOTAL ENERGY =' in pattern:
+                elif 'TOTAL ENERGY =' in pattern:
                     output = float(line.split()[3])
                     print(output)
                     return output
 
-                elif 'GMC-PT-LEVEL DIABATIC ENERGY' in pattern:
-                    output = float(line.split()[7])
+                elif unit == 'HARTREE':
+                    output = float(line.split('=')[1].split()[0])
                     print(output)
                     return output
+
+                elif unit == 'EV':
+                    output = float(line.split('=')[1].split()[1])
+                    print(output)
+                    return output
+
+                elif 'HSO MATRIX IN DIABATIC REPRESENTATION \\(DIRECT MAXIMIZATION\\)' in pattern:
+                    output = line
+                    print(output)
+                    return output
+
+                elif 'SOC EIG. VALUES and VECTORS IN DIABATS \\(DIRECT MAX.\\)' in pattern:
+                    output = line
+                    print(output)
+                    return output
+
             else:
                return None
 
-def _example_processing_function(path, memmap):
+def selected_lines_mmap(path, start_pattern, end_pattern):
 
-    # if processing block 1
-    begin_string, end_string = 'STATE #.* {col}.S GMC-PT-LEVEL DIABATIC ENERGY=', "\n"
-    # here is where you call extract string
-    lines = extract_string_list(path, memmap, begin_string, end_string, nof_line_skip=1)
-    print(lines)
-    breakpoint()
+    with open(path, 'r+b') as file:
 
-    def process_block_1(): return
-    b1_out = process_block_1(lines)
-
-    begin_string, end_string = "block_2_begin", "block_2_end"
-    # here is where you call extract string
-    lines = extract_string_list(path, memmap, begin_string, end_string, nof_line_skip=3)
-
-    def process_block_2(): return
-    b2_out = process_block_2(lines)
-
-    stuff = [b1_out, b2_out, ]  # whatever you might need to return?
-
-    return stuff
-
+        with mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ) as mmapped_file:
+        
+            # Search for the start and end patterns
+            print(path, start_pattern, end_pattern)
+            start_match = re.search(start_pattern.encode(), mmapped_file)
+            print('start_match.group().decode():', start_match.group().decode())
+            end_match = re.search(end_pattern.encode(), mmapped_file)
+            print('end_match.group().decode():', end_match.group().decode())
+            
+            # If both matches are found
+            if start_match and end_match:
+                # Find the start of the line for the start pattern
+                start_line_start = mmapped_file.rfind(b'\n', 0, start_match.start()) + 1
+                
+                # Find the end of the line for the end pattern
+                end_line_end = mmapped_file.find(b'\n', end_match.end())
+                
+                # Extract the lines
+                lines = mmapped_file[start_line_start:end_line_end].decode()
+                
+                print(lines) ; breakpoint()
+                return lines
+            else:
+                print('here2')
+                return None
 
 def pattern_processing_routing(path, memmap, pattern):
 
@@ -692,7 +724,7 @@ def pattern_processing_routing(path, memmap, pattern):
         end_string = "ELECTRON-ELECTRON POTENTIAL ENERGY"
         lines = extract_string_list(path, memmap, begin_string, end_string, nof_line_skip=0)
         G1E_line = lines[0]
-        total_energy = float(G1E_line[-1])
+        total_energy = float(G1E_line.split()[-1])
         return total_energy
 
     if 'GMC-PT-LEVEL DIABATIC ENERGY' in pattern:
@@ -700,17 +732,17 @@ def pattern_processing_routing(path, memmap, pattern):
         begin_string = " - DM DIABT PT HAMILTONIAN MATRIX ELEMENTS -"
         end_string = " --- DIABATIC COUPLINGS (OFF DIAGONAL ELEMENTS)---"
         lines = extract_string_list(path, memmap, begin_string, end_string, nof_line_skip=4)
-        print(lines)
+        #print(lines)
 
         print("Ingested:")
         for i, l in enumerate(lines): print(f"Line {i:02d}: ", l)
         breakpoint()
 
-        hartree_list = [float(l[6]) for l in lines]
+        hartree_list = [float(l.split()[6]) for l in lines]
         hartree_array = np.array(hartree_list)
         if False: print("Hartree array\n", hartree_array)
 
-        eV_list = [float(l[7]) for l in lines]
+        eV_list = [float(l.split()[7]) for l in lines]
         eV_array = np.array(eV_list)
         if False: print("eV array\n", eV_array)
 
@@ -727,11 +759,11 @@ def pattern_processing_routing(path, memmap, pattern):
         print("Ingested:\n")
         for i, l in enumerate(lines): print(f"Line {i:02d}: ", l)
 
-        hartree_list = [float(l[7]) for l in lines]
+        hartree_list = [float(l.split()[7]) for l in lines]
         hartree_array = np.array(hartree_list)
         print("Hartree array\n", hartree_array)
 
-        eV_list = [float(l[8]) for l in lines]
+        eV_list = [float(l.split()[8]) for l in lines]
         eV_array = np.array(eV_list)
         print("eV array\n", eV_array)
 
@@ -776,11 +808,19 @@ def extract_DSOME_memmap(path, pattern):
     string = extract_from_file(path, pattern_processing_routing, pattern)
     return string
 
-_extract_energy_from_gamessoutput_memmap('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', 'STATE #.* 7.S GMC-PT-LEVEL DIABATIC ENERGY=')
-_extract_energy_from_gamessoutput_memmap('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', 'TOTAL ENERGY =')
-extract_from_file('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', pattern_processing_routing, 'TOTAL ENERGY =')
-extract_from_file('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', pattern_processing_routing, 'STATE #.* 1.S GMC-PT-LEVEL DIABATIC ENERGY=')
-extract_ground_state_energy_memmap('RhF3_SPK_mp2_rohf_D3h_mult5_diis_gh.out', 'TOTAL ENERGY =')
+breakpoint()
+# search_IN_file('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', \
+#     "HSO MATRIX IN DIABATIC REPRESENTATION \\(DIRECT MAXIMIZATION\\)")
+# search_IN_file('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', \
+#     'SOC EIG. VALUES and VECTORS IN DIABATS \\(DIRECT MAX.\\)')
+# selected_lines_mmap('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', \
+#     "HSO MATRIX IN DIABATIC REPRESENTATION \\(DIRECT MAXIMIZATION\\)", \
+#      'SOC EIG. VALUES and VECTORS IN DIABATS \\(DIRECT MAX.\\)')
+# _extract_energy_from_gamessoutput_memmap('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', 'STATE #.* 7.S GMC-PT-LEVEL DIABATIC ENERGY=')
+# _extract_energy_from_gamessoutput_memmap('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', 'TOTAL ENERGY =')
+# extract_from_file('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', pattern_processing_routing, 'TOTAL ENERGY =')
+# extract_from_file('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', pattern_processing_routing, 'STATE #.* 1.S GMC-PT-LEVEL DIABATIC ENERGY=')
+# extract_ground_state_energy_memmap('RhF3_SPK_mp2_rohf_D3h_mult5_diis_gh.out', 'TOTAL ENERGY =')
 extract_DSOME_memmap('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', 'DSOME')
 
 breakpoint()
@@ -1050,7 +1090,7 @@ def diabatization(**kwargs):
         # Check if the reference geometry calculation is done?
         refG_out = f"{filename}_refG.out"
         #grace0 = subprocess_run_wrapper(["grep", "-a", "DONE WITH MP2 ENERGY", refG_out])
-        grace0 = search_file(refG_out, "DONE WITH MP2 ENERGY")
+        grace0 = search_IN_file(refG_out, "DONE WITH MP2 ENERGY", unit='GRACE')
         ref_geom_flag_exists = bool(grace0)
 
         for key in linear_disp_keys:
@@ -1076,7 +1116,7 @@ def diabatization(**kwargs):
                 fp.write('\n $END')
 
             #grace1 = subprocess_run_wrapper(["grep", "-a", "DONE WITH MP2 ENERGY", games_filename+'.out'])
-            grace1 = search_file(games_filename+'.out', "DONE WITH MP2 ENERGY")
+            grace1 = search_IN_file(games_filename+'.out', "DONE WITH MP2 ENERGY", unit='GRACE')
             gamess_calculation_run = bool(grace1)
 
             # This means that refG completed successfully and `diabmode*.out` not completed
@@ -1098,7 +1138,7 @@ def diabatization(**kwargs):
         # Check if the reference geometry calculation is done?
         refG_out = f"{filename}_refG.out"
         #grace0 = subprocess_run_wrapper(["grep", "-a", "DONE WITH MP2 ENERGY", refG_out])
-        grace0 = search_file(refG_out, "DONE WITH MP2 ENERGY")
+        grace0 = search_IN_file(refG_out, "DONE WITH MP2 ENERGY", unit='GRACE')
         ref_geom_flag_exists = bool(grace0)
 
         for key in bi_linear_disp_keys:
@@ -1120,7 +1160,7 @@ def diabatization(**kwargs):
 
             # Check if the calculation is done already
             #grace2 = subprocess_run_wrapper(["grep", "-a", "DONE WITH MP2 ENERGY", games_filename+'.out'])
-            grace2 = search_file(games_filename+'.out', "DONE WITH MP2 ENERGY")
+            grace2 = search_IN_file(games_filename+'.out', "DONE WITH MP2 ENERGY", unit='GRACE')
             gamess_calculation_run = bool(grace2)
 
             # this will never work? grace0 is not defined
@@ -2834,6 +2874,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 lin_dict[pp.mode_map_dict[i]] = soc_ev
 
             print("Finished extracting linear SOC")
+            breakpoint()
             return lin_dict
 
         def _extract_quadratic_soc(SOC_E0):
@@ -2881,6 +2922,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 quad_dict[pp.mode_map_dict[i]] = soc_ev
 
             print("Finished extracting quadratic SOC")
+            breakpoint()
             return quad_dict
 
         def _extract_bilinear_soc():
@@ -3033,8 +3075,8 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                     #     linear_displacement_filenames[(key, i)]
                     # ])
 
-                    grace_code[key] = bool(search_file(
-                        linear_displacement_filenames[(key, i)], "DONE WITH MP2 ENERGY"))
+                    grace_code[key] = bool(search_IN_file(
+                        linear_displacement_filenames[(key, i)], "DONE WITH MP2 ENERGY", unit='GRACE'))
                     print(f" ..... in file {linear_displacement_filenames[(key, i)]}")
 
                 if not all(code == True for code in grace_code.values()):
@@ -3053,8 +3095,8 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                     #     "grep", "-a", "DONE WITH MP2 ENERGY",
                     #     bi_linear_displacement_filenames[(key, i, j)]
                     # ])
-                    grace_code[key] = bool(search_file(
-                        bi_linear_displacement_filenames[(key, i, j)], "DONE WITH MP2 ENERGY"))
+                    grace_code[key] = bool(search_IN_file(
+                        bi_linear_displacement_filenames[(key, i, j)], "DONE WITH MP2 ENERGY", unit='GRACE'))
                     print(f" ..... in file {bi_linear_displacement_filenames[(key, i, j)]}")
 
                 if not all(code == True for code in grace_code.values()):
@@ -3303,7 +3345,7 @@ def refG_calc(ref_geom_path, **kwargs):
 
     # Check if the calculation has already been run
     #grace_exists = subprocess_call_wrapper(["grep", "-a", "DONE WITH MP2 ENERGY", output_path]) == 0
-    grace_exists = bool(search_file(output_path, "DONE WITH MP2 ENERGY"))
+    grace_exists = bool(search_IN_file(output_path, "DONE WITH MP2 ENERGY", unit='GRACE'))
     if grace_exists:
         print("Calculation at the reference structure has already been done.")
         return

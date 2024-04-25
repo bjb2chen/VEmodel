@@ -74,7 +74,7 @@ def extract_string_list(path, memmap, begin_string, end_string, nof_line_skip=1)
     stringData = stringData.strip()
 
     # return the list of strings (not including empty strings and comments)
-    return [line.split() for line in stringData.splitlines() if line != ""]
+    return [line for line in stringData.splitlines() if line != ""]
 
 
 def _example_processing_function(path, memmap):
