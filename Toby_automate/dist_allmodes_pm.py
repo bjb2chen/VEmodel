@@ -628,6 +628,9 @@ def search_IN_file(path, pattern, unit):
     ''' Using mmap to grep a file and see if regex pattern hits or not.
         Basically the in operator. Returns the full line of text 'pattern' is located in. 
         It uses REGEX, so be careful! Escape the parens. '''
+    
+    if not os.path.isfile(path):
+        return False
 
     with open(path, 'r+b') as file:
         with mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ) as mmapped_file:
