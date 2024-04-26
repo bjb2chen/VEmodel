@@ -503,7 +503,7 @@ def extract_DSOME(path, nof_states, nof_electron_couplings=2):
 
     def get_line_list():
 
-        reduced_line_list = extract_DSOME_memmap(path, 'DSOME')
+        reduced_line_list = extract_DSOME_memmap(path, 'DSOME', unit='EV', cheat=True)
 
         if not (isinstance(reduced_line_list, list) and reduced_line_list != []):
 
@@ -744,7 +744,7 @@ def pattern_processing_routing(path, memmap, pattern, unit=None, cheat=False):
             n = int(pattern.replace('.S GMC-PT-LEVEL DIABATIC ENERGY=', '').replace('STATE #.* ', ''))
             return eV_array[n-1] if unit == 'EV' else hartree_array[n-1]
         else:
-            return eV_array
+            return eV_array, hartree_array
 
     elif 'GMC-PT-LEVEL COUPLING' in pattern:
         ''' STATE #.* 1 &.* 2.S GMC-PT-LEVEL COUPLING '''
@@ -759,13 +759,21 @@ def pattern_processing_routing(path, memmap, pattern, unit=None, cheat=False):
             for i, l in enumerate(lines): print(f"Line {i:02d}: ", l)
 
         hartree_list = [float(l.split()[8]) for l in lines]
-        hartree_list = [hartree_list[i:i+pp.A] for i in range(pp.A+1)]
-        hartree_array = np.array(hartree_list)
+        idx_list = [(a, b) for a, b in upper_triangle_loop_indices(pp.A, 2)]
+        assert len(hartree_list) == len(idx_list), "Something went wrong with reading lines"
+        hartree_array = np.zeros((pp.A, pp.A))
+        for i in range(len(idx_list)):
+            hartree_array[idx_list[i]] = hartree_list[i]
+ 
         if False: print("Hartree array\n", hartree_array)
-
+ 
         eV_list = [float(l.split()[9]) for l in lines]
-        eV_list = [eV_list[i:i+pp.A] for i in range(pp.A+1)]
-        eV_array = np.array(eV_list)
+        idx_list = [(a, b) for a, b in upper_triangle_loop_indices(pp.A, 2)]
+        assert len(eV_list) == len(idx_list), "Something went wrong with reading lines"
+        eV_array = np.zeros((pp.A, pp.A))
+        for i in range(len(idx_list)):
+            eV_array[idx_list[i]] = eV_list[i]
+ 
         if False: print("eV array\n", eV_array)
 
         #breakpoint()
@@ -774,7 +782,7 @@ def pattern_processing_routing(path, memmap, pattern, unit=None, cheat=False):
             s1, s2 = map(int, pattern.replace(".S GMC-PT-LEVEL COUPLING", '').replace('STATE #.*', '').split('&.*'))
             return eV_array[s1-1,s2-1] if unit == 'EV' else hartree_array[s1-1,s2-1]
         else:
-            return eV_array
+            return eV_array, hartree_array
 
     elif 'DSOME' in pattern:
         begin_string = "HSO MATRIX IN DIABATIC REPRESENTATION (DIRECT MAXIMIZATION)"
@@ -798,17 +806,29 @@ def pattern_processing_routing(path, memmap, pattern, unit=None, cheat=False):
 
 def _extract_energy_from_gamessoutput_memmap(path, pattern, unit=None, cheat=False):
     """ use memory map to extract data  """
-    string = extract_from_file(path, pattern_processing_routing, pattern, unit, cheat=cheat)
-    if False: print(string)
-    return string
+    if not cheat:
+        string = extract_from_file(path, pattern_processing_routing, pattern, unit, cheat=cheat)
+        if False: print(string)
+        return string
+ 
+    if cheat:
+        ev_array, au_array = extract_from_file(path, pattern_processing_routing, pattern, unit, cheat=cheat)
+ 
+        if unit == 'HARTREE':
+            return au_array
+        elif unit == 'EV':
+            return ev_array
+        else:
+            print(f"{unit=} not recognized")
+            breakpoint()
 
-def extract_ground_state_energy_memmap(hessian_path, pattern):
-    string = extract_from_file(hessian_path, pattern_processing_routing, pattern)
+def extract_ground_state_energy_memmap(hessian_path, pattern, unit=None, cheat=False):
+    string = extract_from_file(hessian_path, pattern_processing_routing, pattern, unit, cheat=cheat)
     print(string)
     return string
 
-def extract_DSOME_memmap(path, pattern):
-    string = extract_from_file(path, pattern_processing_routing, pattern)
+def extract_DSOME_memmap(path, pattern, unit=None, cheat=False):
+    string = extract_from_file(path, pattern_processing_routing, pattern, unit, cheat=cheat)
     return string
 
 # search_IN_file('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', \
@@ -2443,15 +2463,15 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             f'Linear shift value: {linear_shift} eV\n'
         )
 
-
         A = pp.A
         shape = (A, A)
-        E0_array = np.zeros(shape)
-
+        E0_array_ev = np.zeros(shape)
+        E0_array_au = np.zeros(shape)
+ 
         if False and __debug__:  # debug
             # check this function to remind yourself how the indexing works
             _reminder_produce_upper_triangle_indices(A)
-
+ 
         def _toby_bash_style(E0_array):
             """ This matches the bash script looping style used by Toby.
             The outer loop is over the columns of the matrix a ~ col.
@@ -2463,53 +2483,53 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 for b in range(a):
                     E0_array[b, a] = refG_extract(ref_geom_path, ba_pattern.format(row=b+1, col=a+1))
             return
-
-        def _row_first_style(E0_array):
-            """ x """
+ 
+        def _row_first_style_ev(E0_array):
+            """ Modify `E0_array` in place """
             extracted_eV_1D = extract_in_eV(ref_geom_path, a_pattern.format(col=0+1), cheat=True)
             for a in range(A):
                 E0_array[a, a] = extracted_eV_1D[a]
                 E0_array[a, a] += linear_shift
-
+ 
             extracted_eV_2D = extract_in_eV(ref_geom_path, ba_pattern.format(row=0+1, col=1+1), cheat=True)
             for a, b in upper_triangle_loop_indices(A, 2):
-                E0_array[a, b] = extracted_eV_2D[a,b]
-
+                E0_array[a, b] = extracted_eV_2D[a, b]
+ 
             # for row, col in upper_triangle_loop_indices(A, 2):
             #     E0_array[row, col] = extract_in_eV(ref_geom_path, ba_pattern.format(row=row+1, col=col+1))
-
+ 
             return
-
+ 
+        def _row_first_style_au(E0_array):
+            """ Modify `E0_array` in place """
+            extracted_au_1D = extract_in_Hartrees(ref_geom_path, a_pattern.format(col=0+1), cheat=True)
+            for a in range(A):
+                E0_array[a, a] = extracted_au_1D[a]
+ 
+            extracted_au_2D = extract_in_Hartrees(ref_geom_path, ba_pattern.format(row=0+1, col=1+1), cheat=True)
+            for a, b in upper_triangle_loop_indices(A, 2):
+                E0_array[a, b] = extracted_au_2D[a, b]
+ 
+            return
+ 
         if True:  # this makes more sense based on what I see in the file
-            _row_first_style(E0_array)
+            _row_first_style_ev(E0_array_ev)
+            _row_first_style_au(E0_array_au)
             # print("Row first", E0_array)
-
+ 
         if False:  # matches the bash style from Toby
             _toby_bash_style(E0_array)
             # print("Column first / bash style", E0_array)
-
+ 
         if False and __debug__:  # (keep them out of the loops above for simplicity)
             for a in range(A):
-                print(f"Diabatic energy at state {a+1}: {E0_array[a, a]}")
+                print(f"Diabatic energy at state {a+1}: {E0_array_ev[a, a]}")
             for a, b in upper_triangle_loop_indices(A, 2):
-                print(f"Coupling energy at state {a+1} & {b+1}: {E0_array[a, b]}")
+                print(f"Coupling energy at state {a+1} & {b+1}: {E0_array_ev[a, b]}")
             # for row, col in upper_triangle_loop_indices(A, 2):
             #     print(f"Coupling energy at state {row+1} & {col+1}: {E0_array[row, col]}")
             print(E0_array)
-
-        # added at the last minute (change later)
-        E0_array_ev = E0_array
-        E0_array_au = np.zeros(shape)
-
-        # now also get the array in atomic units (Hartrees)
-        extracted_eV_1D = extract_in_Hartrees(ref_geom_path, a_pattern.format(col=0+1), cheat=True)
-        for a in range(A):
-            E0_array_au[a, a] = extracted_eV_1D[a]
-
-        extracted_eV_2D = extract_in_Hartrees(ref_geom_path, ba_pattern.format(row=0+1, col=1+1), cheat=True)
-        for a, b in upper_triangle_loop_indices(A, 2):
-            E0_array_au[a, b] = extracted_eV_2D[a,b]
-
+ 
         return E0_array_ev, E0_array_au
 
     def extract_etdm(path, verbose=False):
@@ -2595,6 +2615,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 array[a, a] = extracted_Hartree_1D[a]
 
             extracted_eV_2D = extract_in_eV(path, ba_pattern.format(row=0+1, col=1+1), cheat=True)
+            #breakpoint()
             for a, b in upper_triangle_loop_indices(A, 2):
                 array[a, b] = extracted_eV_2D[a, b]
 
@@ -3051,6 +3072,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 print(str(e), "\nFailed to extract SOC! Continue?")
                 breakpoint()
 
+        breakpoint()
         file_contents = "\n".join([
             make_op_section(job_title),
             make_parameter_section(model, A, N),
