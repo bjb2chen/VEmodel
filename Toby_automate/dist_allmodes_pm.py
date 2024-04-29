@@ -837,23 +837,6 @@ def extract_DSOME_memmap(path, pattern, unit=None, cheat=False):
     string = extract_from_file(path, pattern_processing_routing, pattern, unit, cheat=cheat)
     return string
 
-# search_IN_file('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', \
-#     "HSO MATRIX IN DIABATIC REPRESENTATION \\(DIRECT MAXIMIZATION\\)")
-# search_IN_file('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', \
-#     'SOC EIG. VALUES and VECTORS IN DIABATS \\(DIRECT MAX.\\)')
-# selected_lines_mmap('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', \
-#     "HSO MATRIX IN DIABATIC REPRESENTATION \\(DIRECT MAXIMIZATION\\)", \
-#      'SOC EIG. VALUES and VECTORS IN DIABATS \\(DIRECT MAX.\\)')
-# _extract_energy_from_gamessoutput_memmap('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', "STATE #.* 7.S GMC-PT-LEVEL DIABATIC ENERGY=")
-# _extract_energy_from_gamessoutput_memmap('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', "STATE #  2 &  8'S GMC-PT-LEVEL COUPLING  =")
-# # extract_from_file('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', pattern_processing_routing, 'TOTAL ENERGY =')
-# # extract_from_file('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', pattern_processing_routing, 'STATE #.* 1.S GMC-PT-LEVEL DIABATIC ENERGY=')
-# # extract_ground_state_energy_memmap('RhF3_SPK_mp2_rohf_D3h_mult5_diis_gh.out', 'TOTAL ENERGY =')
-# breakpoint()
-# extract_DSOME_memmap('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', 'DSOME')
-# search_IN_file('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', "STATE #  6'S GMC-PT-LEVEL DIABATIC ENERGY=", unit='HARTREE')
-# search_IN_file('RhF3cat_SPK_gmcpt_C1_15st_diab_0.05_-x1q12_+x1q9.out', " STATE #  2 &  8'S GMC-PT-LEVEL COUPLING  =", unit='EV')
-
 # ---------------------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------------------
