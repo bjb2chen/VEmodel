@@ -39,7 +39,7 @@ file_name = str(
 print(f"Our {file_name=}")
 
 # Compute settings
-ncpus, ngb, nhour = 2, 4, 24
+ncpus, ngb, nhour = 4, 4, 24
 
 # -------------------------------------------------------------------------
 filnam = file_name  # alias (remove later)
@@ -49,7 +49,7 @@ filnam = file_name  # alias (remove later)
 selected_mode_list = {
     "H2Ocat": [7, 8, 9],
     # "NH3cat": [8, 9, 10, 11, 12, ],
-    f"{name}t": [7, 8, 9, 10, 11, 12, ],
+    f"{name}": [7, 8, 9, 10, 11, 12, ],
     }[name]
 
 nof_displacements_per_mode = {
@@ -64,10 +64,10 @@ nof_displacements_per_mode = {
 # if True it doesn't run any subprocess.run() commands
 # instead it simply prints out what the commands would be to the terminal
 dry_run = False
-is_compute_canada = True
+is_compute_canada = False
 suppress_zeros = False
 SOC_flag = False
-VECC_flag = True
+VECC_flag = False
 
 # -------------------------------------------------------------------------
 #                           Project Paths
