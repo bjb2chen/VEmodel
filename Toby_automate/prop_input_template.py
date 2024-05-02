@@ -239,7 +239,6 @@ def _generate_basic_wavefunction(basic_HO_wavepacket, nof_electronic_states, ope
         build_end,
         #operate_spec.format("Ex, Ey, Ez"),
         operate_spec.format("Ex"),
-        int_wf_end,
     ])
 
 def generate_basic_harmonic_oscillator_wavefunction_section(N, A, operate_string):
@@ -250,7 +249,7 @@ def generate_basic_harmonic_oscillator_wavefunction_section(N, A, operate_string
         "#  mode   type  center  moment.  freq.    mass",
         "-----------------------------------------------------------",
         *[
-            f"    v{n+1:>02d}    HO     0.0    0.0      1.0     1.0" for n in range(N)
+            f"    v{n:>02d}    HO     0.0    0.0      1.0     1.0" for n in N
         ],
         "-----------------------------------------------------------",
     ])
