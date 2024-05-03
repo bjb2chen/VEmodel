@@ -3061,7 +3061,6 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 print(str(e), "\nFailed to extract SOC! Continue?")
                 breakpoint()
 
-        breakpoint()
         file_contents = "\n".join([
             make_op_section(job_title),
             make_parameter_section(model, A, N),
