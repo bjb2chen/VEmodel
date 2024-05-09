@@ -1752,7 +1752,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
         return block
 
-    def build_linear_coupling(lin_dict, A, N):
+    def build_linear_coupling(lin_dict, A, N, vibron_ev, E0_array_ev):
         """Return a string containing the linear coupling constant information of a .op file.
         `lin_dict` is a dictionary
         for a `selected_mode_list = [7, 8, 9]`
@@ -1787,6 +1787,25 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 for a1, a2, i in it.product(range(A), range(A), range(N))
                 if (a1 < a2)
                 and (not suppress_zeros or not np.isclose(linear[i][a1, a2], 0.0))
+            ]),
+            ''.join([
+                make_line(
+                    label=f"#Screen: C1_s{a+1:0>2d}_s{a+1:0>2d}_v{i+1:0>2d}", 
+                    value=(np.log10(abs(linear[i][a, a]/(abs(E0_array_ev[a, a] - E0_array_ev[a, a]) - vibron_ev[i]))))
+                )
+                for a, i in it.product(range(A), range(N))
+                if (not suppress_zeros or not np.isclose(linear[i][a, a], 0.0)) and \
+                (np.log10(abs(linear[i][a, a]/(abs(E0_array_ev[a, a] - E0_array_ev[a, a]) - vibron_ev[i]))) > -0.5)
+            ]),
+            ''.join([
+                make_line(
+                    label=f"#Screen: C1_s{a1+1:0>2d}_s{a2+1:0>2d}_v{i+1:0>2d}", 
+                    value=(np.log10(abs(linear[i][a1, a2]/(abs(E0_array_ev[a1, a1] - E0_array_ev[a2, a2]) - vibron_ev[i]))))
+                )
+                for a1, a2, i in it.product(range(A), range(A), range(N))
+                if (a1 < a2)
+                and (not suppress_zeros or not np.isclose(linear[i][a1, a2], 0.0)) and \
+                (np.log10(abs(linear[i][a1, a2]/(abs(E0_array_ev[a1, a1] - E0_array_ev[a2, a2]) - vibron_ev[i]))) > -0.5)
             ]),
         ])
 
@@ -1989,7 +2008,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         # add them if present
         key = 'Linear'
         if key in model.keys():
-            return_list += [make_header(headers[key]),  build_linear_coupling(model[key], A, N)]
+            return_list += [make_header(headers[key]),  build_linear_coupling(model[key], A, N, vibron_ev, E0_array_ev)]
 
         key = 'Quadratic'
         if key in model.keys():
