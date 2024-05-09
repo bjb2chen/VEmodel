@@ -1788,7 +1788,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 if (a1 < a2)
                 and (not suppress_zeros or not np.isclose(linear[i][a1, a2], 0.0))
             ]),
-            "SCREENING EFFECTIVE VIBRONIC COUPLING, THRESHOLD: -0.5",
+            "### SCREENING EFFECTIVE VIBRONIC COUPLING, THRESHOLD: -0.6 ###",
             ''.join([
                 make_line(
                     label=f"#Screen: C1_s{a+1:0>2d}_s{a+1:0>2d}_v{i+1:0>2d}", 
@@ -1796,7 +1796,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 )
                 for a, i in it.product(range(A), range(N))
                 if (not suppress_zeros or not np.isclose(linear[i][a, a], 0.0)) and \
-                (np.log10(abs(linear[i][a, a]/(abs(E0_array_eV[a, a] - E0_array_eV[a, a]) - vibron_ev[i]))) > -0.5)
+                (np.log10(abs(linear[i][a, a]/(abs(E0_array_eV[a, a] - E0_array_eV[a, a]) - vibron_ev[i]))) > -0.6)
             ]),
             ''.join([
                 make_line(
@@ -1806,11 +1806,11 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 for a1, a2, i in it.product(range(A), range(A), range(N))
                 if (a1 < a2)
                 and (not suppress_zeros or not np.isclose(linear[i][a1, a2], 0.0)) and \
-                (np.log10(abs(linear[i][a1, a2]/(abs(E0_array_eV[a1, a1] - E0_array_eV[a2, a2]) - vibron_ev[i]))) > -0.5)
+                (np.log10(abs(linear[i][a1, a2]/(abs(E0_array_eV[a1, a1] - E0_array_eV[a2, a2]) - vibron_ev[i]))) > -0.6)
             ]),
         ])
 
-    def build_quadratic_coupling(quad_dict, A, N):
+    def build_quadratic_coupling(quad_dict, A, N, vibron_ev, E0_array_eV):
         """Return a string containing the quadratic coupling constant information of a .op file."""
 
         # make ordered-list of arrays stored in `lin_data`
@@ -1835,9 +1835,29 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 if (a1 < a2)
                 and (not suppress_zeros or not np.isclose(quad[i][a1, a2], 0.0))
             ]),
+            "### SCREENING EFFECTIVE VIBRONIC COUPLING, THRESHOLD: -0.6 ###",
+            ''.join([
+                make_line(
+                    label=f"#Screen: C2_s{a+1:0>2d}s{a+1:0>2d}_v{i+1:0>2d}v{i+1:0>2d}",
+                    value=(np.log10(abs(quad[i][a, a]/(abs(E0_array_eV[a, a] - E0_array_eV[a, a]) - vibron_ev[i]))))
+                )
+                for a, i in it.product(range(A), range(N))
+                if (not suppress_zeros or not np.isclose(quad[i][a, a], 0.0)) and \
+                (np.log10(abs(quad[i][a, a]/(abs(E0_array_eV[a, a] - E0_array_eV[a, a]) - vibron_ev[i]))) > -0.6)
+            ]),
+            ''.join([
+                make_line(
+                    label=f"#Screen: C2_s{a1+1:0>2d}s{a2+1:0>2d}_v{i+1:0>2d}v{i+1:0>2d}",
+                    value=(np.log10(abs(quad[i][a1, a2]/(abs(E0_array_eV[a1, a1] - E0_array_eV[a2, a2]) - vibron_ev[i]))))
+                )
+                for a1, a2, i in it.product(range(A), range(A), range(N))
+                if (a1 < a2)
+                and (not suppress_zeros or not np.isclose(quad[i][a1, a2], 0.0)) and \
+                (np.log10(abs(quad[i][a1, a2]/(abs(E0_array_eV[a1, a1] - E0_array_eV[a2, a2]) - vibron_ev[i]))) > -0.6)
+            ]),
         ])
 
-    def build_bilinear_coupling(bi_lin_dict, A, N):
+    def build_bilinear_coupling(bi_lin_dict, A, N, vibron_ev, E0_array_eV):
         """Return a string containing the BI-Linear coupling constant information of a .op file.
 
         We first make a new dictionary whose keys are  0-indexed (0, 1) based on `selected_mode_list`.
@@ -1878,10 +1898,10 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             ]),
         ])
 
-    def build_spinorbit_coupling(soc_dict, A, N):
+    def build_spinorbit_coupling(soc_dict, A, N, vibron_ev, E0_array_eV):
         """ x """
 
-        def build_linear_SOC(lin_dict, A, N):
+        def build_linear_SOC(lin_dict, A, N, vibron_ev, E0_array_eV):
             assert len(lin_dict.keys()) == N
             linear_soc = [lin_dict[mode_map_dict[i]] for i in range(N)]
 
@@ -1898,7 +1918,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 and (not suppress_zeros or not np.isclose(linear_soc[i][a1, a2], 0.0))
             ]) + '\n'
 
-        def build_quadratic_SOC(quad_dict, A, N):
+        def build_quadratic_SOC(quad_dict, A, N, vibron_ev, E0_array_eV):
             # make ordered-list of arrays stored in `lin_data`
             assert len(quad_dict.keys()) == N
             quad = [quad_dict[mode_map_dict[i]] for i in range(N)]
@@ -1916,7 +1936,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 and (not suppress_zeros or not np.isclose(quad[i][a1, a2], 0.0))
             ]) + '\n'
 
-        def build_BiLinear_SOC(bi_lin_dict, A, N):
+        def build_BiLinear_SOC(bi_lin_dict, A, N, vibron_ev, E0_array_eV):
 
             bi_lin = {}
             for old_key in bi_lin_dict.keys():
@@ -1936,7 +1956,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 and (not suppress_zeros or not np.isclose(bi_lin[(j1, j2)][a1, a2], 0.0))
             ]) + '\n'
 
-        def build_Total_SOC(total_dict, A, N):
+        def build_Total_SOC(total_dict, A, N, vibron_ev, E0_array_eV):
 
             total = {}
             for old_key in total_dict.keys():
