@@ -1793,7 +1793,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
     def build_quadratic_coupling(quad_dict, A, N):
         """Return a string containing the quadratic coupling constant information of a .op file."""
 
-        # make ordered-list of arrays stored in `lin_data`
+        # make ordered-list of arrays stored in `quad_data`
         assert len(quad_dict.keys()) == N
         quad = [quad_dict[mode_map_dict[i]] for i in range(N)]
 
@@ -1855,6 +1855,84 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 for a1, a2, j1, j2 in it.product(range(A), range(A), range(N), range(N))
                 if (a1 < a2) and (j1 < j2)
                 and (not suppress_zeros or not np.isclose(bi_lin[(j1, j2)][a1, a2], 0.0))
+            ]),
+        ])
+
+    def effective_vibronic_coupling_screening(lin_dict, quad_dict, bi_lin_dict, A, N, vibron_ev, E0_array_eV, screen_val=pp.screen_val):
+        """ Screening function"""
+        assert len(lin_dict.keys()) == N
+        linear = [lin_dict[mode_map_dict[i]] for i in range(N)]
+
+        assert len(quad_dict.keys()) == N
+        quad = [quad_dict[mode_map_dict[i]] for i in range(N)]
+
+        bi_lin = {}
+        for old_key in bi_lin_dict.keys():
+            new_key = reverse_ij_map[old_key]
+            bi_lin[new_key] = bi_lin_dict[old_key]
+
+        return '\n'.join([
+            f"### SCREENING EFFECTIVE LINEAR VIBRONIC COUPLING, THRESHOLD: {screen_val} ###",
+            ''.join([
+                make_line(
+                    label=f"#Screen: C1_s{a+1:0>2d}_s{a+1:0>2d}_v{i+1:0>2d}", 
+                    value=(np.log10(abs(linear[i][a, a]/(abs(E0_array_eV[a, a] - E0_array_eV[a, a]) - vibron_ev[i]))))
+                )
+                for a, i in it.product(range(A), range(N))
+                if (not suppress_zeros or not np.isclose(linear[i][a, a], 0.0)) and
+                (np.log10(abs(linear[i][a, a]/(abs(E0_array_eV[a, a] - E0_array_eV[a, a]) - vibron_ev[i]))) > screen_val)
+            ]),
+            ''.join([
+                make_line(
+                    label=f"#Screen: C1_s{a1+1:0>2d}_s{a2+1:0>2d}_v{i+1:0>2d}", 
+                    value=(np.log10(abs(linear[i][a1, a2]/(abs(E0_array_eV[a1, a1] - E0_array_eV[a2, a2]) - vibron_ev[i]))))
+                )
+                for a1, a2, i in it.product(range(A), range(A), range(N))
+                if (a1 < a2)
+                and (not suppress_zeros or not np.isclose(linear[i][a1, a2], 0.0)) and
+                (np.log10(abs(linear[i][a1, a2]/(abs(E0_array_eV[a1, a1] - E0_array_eV[a2, a2]) - vibron_ev[i]))) > screen_val)
+            ]),
+            f"### SCREENING EFFECTIVE QUADRATIC VIBRONIC COUPLING, THRESHOLD: {screen_val} ###",
+            ''.join([
+                make_line(
+                    label=f"#Screen: C2_s{a+1:0>2d}s{a+1:0>2d}_v{i+1:0>2d}v{i+1:0>2d}",
+                    value=(np.log10(abs(quad[i][a, a]/(abs(E0_array_eV[a, a] - E0_array_eV[a, a]) - vibron_ev[i]))))
+                )
+                for a, i in it.product(range(A), range(N))
+                if (not suppress_zeros or not np.isclose(quad[i][a, a], 0.0)) and
+                (np.log10(abs(quad[i][a, a]/(abs(E0_array_eV[a, a] - E0_array_eV[a, a]) - vibron_ev[i]))) > screen_val)
+            ]),
+            ''.join([
+                make_line(
+                    label=f"#Screen: C2_s{a1+1:0>2d}s{a2+1:0>2d}_v{i+1:0>2d}v{i+1:0>2d}",
+                    value=(np.log10(abs(quad[i][a1, a2]/(abs(E0_array_eV[a1, a1] - E0_array_eV[a2, a2]) - vibron_ev[i]))))
+                )
+                for a1, a2, i in it.product(range(A), range(A), range(N))
+                if (a1 < a2)
+                and (not suppress_zeros or not np.isclose(quad[i][a1, a2], 0.0)) and
+                (np.log10(abs(quad[i][a1, a2]/(abs(E0_array_eV[a1, a1] - E0_array_eV[a2, a2]) - vibron_ev[i]))) > screen_val)
+            ]),
+            f"### SCREENING EFFECTIVE BILINEAR VIBRONIC COUPLING, THRESHOLD: {screen_val} ###",
+            ''.join([
+                make_line(
+                    label=f"#Screen: C1b_s{a+1:0>2d}s{a+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}", 
+                    value=(np.log10(abs(bi_lin[(j1, j2)][a, a]/(abs(E0_array_eV[a, a] - E0_array_eV[a, a]) - vibron_ev[i]))))
+                )
+                for a, j1, j2 in it.product(range(A), range(N), range(N))
+                if (j1 < j2)
+                and (not suppress_zeros or not np.isclose(bi_lin[(j1, j2)][a, a], 0.0)) and
+                (np.log10(abs(bi_lin[(j1, j2)][a, a]/(abs(E0_array_eV[a, a] - E0_array_eV[a, a]) - vibron_ev[i]))) > screen_val)
+            ]),
+            ''.join([
+                make_line(
+                    label=f"#Screen: C1b_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}",
+                    # value=0.0
+                    value=(np.log10(abs(bi_lin[(j1, j2)][a1, a2]/(abs(E0_array_eV[a1, a1] - E0_array_eV[a2, a2]) - vibron_ev[i]))))
+                )
+                for a1, a2, j1, j2 in it.product(range(A), range(A), range(N), range(N))
+                if (a1 < a2) and (j1 < j2)
+                and (not suppress_zeros or not np.isclose(bi_lin[(j1, j2)][a1, a2], 0.0)) and
+                (np.log10(abs(bi_lin[(j1, j2)][a1, a2]/(abs(E0_array_eV[a1, a1] - E0_array_eV[a2, a2]) - vibron_ev[i]))) > screen_val)
             ]),
         ])
 
@@ -1998,6 +2076,9 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         key = 'BiLinear'
         if key in model.keys():
             return_list += [make_header(headers[key]),  build_bilinear_coupling(model[key], A, N)]
+
+        if pp.screening:
+            return_list += [effective_vibronic_coupling_screening(model['Linear'], model['Quadratic'], model['BiLinear'], A, N, vibron_ev, E0_array_eV)]
 
         key = 'SOC'
         if key in model.keys():
@@ -3521,88 +3602,6 @@ def main(ref_geom_path="ref_structure", ncols=5, **kwargs):
         " "*4 + src_path,
         "copied to",
         " "*4 +dst_path,
-        sep='\n'
-    )
-
-    # -------------------------------------------------------------------------
-    if False and __debug__:
-        header = f"\n{'-'*20}{{}}{'-'*20}\n"
-        print_header = lambda s: print(header.format(s))
-
-        print_header('Normal modes')
-        for i in range(nrmmod.shape[0]):
-            print(" "*4, i)
-            pprint.pprint(nrmmod[i, :])
-
-        print_header('Frequencies')
-        for i in range(freqcm.shape[0]):
-            print(" "*4, i, freqcm[i])
-
-        print_header('Execution Parameters')
-        print(f"Selected modes: {pp.selected_mode_list}")
-
-        print("List of atoms:")
-        for k, v in atom_dict.items():
-            print(" "*4, k, v)
-
-        print("List of charges:")
-        for k, v in charge_dict.items():
-            print(" "*4, k, v)
-
-        print("Reference co-ordinates")
-        for k, v in ref_coords.items():
-            print(" "*4, k, v)
-
-    return
-
-
-# ---------------------------------------------------------------------------------------
-if (__name__ == "__main__"):
-
-    if len(sys.argv) != 2:
-        print("Usage: python your_script.py <path_to_hessian_output>")
-        sys.exit(1)
-
-    hessian_filename = sys.argv[1]  # read in name of hessian file
-    kwargs = {'hessian_filename': hessian_filename}
-
-    # everything we add to `kwargs` is 'imported' from project parameters
-
-    kwargs.update({
-        'refG_in': f"{pp.filnam}_refG.inp",  # reference geometry
-        'refG_out': f"{pp.filnam}_refG.out",  # reference geometry
-        # 'modes_included': pp.modes_included,
-    })
-
-    # ---------------------------------------------------------------
-    profiling = True  # just change this to enable profiling
-
-    if not profiling:
-        main(**kwargs)
-
-    else:
-        root = os.getcwd()
-        filename = join(root, "cProfile_dist_allmodes_pm")
-
-        if True:  # set this to false if you simply want to print out the profile stats again (without running all the code)
-            cProfile.runctx(
-                'main(**kwargs)',
-                globals(),
-                locals(),
-                filename
-            )
-
-        # print the results of profiling to stdout
-        # optional (can always be called by some other script)
-        process_profiling_data(filename)
-
-        if True:  # if you want to save the results to a file
-            from contextlib import redirect_stdout  # to send the prints to a file
-            with open(filename+'.txt', 'w') as f:
-                with redirect_stdout(f):
-                    process_profiling_data(filename)
-    # ---------------------------------------------------------------
-" "*4 +dst_path,
         sep='\n'
     )
 
