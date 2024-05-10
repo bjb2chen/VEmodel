@@ -1875,8 +1875,9 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             f"### SCREENING EFFECTIVE LINEAR VIBRONIC COUPLING, THRESHOLD: {screen_val} ###",
             ''.join([
                 make_line(
-                    label=f"#Screen: C1_s{a+1:0>2d}_s{a+1:0>2d}_v{i+1:0>2d}", 
-                    value=(np.log10(abs(linear[i][a, a]/(abs(E0_array_eV[a, a] - E0_array_eV[a, a]) - vibron_ev[i]))))
+                    label=f"# C1_s{a+1:0>2d}_s{a+1:0>2d}_v{i+1:0>2d}", 
+                    value=linear[i][a, a],
+                    units=f"    , ev   Ratio: {(np.log10(abs(linear[i][a, a]/(abs(E0_array_eV[a, a] - E0_array_eV[a, a]) - vibron_ev[i])))):>-10.4f}"
                 )
                 for a, i in it.product(range(A), range(N))
                 if (not suppress_zeros or not np.isclose(linear[i][a, a], 0.0)) and
@@ -1884,8 +1885,9 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             ]),
             ''.join([
                 make_line(
-                    label=f"#Screen: C1_s{a1+1:0>2d}_s{a2+1:0>2d}_v{i+1:0>2d}", 
-                    value=(np.log10(abs(linear[i][a1, a2]/(abs(E0_array_eV[a1, a1] - E0_array_eV[a2, a2]) - vibron_ev[i]))))
+                    label=f"# C1_s{a1+1:0>2d}_s{a2+1:0>2d}_v{i+1:0>2d}", 
+                    value=linear[i][a1, a2],
+                    units=f"    , ev   Ratio: {(np.log10(abs(linear[i][a1, a2]/(abs(E0_array_eV[a1, a1] - E0_array_eV[a2, a2]) - vibron_ev[i])))):>-10.4f}"
                 )
                 for a1, a2, i in it.product(range(A), range(A), range(N))
                 if (a1 < a2)
@@ -1895,8 +1897,9 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             f"### SCREENING EFFECTIVE QUADRATIC VIBRONIC COUPLING, THRESHOLD: {screen_val} ###",
             ''.join([
                 make_line(
-                    label=f"#Screen: C2_s{a+1:0>2d}s{a+1:0>2d}_v{i+1:0>2d}v{i+1:0>2d}",
-                    value=(np.log10(abs(quad[i][a, a]/(abs(E0_array_eV[a, a] - E0_array_eV[a, a]) - vibron_ev[i]))))
+                    label=f"# C2_s{a+1:0>2d}s{a+1:0>2d}_v{i+1:0>2d}v{i+1:0>2d}",
+                    value=quad[i][a, a],
+                    units=f"    , ev   Ratio: {(np.log10(abs(quad[i][a, a]/(abs(E0_array_eV[a, a] - E0_array_eV[a, a]) - vibron_ev[i])))):>-10.4f}"
                 )
                 for a, i in it.product(range(A), range(N))
                 if (not suppress_zeros or not np.isclose(quad[i][a, a], 0.0)) and
@@ -1904,8 +1907,9 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             ]),
             ''.join([
                 make_line(
-                    label=f"#Screen: C2_s{a1+1:0>2d}s{a2+1:0>2d}_v{i+1:0>2d}v{i+1:0>2d}",
-                    value=(np.log10(abs(quad[i][a1, a2]/(abs(E0_array_eV[a1, a1] - E0_array_eV[a2, a2]) - vibron_ev[i]))))
+                    label=f"# C2_s{a1+1:0>2d}s{a2+1:0>2d}_v{i+1:0>2d}v{i+1:0>2d}",
+                    value=quad[i][a1, a2],
+                    units=f"    , ev   Ratio: {(np.log10(abs(quad[i][a1, a2]/(abs(E0_array_eV[a1, a1] - E0_array_eV[a2, a2]) - vibron_ev[i])))):>-10.4f}"
                 )
                 for a1, a2, i in it.product(range(A), range(A), range(N))
                 if (a1 < a2)
@@ -1915,8 +1919,9 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             f"### SCREENING EFFECTIVE BILINEAR VIBRONIC COUPLING, THRESHOLD: {screen_val} ###",
             ''.join([
                 make_line(
-                    label=f"#Screen: C1b_s{a+1:0>2d}s{a+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}", 
-                    value=(np.log10(abs(bi_lin[(j1, j2)][a, a]/(abs(E0_array_eV[a, a] - E0_array_eV[a, a]) - vibron_ev[i]))))
+                    label=f"# C1b_s{a+1:0>2d}s{a+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}", 
+                    value=bi_lin[(j1, j2)][a, a],
+                    units=f"    , ev   Ratio: {(np.log10(abs(bi_lin[(j1, j2)][a, a]/(abs(E0_array_eV[a, a] - E0_array_eV[a, a]) - vibron_ev[i])))):>-10.4f}"
                 )
                 for a, j1, j2 in it.product(range(A), range(N), range(N))
                 if (j1 < j2)
@@ -1925,9 +1930,9 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             ]),
             ''.join([
                 make_line(
-                    label=f"#Screen: C1b_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}",
-                    # value=0.0
-                    value=(np.log10(abs(bi_lin[(j1, j2)][a1, a2]/(abs(E0_array_eV[a1, a1] - E0_array_eV[a2, a2]) - vibron_ev[i]))))
+                    label=f"# C1b_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}",
+                    value=bi_lin[(j1, j2)][a1, a2],
+                    units=f"    , ev   Ratio: {(np.log10(abs(bi_lin[(j1, j2)][a1, a2]/(abs(E0_array_eV[a1, a1] - E0_array_eV[a2, a2]) - vibron_ev[i])))):>-10.4f}"
                 )
                 for a1, a2, j1, j2 in it.product(range(A), range(A), range(N), range(N))
                 if (a1 < a2) and (j1 < j2)
