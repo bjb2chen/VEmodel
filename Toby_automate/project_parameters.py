@@ -68,6 +68,7 @@ is_compute_canada = False
 suppress_zeros = False
 SOC_flag = False
 VECC_flag = False
+screening = False
 
 # -------------------------------------------------------------------------
 #                           Project Paths
@@ -182,6 +183,7 @@ for key, value in ij_map.items():
 # -------------------------------------------------------------------------
 # define constant values
 from types import SimpleNamespace
+screen_val = -0.6
 
 # constants regarding the calculation
 gamess_const = SimpleNamespace()  # make an empty object
