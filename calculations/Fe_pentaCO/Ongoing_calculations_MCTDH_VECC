@@ -25,3 +25,25 @@ narval:
     28974671: 50 fs, screened, SOC, 48 CPUs, 4G/CPU ("")
     28974232: 100 fs, screened, SOC, 32 CPUs, 4G/CPU ("")
     28979569: 50 fs, screened, NO SOC, 48 CPUs, 4G/CPU (/scratch/bjb2chen/vibronics/8o9e/fastLagrangian/Apr26_redo_SOC/noSOC_screen_12modes)
+
+
+
+We are not getting meaningful results and long computation time b/c we are doing uniform SPF multiset!
+Combine modes as such in the input file:
+
+v01, v02, v03, v04 = 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 1
+v05, v06, v07, v08, v09, v10 = 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 1
+v11, v12 = 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 1
+
+10 PBFs instead of 30, value of 5 above b/c we are only doing it to get going
+
+Add anything missing in RUN-SECTION:
+usepthreads = 24
+name = n4o4anth_spf_nth24 propagate
+tfinal = 5000.0  tout = 5.0  tpsi=5.0
+psi steps gridpop
+title = n4o4anth  8 ag-modes 3 b1g-modes 3 b2u-modes 5 b3u-modes
+timing
+genoper
+#genpes
+end-run-section
