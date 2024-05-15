@@ -50,3 +50,29 @@ end-run-section
 
 We found out that basically the max combo you can do is SPF of 3, 3, ..., 1 and PBF 10. It will result in a fast run but high memory.
 See: /home/bjb2chen/scratch/vibronics/8o9e/fastLagrangian/Apr26_redo_SOC/May15_unique_multiset/mctdh/op_FeCO3Q_17st
+
+This is the error you keep getting if the integer overflows (too high PBFs?)
+
+total array memory in mb     (used):     58360.6
+
+**** Global array sizes ****
+
+Minimum value for maxdim:       3  Present value:      15
+Minimum value for maxsta:      18  Present value:      18
+Minimum value for maxsub:      39  Present value:    2000
+Minimum value for maxkoe:    5801  Present value:  280000
+
+ 1)  dgldim =   52525660      0.783 GB
+ 3)  mcdim  = -721665316    -10.754 GB
+ 4)  mrdim  = 1458655971     10.868 GB
+ 5)  midim  =          6      0.000 GB
+ 6)  mldim  =          3      0.000 GB
+ 7)  ikrylov=          1      0.000 GB
+ 9)  ikryc  =          1      0.000 GB
+
+
+ERROR in subroutine mctdh.F line 388:
+Integer overflow of array dimensions
+
+I have confirmed that the primary parameter causing the issue is PBFs.
+Seems like with 5 PBFs, it is very fast and low memory. Can run arbitrary SPFs.
