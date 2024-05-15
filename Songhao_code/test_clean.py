@@ -393,6 +393,8 @@ if (__name__ == '__main__'):
             mctdh_t_final = t_final*0.5,
             mctdh_dt = 0.1
         )
+    # print('Do you want to plot the ABS spectra? Press c to continue.')
+    # breakpoint()
         # # plot
     print("-"*40 + "\nPlotting Spectrum\n" + "-"*40 + "\n")
     gnuplot_spectrum(
