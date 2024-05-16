@@ -2,11 +2,11 @@ RUN-SECTION
 title = wavefunction propagation of op_FeCO3Q_17st
 name = op_FeCO3Q_17st
 propagation
-tout = 0.10 tfinal = 125.00 tpsi=1.0
+tout = 0.10 tfinal = 100.00 tpsi=1.0
 geninwf
-psi=single
+psi steps gridpop
 auto=once
-usepthreads = 64
+usepthreads = 32
 end-run-section
 
 OPERATOR-SECTION
@@ -15,33 +15,24 @@ end-operator-section
 
 SPF-BASIS-SECTION
 multi-set
-      v01      =  3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1
-      v02      =  3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1
-      v03      =  3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1
-      v04      =  3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1
-      v05      =  3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1
-      v06      =  3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1
-      v07      =  3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1
-      v08      =  3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1
-      v09      =  3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1
-      v10      =  3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1
-      v11      =  3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1
-      v12      =  3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 1
+      v01, v02, v03, v04           = 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 1
+      v05, v06, v07, v08, v09, v10 = 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 1
+      v11, v12                     = 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 1
 end-spf-basis-section
 
 PRIMITIVE-BASIS-SECTION
-    v01    HO     30   0.0   1.0   1.0
-    v02    HO     30   0.0   1.0   1.0
-    v03    HO     30   0.0   1.0   1.0
-    v04    HO     30   0.0   1.0   1.0
-    v05    HO     30   0.0   1.0   1.0
-    v06    HO     30   0.0   1.0   1.0
-    v07    HO     30   0.0   1.0   1.0
-    v08    HO     30   0.0   1.0   1.0
-    v09    HO     30   0.0   1.0   1.0
-    v10    HO     30   0.0   1.0   1.0
-    v11    HO     30   0.0   1.0   1.0
-    v12    HO     30   0.0   1.0   1.0
+    v01    HO     5   0.0   1.0   1.0
+    v02    HO     5   0.0   1.0   1.0
+    v03    HO     5   0.0   1.0   1.0
+    v04    HO     5   0.0   1.0   1.0
+    v05    HO     5   0.0   1.0   1.0
+    v06    HO     5   0.0   1.0   1.0
+    v07    HO     5   0.0   1.0   1.0
+    v08    HO     5   0.0   1.0   1.0
+    v09    HO     5   0.0   1.0   1.0
+    v10    HO     5   0.0   1.0   1.0
+    v11    HO     5   0.0   1.0   1.0
+    v12    HO     5   0.0   1.0   1.0
     el      el     18
 end-primitive-basis-section
 
@@ -75,15 +66,15 @@ operate=Ex
 end-init_wf-section
 ALLOC-SECTION
  maxpar  =  100000
- maxkoe  =  270000
- maxhtm  =  270000
- maxhop  =  270000
+ maxkoe  =  280000
+ maxhtm  =  280000
+ maxhop  =  280000
  maxfac  =     800
  maxdef  =     240
  maxmuld =      20
  maxLMR  =      20
  maxedim =      50
- maxsub  =    1000
+ maxsub  =    2000
  maxreadspf=    10
  maxnhtmshift=  10
 end-alloc-section
