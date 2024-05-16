@@ -7,7 +7,7 @@ basic_propagation_scheme = "tout = {tout:.2f} tfinal = {tfinal:.2f} tpsi=1.0"
 generate_initial_wavefunction = "geninwf"
 
 # this specifies the precision of the wavefunction when written to the output
-wavefunction_single_precision = "psi=single"
+wavefunction_single_precision = "psi=single steps gridpop"
 # wavefunction_double_precision = "psi=double"
 
 # this specifies the 1st order
@@ -24,6 +24,7 @@ run_section_propagation = "\n".join([
     generate_initial_wavefunction,
     wavefunction_single_precision,
     auto_scheme,
+    "usepthreads = {ncpus:s}", # parallelized
     run_end,
 ])
 
@@ -292,3 +293,21 @@ block_initial_wavefunction_section = "\n".join([
     autoblock_spec,
     int_wf_end,
 ])
+
+
+block_alloc_section = "\n".join([
+    "ALLOC-SECTION",
+    "maxpar  =  100000",
+    "maxkoe  =  280000",
+    "maxhtm  =  280000",
+    "maxhop  =  280000",
+    "maxfac  =     800",
+    "maxdef  =     240",
+    "maxmuld =      20",
+    "maxLMR  =      20",
+    "maxedim =      50",
+    "maxsub  =    2000",
+    "maxreadspf=    10",
+    "maxnhtmshift=  10",
+    "end-alloc-section"
+    ])
