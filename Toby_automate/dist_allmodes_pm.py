@@ -210,9 +210,9 @@ def my_subgam(path, **kwargs):
     # nlogn compute resources
     # bjb2chen@nlogn: sinfo -o "%20N %20f %6c %6m"
     # NODELIST             AVAIL_FEATURES       CPUS   MEMORY
-    # cpu[005-006]         intel,westmere,X5670 12     48000 
+    # cpu[005-006]         intel,westmere,X5670 12     48000
     # io003                intel,ivybridge,E5-2 16     128000
-    # io[001-002]          intel,westmere,X5670 12     48000 
+    # io[001-002]          intel,westmere,X5670 12     48000
 
     ncpus = kwargs.get('ncpus', 2)
     nhour = kwargs.get('nhour', 24)
@@ -226,7 +226,7 @@ def my_subgam(path, **kwargs):
 
     file_contents = "".join([
         "#!/bin/bash\n",
-        "#SBATCH --nodes=1\n", 
+        "#SBATCH --nodes=1\n",
         f"{'#SBATCH --account=def-mnooijen' if is_compute_canada else ''}\n",
         f"#SBATCH --ntasks={ncpus}\n",
         f"#SBATCH --mem-per-cpu={ngb}G\n",
@@ -629,9 +629,9 @@ def extract_DSOME(path, nof_states, nof_electron_couplings=2):
 # ---------------------------------------------------------------------------------------
 def search_IN_file(path, pattern, unit):
     ''' Using mmap to grep a file and see if regex pattern hits or not.
-        Basically the in operator. Returns the full line of text 'pattern' is located in. 
+        Basically the in operator. Returns the full line of text 'pattern' is located in.
         It uses REGEX, so be careful! Escape the parens. '''
-    
+
     if not os.path.isfile(path):
         return False
 
@@ -640,24 +640,24 @@ def search_IN_file(path, pattern, unit):
             # Search for the pattern
             # We want to find the last possible occurrence of pattern
             matches = [match for match in re.finditer(pattern.encode(), mmapped_file)]
-            
+
             # If a match is found
             if matches:
                 # Get the last match
                 last_match = matches[-1]
-                
+
                 # Find the start of the line
                 start = mmapped_file.rfind(b'\n', 0, last_match.start()) + 1
                 end = mmapped_file.find(b'\n', last_match.end())
-                
+
                 # Extract the line
                 line = mmapped_file[start:end].decode()
 
                 if unit == 'GRACE':
                     output = line
                     print(output)
-                    return output  
-                
+                    return output
+
                 elif 'TOTAL ENERGY =' in pattern:
                     output = float(line.split()[3])
                     print(output)
@@ -682,25 +682,25 @@ def selected_lines_mmap(path, start_pattern, end_pattern):
     with open(path, 'r+b') as file:
 
         with mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ) as mmapped_file:
-        
+
             # Search for the start and end patterns
             print(path, start_pattern, end_pattern)
             start_match = re.search(start_pattern.encode(), mmapped_file)
             print('start_match.group().decode():', start_match.group().decode())
             end_match = re.search(end_pattern.encode(), mmapped_file)
             print('end_match.group().decode():', end_match.group().decode())
-            
+
             # If both matches are found
             if start_match and end_match:
                 # Find the start of the line for the start pattern
                 start_line_start = mmapped_file.rfind(b'\n', 0, start_match.start()) + 1
-                
+
                 # Find the end of the line for the end pattern
                 end_line_end = mmapped_file.find(b'\n', end_match.end())
-                
+
                 # Extract the lines
                 lines = mmapped_file[start_line_start:end_line_end].decode()
-                
+
                 print(lines) ; breakpoint()
                 return lines
             else:
@@ -734,7 +734,7 @@ def pattern_processing_routing(path, memmap, pattern, unit=None, cheat=False):
         lines = extract_string_list(path, memmap, begin_string, end_string, nof_line_skip=1)
         #print(lines)
 
-        if False: 
+        if False:
             print("Ingested:")
             for i, l in enumerate(lines): print(f"Line {i:02d}: ", l)
 
@@ -760,7 +760,7 @@ def pattern_processing_routing(path, memmap, pattern, unit=None, cheat=False):
         #skip the last two lines b/c dashed lines
         lines = [l for l in lines if '&' in l]
 
-        if False: 
+        if False:
             print("Ingested:\n")
             for i, l in enumerate(lines): print(f"Line {i:02d}: ", l)
 
@@ -770,21 +770,21 @@ def pattern_processing_routing(path, memmap, pattern, unit=None, cheat=False):
         hartree_array = np.zeros((pp.A, pp.A))
         for i in range(len(idx_list)):
             hartree_array[idx_list[i]] = hartree_list[i]
- 
+
         if False: print("Hartree array\n", hartree_array)
- 
+
         eV_list = [float(l.split()[9]) for l in lines]
         idx_list = [(a, b) for a, b in upper_triangle_loop_indices(pp.A, 2)]
         assert len(eV_list) == len(idx_list), "Something went wrong with reading lines"
         eV_array = np.zeros((pp.A, pp.A))
         for i in range(len(idx_list)):
             eV_array[idx_list[i]] = eV_list[i]
- 
+
         if False: print("eV array\n", eV_array)
 
         #breakpoint()
         # match the s1/s2 with the appropriate line in `lines`
-        if not cheat:    
+        if not cheat:
             s1, s2 = map(int, pattern.replace(".S GMC-PT-LEVEL COUPLING", '').replace('STATE #.*', '').split('&.*'))
             return eV_array[s1-1,s2-1] if unit == 'EV' else hartree_array[s1-1,s2-1]
         else:
@@ -816,10 +816,10 @@ def _extract_energy_from_gamessoutput_memmap(path, pattern, unit=None, cheat=Fal
         string = extract_from_file(path, pattern_processing_routing, pattern, unit, cheat=cheat)
         if False: print(string)
         return string
- 
+
     if cheat:
         ev_array, au_array = extract_from_file(path, pattern_processing_routing, pattern, unit, cheat=cheat)
- 
+
         if unit == 'HARTREE':
             return au_array
         elif unit == 'EV':
@@ -980,7 +980,7 @@ def diabatization(**kwargs):
 
         #     # this check is redundant but here for sanity
         max_order_of_qi = max(pp.nof_displacements_per_mode)
-            #assert max_order_of_qi > 2, f"You messed up {pp.fitting_mode_idxs=} somehow? why are {pp.nof_displacements_per_mode[pp.fitting_mode_idxs]}= not all > 2"
+        #assert max_order_of_qi > 2, f"You messed up {pp.fitting_mode_idxs=} somehow? why are {pp.nof_displacements_per_mode[pp.fitting_mode_idxs]}= not all > 2"
 
         for order in range(3, max_order_of_qi+1):
             displacements.update({
@@ -1707,7 +1707,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         return block
 
     def build_magnetic_moments(dipoles_dict):
-        
+
         # only do this if you cannot find etdm
         #dipoles_dict = {key: [0.1] for key in dipoles_dict} # arbitrary fictitious magnetic dipoles
 
@@ -1838,7 +1838,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 make_line(
                     # Bilinear is technically order=1, but C2 for VECC compatibility
                     # Bilinear will go under Quadratic banner to align with VECC hamiltonian
-                    label=f"C1b_s{a+1:0>2d}s{a+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}", 
+                    label=f"C1b_s{a+1:0>2d}s{a+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}",
                     # value=0.0
                     value=bi_lin[(j1, j2)][a, a]
                 )
@@ -1875,7 +1875,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             f"### SCREENING EFFECTIVE LINEAR VIBRONIC COUPLING, THRESHOLD: {screen_val} ###",
             ''.join([
                 make_line(
-                    label=f"# C1_s{a+1:0>2d}_s{a+1:0>2d}_v{i+1:0>2d}", 
+                    label=f"# C1_s{a+1:0>2d}_s{a+1:0>2d}_v{i+1:0>2d}",
                     value=linear[i][a, a],
                     units=f"    , ev   Ratio: {(np.log10(abs(linear[i][a, a]/(abs(E0_array_eV[a, a] - E0_array_eV[a, a]) - vibron_ev[i])))):>-10.4f}"
                 )
@@ -1885,7 +1885,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             ]),
             ''.join([
                 make_line(
-                    label=f"# C1_s{a1+1:0>2d}_s{a2+1:0>2d}_v{i+1:0>2d}", 
+                    label=f"# C1_s{a1+1:0>2d}_s{a2+1:0>2d}_v{i+1:0>2d}",
                     value=linear[i][a1, a2],
                     units=f"    , ev   Ratio: {(np.log10(abs(linear[i][a1, a2]/(abs(E0_array_eV[a1, a1] - E0_array_eV[a2, a2]) - vibron_ev[i])))):>-10.4f}"
                 )
@@ -1919,7 +1919,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             f"### SCREENING EFFECTIVE BILINEAR VIBRONIC COUPLING, THRESHOLD: {screen_val} ###",
             ''.join([
                 make_line(
-                    label=f"# C1b_s{a+1:0>2d}s{a+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}", 
+                    label=f"# C1b_s{a+1:0>2d}s{a+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}",
                     value=bi_lin[(j1, j2)][a, a],
                     units=f"    , ev   Ratio: {(np.log10(abs(bi_lin[(j1, j2)][a, a]/(abs(E0_array_eV[a, a] - E0_array_eV[a, a]) - vibron_ev[i])))):>-10.4f}"
                 )
@@ -2054,7 +2054,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         for key in ['Linear', 'Quadratic', 'BiLinear']:
             if key not in model.keys():
                 print(f'NO {key} coupling found in {model.keys()}');
-                breakpoint(); raise Exception()  # (temporarily) comment out if you don't need them
+                #breakpoint(); raise Exception()  # (temporarily) comment out if you don't need them
 
         # soft fail, may not always want spin-orbit-coupling?
         if 'SOC' not in model.keys():
@@ -2125,8 +2125,8 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             and (not suppress_zeros or not np.isclose(energy[a1-1, a2-1], 0.0))
         ]) + '\n'
 
-        string = diag_block + "\n" + off_diag_block 
-        
+        string = diag_block + "\n" + off_diag_block
+
         if VECC_flag:
             string = diag_block # VECC can only take diagonal
 
@@ -2243,9 +2243,9 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
          I*SOC_s09s15_v01v02r        |1 S9&15   |2  q     |3  q
         -I*SOC_s09s15_v01v02i        |1 S9&15   |2  q     |3  q
-        
+
         to
-        
+
            SOC_s09s15_v01v02r        |1 S9&15   |2  q     |3  q
          I*SOC_s09s15_v01v02i        |1 Z9&15   |2  q     |3  q
         -I*SOC_s09s15_v01v02i        |1 Z15&9   |2  q     |3  q
@@ -2427,7 +2427,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         for key in ['Linear', 'Quadratic', 'BiLinear']:
             if key not in model.keys():
                 print(f'NO {key} coupling found in {model.keys()}');
-                breakpoint(); raise Exception()  # (temporarily) comment out if you don't need them
+                #breakpoint(); raise Exception()  # (temporarily) comment out if you don't need them
 
         # soft fail, may not always want spin-orbit-coupling?
         if 'SOC' not in model.keys():
@@ -2503,7 +2503,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         block += "\nend-hamiltonian-section\n"
         if VECC_flag:
             block += block.replace('Ex', 'Ey') + block.replace('Ex', 'Ez')
-        
+
         return block
 
     # -------------------------------------------------------------------------
@@ -2542,11 +2542,11 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         shape = (A, A)
         E0_array_ev = np.zeros(shape)
         E0_array_au = np.zeros(shape)
- 
+
         if False and __debug__:  # debug
             # check this function to remind yourself how the indexing works
             _reminder_produce_upper_triangle_indices(A)
- 
+
         def _toby_bash_style(E0_array):
             """ This matches the bash script looping style used by Toby.
             The outer loop is over the columns of the matrix a ~ col.
@@ -2558,44 +2558,44 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 for b in range(a):
                     E0_array[b, a] = refG_extract(ref_geom_path, ba_pattern.format(row=b+1, col=a+1))
             return
- 
+
         def _row_first_style_ev(E0_array):
             """ Modify `E0_array` in place """
             extracted_eV_1D = extract_in_eV(ref_geom_path, a_pattern.format(col=0+1), cheat=True)
             for a in range(A):
                 E0_array[a, a] = extracted_eV_1D[a]
                 E0_array[a, a] += linear_shift
- 
+
             extracted_eV_2D = extract_in_eV(ref_geom_path, ba_pattern.format(row=0+1, col=1+1), cheat=True)
             for a, b in upper_triangle_loop_indices(A, 2):
                 E0_array[a, b] = extracted_eV_2D[a, b]
- 
+
             # for row, col in upper_triangle_loop_indices(A, 2):
             #     E0_array[row, col] = extract_in_eV(ref_geom_path, ba_pattern.format(row=row+1, col=col+1))
- 
+
             return
- 
+
         def _row_first_style_au(E0_array):
             """ Modify `E0_array` in place """
             extracted_au_1D = extract_in_Hartrees(ref_geom_path, a_pattern.format(col=0+1), cheat=True)
             for a in range(A):
                 E0_array[a, a] = extracted_au_1D[a]
- 
+
             extracted_au_2D = extract_in_Hartrees(ref_geom_path, ba_pattern.format(row=0+1, col=1+1), cheat=True)
             for a, b in upper_triangle_loop_indices(A, 2):
                 E0_array[a, b] = extracted_au_2D[a, b]
- 
+
             return
- 
+
         if True:  # this makes more sense based on what I see in the file
             _row_first_style_ev(E0_array_ev)
             _row_first_style_au(E0_array_au)
             # print("Row first", E0_array)
- 
+
         if False:  # matches the bash style from Toby
             _toby_bash_style(E0_array)
             # print("Column first / bash style", E0_array)
- 
+
         if False and __debug__:  # (keep them out of the loops above for simplicity)
             for a in range(A):
                 print(f"Diabatic energy at state {a+1}: {E0_array_ev[a, a]}")
@@ -2604,7 +2604,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             # for row, col in upper_triangle_loop_indices(A, 2):
             #     print(f"Coupling energy at state {row+1} & {col+1}: {E0_array[row, col]}")
             print(E0_array)
- 
+
         return E0_array_ev, E0_array_au
 
     def extract_etdm(path, verbose=False):
@@ -2639,7 +2639,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                         y = float(y) if float(y) != 0 else 0.000000010
                         z = float(z) if float(z) != 0 else 0.000000010
                         dipoles[(pair, state)] = [float(x), float(y), float(z)] # off-diagonal state-pairs
- 
+
                 except Exception as e:
                     print(f"Error processing line: {line} - {e}")
                     breakpoint()
@@ -3122,48 +3122,171 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
     # ----------------------------------------------------------
 
     def _write_op():
+        """ x """
 
-        job_title = f'{filnam} {A} states + ' + str(N) + ' modes'
+        constant_keys = ["vibron eV", "E0 eV", "E0 au", "dipoles",]
 
-        # do all the extraction first
+        def _extract_gamess_model():
+            """ x """
+            vibron_ev = freq_array * wn2ev
+            E0_array_eV, E0_array_au = extract_E0(hessian_path)
+            model = {
+                "vibron eV": vibron_ev,
+                "E0 eV": E0_array_eV,
+                "E0 au": E0_array_au,
+                "dipoles": extract_etdm(ref_geom_path),
+            }
 
-        vibron_ev = freq_array * wn2ev
-        E0_array_eV, E0_array_au = extract_E0(hessian_path)
-        model = {
-            "vibron eV": vibron_ev,
-            "E0 eV": E0_array_eV,
-            "E0 au": E0_array_au,
-            "dipoles": extract_etdm(ref_geom_path),
-        }
+            model["Linear"] = extract_linear()
+            model["Quadratic"] = extract_quadratic(E0_array_eV, E0_array_au, vibron_ev)
+            model["BiLinear"] = extract_bilinear()
 
-        model["Linear"] = extract_linear()
-        model["Quadratic"] = extract_quadratic(E0_array_eV, E0_array_au, vibron_ev)
-        model["BiLinear"] = extract_bilinear()
+            if pp.SOC_flag:
+                try:
+                    model['SOC'] = extract_soc()
+                except Exception as e:
+                    print(str(e), "\nFailed to extract SOC! Continue?")
+                    breakpoint()
 
-        if pp.SOC_flag:
-            try:
-                model['SOC'] = extract_soc()
-            except Exception as e:
-                print(str(e), "\nFailed to extract SOC! Continue?")
+            return model
+
+        def make_op_file(full_model, simple=False):
+            """ x """
+            def make_mctdh_file_contents(model):
+                job_title = f'{filnam} {A} states + ' + str(N) + ' modes'
+                file_contents = "\n".join([
+                    make_op_section(job_title),
+                    make_parameter_section(model, A, N),
+                    make_hamiltonian_section(model, A, N),
+                    make_operator_onto_dipole_moments_section(model, A, N),
+                    "end-operator\n"
+                ])
+                return file_contents
+
+            if simple:  # if we don't want to construct multiple mctdh files
+                path = 'mctdh'
+                file_contents = make_mctdh_file_contents(full_model)
+
+                toby_style = False
+                if toby_style:  # relabel all modes to toby's style
+                    path += '_tobystyle'
+                    for i in range(N):
+                        new_i = mode_map_dict[i]
+                        file_contents = file_contents.replace(f'v{i+1:>02d}', f'v{new_i:>02d}')
+                        file_contents = file_contents.replace(f'w{i+1:>02d}', f'w{new_i:>02d}')
+                with open(path + '.op', 'w') as fp:
+                    fp.write(file_contents)
+                return
+
+            fake_zero = complex(0) if pp.SOC_flag else float(0)
+
+            constant_model, linear_model = {}, {}
+            for key in ["vibron eV", "E0 eV", "E0 au"]:
+                constant_model[key] = full_model[key].copy()
+                linear_model[key] = full_model[key].copy()
+
+            # dipoles is special
+            key = "dipoles"
+            constant_model[key], linear_model[key] = {}, {}
+            for index in full_model[key].keys():
+                constant_model[key][index] = full_model[key][index].copy()
+                linear_model[key][index] = full_model[key][index].copy()
+
+            # constant_model = full_model.copy()
+            # for key in ['Linear', 'Quadratic', 'BiLinear']:
+            #     constant_model[key] = {}
+            #     for index in constant_model[key].keys():
+            #         constant_model[key][index] = np.zeros_like(full_model[key][index])
+
+            key = 'Linear'
+            linear_model[key] = {}
+            for index in full_model[key].keys():
+                linear_model[key][index] = full_model[key][index].copy()
+
+            if pp.SOC_flag and False:
+                SOC_key = 'SOC'
+                for index in constant_model[SOC_key].keys():
+                    constant_model[SOC_key][index] = np.zeros_like(full_model[key][index])
+
+                for index in linear_model[SOC_key].keys():
+                    linear_model[SOC_key][index] = np.zeros_like(full_model[key][index])
+
+            arg_list = [
+                (full_model, "mtcdh"),
+                (linear_model, "mtcdh_linear"),
+                (constant_model, "mtcdh_constant"),
+            ]
+
+            for model, path in arg_list:
+                file_contents = make_mctdh_file_contents(model)
+
+                toby_style = False
+                if toby_style:  # relabel all modes to toby's style
+                    path += '_tobystyle'
+                    for i in range(N):
+                        new_i = mode_map_dict[i]
+                        file_contents = file_contents.replace(f'v{i+1:>02d}', f'v{new_i:>02d}')
+                        file_contents = file_contents.replace(f'w{i+1:>02d}', f'w{new_i:>02d}')
+
+                with open(path + '.op', 'w') as fp:
+                    fp.write(file_contents)
+
+            return
+
+        def make_json_file(model):
+            """ x """
+            vmio_dir = "/home/bjb2chen/gamess/vibronics/template_examples/apr26/vmio-SOC_prototype/"
+            sys.path.insert(0, vmio_dir)
+            import vmio
+            from vmio.vibronic import vIO, VMK
+
+            for order in [0, 1, 2]:
+
+                if pp.SOC_flag:
+                    json_model = vIO.soc_model_zeros_template_json_dict(A, N, highest_order=order)
+                else:
+                    json_model = vIO.model_zeros_template_json_dict(A, N, highest_order=order)
+
+                json_model[VMK.E] = model['E0 eV']
+                json_model[VMK.etdm] = model['dipoles']
+
+                # normal couplings
+                if order >= 1:
+                    json_model[VMK.G1] = model['Linear']
+                if order >= 2:
+                    json_model[VMK.G2] = model['Quadratic'] + model['BiLinear']
+
+                filename = "model"
+
+                if pp.SOC_flag:  # SOC couplings
+                    if order >= 1:
+                        json_model[VMK.S1] = model['SOC']['Linear']
+                    if order >= 2:
+                        json_model[VMK.S2] = model['SOC']['Quadratic'] + model['SOC']['BiLinear']
+
+                    filename += '_soc'
+
+                path = join("./", filename + '.json')
+                vIO.save_model_to_JSON(path, json_model)
+
+                if True:  # just to diagnose the saving/loading didn't Fk any coefficients up
+                    loaded_model = vIO.load_model_from_JSON(path)
+                    # some kind of asserts to make sure all the values are the same
+                    breakpoint()
+
+                print("-"*60)
+                vIO.print_model_compact(loaded_model, highest_order=order)
                 breakpoint()
 
-        file_contents = "\n".join([
-            make_op_section(job_title),
-            make_parameter_section(model, A, N),
-            make_hamiltonian_section(model, A, N),
-            make_operator_onto_dipole_moments_section(model, A, N),
-            "end-operator\n"
-        ])
+            return
 
-        #if not VECC_flag: # VECC-compatible notation if True
-        if False:
-            for i in range(N):
-                new_i = mode_map_dict[i]
-                file_contents = file_contents.replace(f'v{i+1:>02d}', f'v{new_i:>02d}')
-                file_contents = file_contents.replace(f'w{i+1:>02d}', f'w{new_i:>02d}')
+        # extract the model from 12 quadrillion files
+        model = _extract_gamess_model()
 
-        with open('mctdh.op', 'w') as fp:
-            fp.write(file_contents)
+        # make both files
+        make_op_file(model)
+        make_json_file(model)
+        return
 
     def confirm_necessary_files_exist():
 
@@ -3569,9 +3692,9 @@ def main(ref_geom_path="ref_structure", ncols=5, **kwargs):
         print("\nDiabatization successfully modified.")
         print("(c) Press 'c' to continue and perform MCTDH and fitting.")
         print("(q) Press 'q' to quit the program.")
-        
+
         user_input = input("Enter your choice: ")
-    
+
         if user_input == 'c':
             print("Performing MCTDH and fitting...")
             break
@@ -3580,7 +3703,7 @@ def main(ref_geom_path="ref_structure", ncols=5, **kwargs):
             sys.exit()
         else:
             print("Invalid choice. Please enter 'c' or 'q'.")
-            
+
     # -------------------------------------------------------------------------
     op_file_name = "mctdh.op"
     op_path = join("./", op_file_name)
