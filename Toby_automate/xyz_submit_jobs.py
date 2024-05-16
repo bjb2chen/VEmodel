@@ -24,7 +24,8 @@ def submit_jobs():
         }[project_name].get(nof_pbfs, '3')
 
 
-        run_on_high_mem = '--partition=highmem' if (False or param_list[0] == 1000) else ''
+        #run_on_high_mem = '--partition=highmem' if (False or param_list[0] == 1000) else ''
+        #f"{run_on_high_mem} "
         cc_mctdh_time = f'--time={nhour}:00:00' if is_compute_canada else ''
 
         for operate_string in range(A+1, A+2):
@@ -33,9 +34,10 @@ def submit_jobs():
             input_file_name = f"{project_name}_init_st{operate_string}.inp"
 
             command = (
-                f"sbatch --mem={ngb}GB "
+                f"sbatch "
                 f"{cc_mctdh_time} "
-                f"{run_on_high_mem} "
+                f"--ntasks={ncpus} "
+                f"--mem-per-cpu={ngb}G "
                 f"--job-name={job_name} "
                 f"--chdir={submit_dir}/init_st{operate_string} "
                 f"{submit_dir}/{execute_script} {input_file_name}"

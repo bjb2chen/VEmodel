@@ -114,8 +114,8 @@ dir_string = "{:s}_PBF{:d}_tf{:.2f}"
 #                       define spectra parameters
 # -------------------------------------------------------------------------
 # pbfs = [10, 30, 40, 50]
-pbfs = [30, ]
-tfinal = [250.0, ]
+pbfs = [5, ]
+tfinal = [100.0, ]
 
 expression_list = [pbfs, tfinal, ]
 
