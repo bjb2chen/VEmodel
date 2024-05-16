@@ -42,7 +42,7 @@ Video recording on how to run the diabatization code (assuming you have GAMESS w
 
 ### Transition metal spectra
 
-<img width="1013" alt="waterfall_FeCO" src="https://github.com/bjb2chen/VEmodel/assets/51763900/d3a31e32-82a5-4efa-8243-114133a21203">
+<img width="1013" alt="waterfall_FeCO" src="https://github.com/bjb2chen/VEmodel/assets/51763900/09098d89-2252-4fe2-80d8-00c8af03f0d2">
 
 (tf = 2000fs, tau = 2000, iexp = 1)
 ![RhF3_spectrum](https://github.com/bjb2chen/VEmodel/assets/51763900/97234174-5bd0-4f83-a691-374efb1cabd3)
