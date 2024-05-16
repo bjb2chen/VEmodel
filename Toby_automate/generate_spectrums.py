@@ -23,7 +23,7 @@ from project_parameters import *
 # from project.vibronic_hamiltonian import vibronic_hamiltonian
 
 
-nof_points = 3000
+nof_points = 13000
 
 eV_dict = {
     "h2o":  (21, 11),
@@ -174,7 +174,7 @@ def _generate_pl(nof_points, root_dir, output_filename, input_filename):
         #
         f"cd {root_dir}; "  # temporary fix!!!!!! TEMPORARY
         #
-        "autospec84 "
+        "/home/bjb2chen/LOCAL/mctdh/mctdh86.4/bin/binary/x86_64/autospec86 "
         # "-g 1 "  # to print gnuplot commands or not
         f"-o {output_filename:s} "
         f"-f {input_filename:s} "
