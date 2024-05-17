@@ -1664,7 +1664,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             By default all values in *.op files are in atomic units (au) but we want to explicitly label them
             for clarity.
         """
-        op_lst = ['x', 'y', 'z'] # apparently VECC is compatible with multi-dimensional tdm now
+        op_lst = ['x', 'y', 'z']  # apparently VECC is compatible with multi-dimensional tdm now
 
         def make_xyz_blocks():
             block = ""
@@ -2054,7 +2054,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         for key in ['Linear', 'Quadratic', 'BiLinear']:
             if key not in model.keys():
                 print(f'NO {key} coupling found in {model.keys()}');
-                #breakpoint(); raise Exception()  # (temporarily) comment out if you don't need them
+                # breakpoint(); raise Exception()  # (temporarily) comment out if you don't need them
 
         # soft fail, may not always want spin-orbit-coupling?
         if 'SOC' not in model.keys():
@@ -2427,7 +2427,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         for key in ['Linear', 'Quadratic', 'BiLinear']:
             if key not in model.keys():
                 print(f'NO {key} coupling found in {model.keys()}');
-                #breakpoint(); raise Exception()  # (temporarily) comment out if you don't need them
+                # breakpoint(); raise Exception()  # (temporarily) comment out if you don't need them
 
         # soft fail, may not always want spin-orbit-coupling?
         if 'SOC' not in model.keys():
@@ -2621,24 +2621,12 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
             for line in selected_lines:
                 try:
-                    state, pair, x, y, z = line.strip().split()
-                    state, pair = int(state), int(pair)
-                    if pair == state:  # transition from the fictitious ground state (0) -> to `state` #
-                        pair = 0
-                    if VECC_flag:
-                        if pair == 0:
-                            # = float(x) if float(x) != 0 else 0.000000010
-                            x = float(x) if float(x) != 0 else 0.000000010
-                            y = float(y) if float(y) != 0 else 0.000000010
-                            z = float(z) if float(z) != 0 else 0.000000010
-                            dipoles[(pair, state)] = [float(x), float(y), float(z)]
-                        else:
-                            continue
-                    else:
-                        x = float(x) if float(x) != 0 else 0.000000010
-                        y = float(y) if float(y) != 0 else 0.000000010
-                        z = float(z) if float(z) != 0 else 0.000000010
-                        dipoles[(pair, state)] = [float(x), float(y), float(z)] # off-diagonal state-pairs
+                    dst, src, x, y, z = line.strip().split()
+                    dst, src = int(dst), int(src)
+                    if dst == src:  # transition from the fictitious ground state (0) -> to `state` #
+                        src = 0
+
+                    dipoles[(src, dst)] = [float(x), float(y), float(z)]
 
                 except Exception as e:
                     print(f"Error processing line: {line} - {e}")
@@ -3124,7 +3112,8 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
     def _write_op():
         """ x """
 
-        constant_keys = ["vibron eV", "E0 eV", "E0 au", "dipoles",]
+        constant_keys = ["vibron eV", "E0 eV", "E0 au", "dipoles"]
+        higher_order_keys = ["Linear", "Quadratic", "BiLinear"]
 
         def _extract_gamess_model():
             """ x """
@@ -3163,47 +3152,52 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 ])
                 return file_contents
 
+            def convert_string_to_tobystyle(path, file_contents):
+                for i in range(N):
+                    new_i = mode_map_dict[i]
+                    file_contents = file_contents.replace(f'v{i+1:>02d}', f'v{new_i:>02d}')
+                    file_contents = file_contents.replace(f'w{i+1:>02d}', f'w{new_i:>02d}')
+                return file_contents
+
+            toby_style = False
+            # ----------------------------------------------------------------------------------------
             if simple:  # if we don't want to construct multiple mctdh files
                 path = 'mctdh'
                 file_contents = make_mctdh_file_contents(full_model)
 
-                toby_style = False
                 if toby_style:  # relabel all modes to toby's style
                     path += '_tobystyle'
-                    for i in range(N):
-                        new_i = mode_map_dict[i]
-                        file_contents = file_contents.replace(f'v{i+1:>02d}', f'v{new_i:>02d}')
-                        file_contents = file_contents.replace(f'w{i+1:>02d}', f'w{new_i:>02d}')
+                    file_contents = convert_string_to_tobystyle(file_contents)
+
                 with open(path + '.op', 'w') as fp:
                     fp.write(file_contents)
                 return
 
             fake_zero = complex(0) if pp.SOC_flag else float(0)
 
+            # ----------------------------------------------------------------------------------------
+            # first copy the basic elements of the model
             constant_model, linear_model = {}, {}
-            for key in ["vibron eV", "E0 eV", "E0 au"]:
-                constant_model[key] = full_model[key].copy()
-                linear_model[key] = full_model[key].copy()
+            for key in ["vibron eV", "E0 eV", "E0 au", "dipoles"]:
+                if key != "dipoles":
+                    constant_model[key] = full_model[key].copy()
+                    linear_model[key] = full_model[key].copy()
+                else:  # dipoles is special
+                    constant_model[key], linear_model[key] = {}, {}
+                    for index in full_model[key].keys():
+                        constant_model[key][index] = full_model[key][index].copy()
+                        linear_model[key][index] = full_model[key][index].copy()
 
-            # dipoles is special
-            key = "dipoles"
-            constant_model[key], linear_model[key] = {}, {}
-            for index in full_model[key].keys():
-                constant_model[key][index] = full_model[key][index].copy()
-                linear_model[key][index] = full_model[key][index].copy()
-
-            # constant_model = full_model.copy()
-            # for key in ['Linear', 'Quadratic', 'BiLinear']:
-            #     constant_model[key] = {}
-            #     for index in constant_model[key].keys():
-            #         constant_model[key][index] = np.zeros_like(full_model[key][index])
-
+            # ----------------------------------------------------------------------------------------
+            # for the linear model, also copy the linear components
             key = 'Linear'
             linear_model[key] = {}
             for index in full_model[key].keys():
                 linear_model[key][index] = full_model[key][index].copy()
 
-            if pp.SOC_flag and False:
+            # handle SOC
+            if pp.SOC_flag:
+                assert False, "SOC CODE HERE IS NOT DONE YET!!!"
                 SOC_key = 'SOC'
                 for index in constant_model[SOC_key].keys():
                     constant_model[SOC_key][index] = np.zeros_like(full_model[key][index])
@@ -3211,54 +3205,123 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 for index in linear_model[SOC_key].keys():
                     linear_model[SOC_key][index] = np.zeros_like(full_model[key][index])
 
+            # ----------------------------------------------------------------------------------------
+            # save the different files
             arg_list = [
-                (full_model, "mtcdh"),
-                (linear_model, "mtcdh_linear"),
-                (constant_model, "mtcdh_constant"),
+                (full_model, "mctdh"),
+                (linear_model, "mctdh_linear"),
+                (constant_model, "mctdh_constant"),
             ]
 
             for model, path in arg_list:
                 file_contents = make_mctdh_file_contents(model)
 
-                toby_style = False
                 if toby_style:  # relabel all modes to toby's style
                     path += '_tobystyle'
-                    for i in range(N):
-                        new_i = mode_map_dict[i]
-                        file_contents = file_contents.replace(f'v{i+1:>02d}', f'v{new_i:>02d}')
-                        file_contents = file_contents.replace(f'w{i+1:>02d}', f'w{new_i:>02d}')
+                    file_contents = convert_string_to_tobystyle(file_contents)
 
                 with open(path + '.op', 'w') as fp:
                     fp.write(file_contents)
-
+            # ----------------------------------------------------------------------------------------
             return
 
         def make_json_file(model):
             """ x """
+
+            # JANKY AS-F import to make vmio work
             vmio_dir = "/home/bjb2chen/gamess/vibronics/template_examples/apr26/vmio-SOC_prototype/"
+            import sys
             sys.path.insert(0, vmio_dir)
             import vmio
-            from vmio.vibronic import vIO, VMK
+            from vmio.vibronic import vIO, VMK, model_op
+            # ------------------------------------
 
             for order in [0, 1, 2]:
-
                 if pp.SOC_flag:
                     json_model = vIO.soc_model_zeros_template_json_dict(A, N, highest_order=order)
                 else:
                     json_model = vIO.model_zeros_template_json_dict(A, N, highest_order=order)
 
                 json_model[VMK.E] = model['E0 eV']
-                json_model[VMK.etdm] = model['dipoles']
+                json_model[VMK.w] = model['vibron eV']
+
+                def _make_dipole_array(model):
+                    dipole_array = np.zeros_like(json_model[VMK.etdm])
+                    for key in model['dipoles'].keys():
+                        i, j = key
+
+                        if i != 0:  # VECC can't handle these parts of the dipole
+                            continue
+
+                        x, y, z = model['dipoles'][key]
+
+                        # we can only use 1 of the three co-ordinates
+                        # this is a temporary workaround
+                        coord = {
+                            'CH2Ocat': z,
+                            'some other name': x,
+                        }.get(pp.name, None)
+
+                        if coord is None:
+                            breakpoint()
+                            raise Exception(f"Have no spec for {pp.name=} need to manually define which co-ordinate")
+
+                        dipole_array[0, j-1] = coord
+
+                    return dipole_array
+
+                dipole_array = _make_dipole_array(model)
+                json_model[VMK.etdm] = dipole_array
+                json_model[VMK.mtdm] = dipole_array
 
                 # normal couplings
                 if order >= 1:
-                    json_model[VMK.G1] = model['Linear']
+                    def _make_linear_array(model):
+                        linear_array = np.zeros_like(json_model[VMK.G1])
+
+                        # maps idx=0 -> jdx=7, 1 -> 8 etc.
+                        for idx, jdx in pp.mode_map_dict.items():
+                            upper_tri = model['Linear'][jdx]
+                            linear_array[idx, :, :] = upper_tri
+
+                        # flip all triangles down (for all modes; vectorized)
+                        for a, b in it.combinations(range(A), 2):
+                            linear_array[:, b, a] = linear_array[:, a, b]
+
+                        return linear_array
+
+                    linear_array = _make_linear_array(model)
+                    json_model[VMK.G1] = linear_array
+
                 if order >= 2:
-                    json_model[VMK.G2] = model['Quadratic'] + model['BiLinear']
+                    def _make_quadratic_array(model):
+                        quadratic_array = np.zeros_like(json_model[VMK.G2])
+
+                        # maps idx=0 -> jdx=7, 1 -> 8 etc.
+                        for i, vdiag in pp.mode_map_dict.items():
+                            quadratic_array[i, i, :, :] = model['Quadratic'][vdiag]
+ 
+                        # maps k(0,1) -> v=(7,8), etc.
+                        for k, v in pp.ij_map.items():
+                            quadratic_array[k[0], k[1], :, :] = model['BiLinear'][v]
+
+                        model_op.mode_symmetrize_from_upper_triangle_quadratic_terms(N, range(A), quadratic_array)
+
+                        # flip all triangles down (for all modes; vectorized)
+                        for a, b in it.combinations(range(A), 2):
+                            quadratic_array[:, :, b, a] = quadratic_array[:, :, a, b]
+
+                        return quadratic_array
+
+                    quadratic_array = _make_quadratic_array(model)
+                    json_model[VMK.G2] = quadratic_array
+
+                breakpoint()
 
                 filename = "model"
 
                 if pp.SOC_flag:  # SOC couplings
+                    assert False, "SOC CODE HERE IS NOT DONE YET!!!"
                     if order >= 1:
                         json_model[VMK.S1] = model['SOC']['Linear']
                     if order >= 2:
