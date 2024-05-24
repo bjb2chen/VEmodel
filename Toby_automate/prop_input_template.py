@@ -15,10 +15,13 @@ auto_scheme = "auto=once"
 # second order is only needed for filter-diagonalization scheme
 # auto_scheme = "auto=twice"
 
+genpes = "genpes"
+
 run_section_propagation = "\n".join([
     run_begin,
     "title = wavefunction propagation of {name:s}",
     "name = {name:s}",
+    genpes,
     basic_propagation,
     basic_propagation_scheme,
     generate_initial_wavefunction,
