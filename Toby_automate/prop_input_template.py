@@ -27,7 +27,7 @@ run_section_propagation = "\n".join([
     generate_initial_wavefunction,
     wavefunction_single_precision,
     auto_scheme,
-    "usepthreads = {ncpus:s}", # parallelized
+    "usepthreads = {ncpus}", # parallelized
     run_end,
 ])
 
