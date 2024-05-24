@@ -3243,6 +3243,11 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                     json_model = vIO.model_zeros_template_json_dict(A, N, highest_order=order)
 
                 json_model[VMK.E] = model['E0 eV']
+
+                # symmetrize w.r.t electronic surfaces (A)
+                for a, b in it.combinations(range(A), 2):
+                    json_model[VMK.E][b, a] = json_model[VMK.E][a, b]
+                    
                 json_model[VMK.w] = model['vibron eV']
 
                 def _make_dipole_array(model):
