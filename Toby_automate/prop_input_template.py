@@ -110,7 +110,7 @@ pbs_begin = "PRIMITIVE-BASIS-SECTION"
 pbs_end = "end-primitive-basis-section"
 electronic_basis = "    el      el     {:d}"
 
-# this is the basis specification where the first element represents...
+# this is the basis specification where the first element represents equilibrium position of HO
 # the second element is the frequency and the third element is the mass
 ho_spec = "0.0   1.0   1.0"
 # this specification allows us to define the HO by the first and last grid points
