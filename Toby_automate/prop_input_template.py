@@ -301,11 +301,11 @@ block_initial_wavefunction_section = "\n".join([
 
 block_alloc_section = "\n".join([
     "ALLOC-SECTION",
-    "maxpar  =  100000",
-    "maxkoe  =  280000",
-    "maxhtm  =  280000",
-    "maxhop  =  280000",
-    "maxfac  =     800",
+    "maxpar  = 1000000",
+    "maxkoe  = 1000000",
+    "maxhtm  = 1000000",
+    "maxhop  = 1000000",
+    "maxfac  =    5000",
     "maxdef  =     240",
     "maxmuld =      20",
     "maxLMR  =      20",
