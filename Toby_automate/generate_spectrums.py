@@ -181,7 +181,7 @@ def _generate_pl(nof_points, root_dir, output_filename, input_filename):
         f"-p {nof_points:d} "
         # f"-EP "
         # f"-e {harmonic_ground_state} eV " # x axis shift (left/right) to account for H.O. G.S.
-        f"{left_eV} {right_EV} eV "  # x axis limits (in eV)
+        f"{left_eV} {right_EV} ev "  # x axis limits (in eV)
         f"{tau:d} "   # tau value
         f"{iexp:d} "  # iexp value
     )
