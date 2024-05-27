@@ -7,7 +7,7 @@ basic_propagation_scheme = "tout = {tout:.2f} tfinal = {tfinal:.2f} tpsi=1.0"
 generate_initial_wavefunction = "geninwf"
 
 # this specifies the precision of the wavefunction when written to the output
-wavefunction_single_precision = "psi=single steps gridpop"
+wavefunction_single_precision = "psi steps gridpop"
 # wavefunction_double_precision = "psi=double"
 
 # this specifies the 1st order
@@ -15,13 +15,14 @@ auto_scheme = "auto=once"
 # second order is only needed for filter-diagonalization scheme
 # auto_scheme = "auto=twice"
 
+# if you need to do a level-2 calculation (propagation is level-4)
+# use genpes for creating pes plots
 genpes = "genpes"
 
 run_section_propagation = "\n".join([
     run_begin,
     "title = wavefunction propagation of {name:s}",
     "name = {name:s}",
-    genpes,
     basic_propagation,
     basic_propagation_scheme,
     generate_initial_wavefunction,
