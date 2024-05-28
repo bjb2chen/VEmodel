@@ -3242,13 +3242,13 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 else:
                     json_model = vIO.model_zeros_template_json_dict(A, N, highest_order=order)
 
-                json_model[VMK.E] = model['E0 eV']
+                json_model[VMK.E] = model['E0 eV'].copy()
 
                 # symmetrize w.r.t electronic surfaces (A)
                 for a, b in it.combinations(range(A), 2):
                     json_model[VMK.E][b, a] = json_model[VMK.E][a, b]
                     
-                json_model[VMK.w] = model['vibron eV']
+                json_model[VMK.w] = model['vibron eV'].copy()
 
                 def _make_dipole_array(model):
                     dipole_array = np.zeros_like(json_model[VMK.etdm])
@@ -3258,28 +3258,37 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                         if i != 0:  # VECC can't handle these parts of the dipole
                             continue
 
-                        x, y, z = model['dipoles'][key]
+                        if True:  # for 3 dimensional dipoles
+                            dipole_array[:, j-1] = np.array(model['dipoles'][key])
+                            
 
-                        # we can only use 1 of the three co-ordinates
-                        # this is a temporary workaround
-                        coord = {
-                            'CH2Ocat': z,
-                            'some other name': x,
-                        }.get(pp.name, None)
+                        else:  # for 1 dimensional dipoles only
+                            x, y, z = model['dipoles'][key]
 
-                        if coord is None:
-                            breakpoint()
-                            raise Exception(f"Have no spec for {pp.name=} need to manually define which co-ordinate")
+                            # we can only use 1 of the three co-ordinates
+                            # this is a temporary workaround
+                            if pp.name == 'CH2Ocat':
+                                coord = z
+                            elif pp.name == 'some other name':  #
+                                coord = x
+                            # elif pp.name == 'sdsds':  #
+                                # coord = y
+                            # elif pp.name == 'asdads':  #
+                                # coord = x
+                            else:
+                                breakpoint()
+                                raise Exception(f"Have no spec for {pp.name=} need to manually define which co-ordinate")
 
-                        dipole_array[0, j-1] = coord
-
+                            dipole_array[0, j-1] = coord
                     return dipole_array
 
                 dipole_array = _make_dipole_array(model)
-                json_model[VMK.etdm] = dipole_array
+                dipole_array *= QM_const.ha2ev # convert dipole_array from au to ev
+                json_model[VMK.etdm] = dipole_array 
                 json_model[VMK.mtdm] = dipole_array
 
                 # normal couplings
+
                 if order >= 1:
                     def _make_linear_array(model):
                         linear_array = np.zeros_like(json_model[VMK.G1])
@@ -3287,7 +3296,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                         # maps idx=0 -> jdx=7, 1 -> 8 etc.
                         for idx, jdx in pp.mode_map_dict.items():
                             upper_tri = model['Linear'][jdx]
-                            linear_array[idx, :, :] = upper_tri
+                            linear_array[idx, :, :] = upper_tri.copy()
 
                         # flip all triangles down (for all modes; vectorized)
                         for a, b in it.combinations(range(A), 2):
@@ -3304,11 +3313,11 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
                         # maps idx=0 -> jdx=7, 1 -> 8 etc.
                         for i, vdiag in pp.mode_map_dict.items():
-                            quadratic_array[i, i, :, :] = model['Quadratic'][vdiag]
+                            quadratic_array[i, i, :, :] = model['Quadratic'][vdiag].copy()
  
                         # maps k(0,1) -> v=(7,8), etc.
                         for k, v in pp.ij_map.items():
-                            quadratic_array[k[0], k[1], :, :] = model['BiLinear'][v]
+                            quadratic_array[k[0], k[1], :, :] = model['BiLinear'][v].copy()
 
                         model_op.mode_symmetrize_from_upper_triangle_quadratic_terms(N, range(A), quadratic_array)
 
@@ -3320,8 +3329,6 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
                     quadratic_array = _make_quadratic_array(model)
                     json_model[VMK.G2] = quadratic_array
-
-                breakpoint()
 
                 filename = "model"
 
