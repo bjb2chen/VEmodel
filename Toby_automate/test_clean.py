@@ -372,7 +372,10 @@ def get_model_from_op_file(path, order):
         path,
         get_transition_dipole_moment=True,
         surface_symmetrize=True,
+        dimension_of_dipole_moments=3,
     )
+
+    raw_model = vIO.model_remove_ground_state(raw_model)
 
     # when we symmetrize the surfaces we divide the diagonal by 2 (that already happens and works correctly)
     A, N = vIO._extract_dimensions_from_dictionary(raw_model)
@@ -409,10 +412,10 @@ def get_model_from_json_file(path, order):
 
 if (__name__ == '__main__'):
 
-    use_JSON_flag = True
+    use_JSON_flag = False
     t_final = 100.0
     FC = False
-    order = 1
+    order = 2
     model_name = f"{file_name}_FC" if FC else f"{file_name}_vibronic"
 
     project.log_conf.setLevelDebug()
@@ -425,7 +428,7 @@ if (__name__ == '__main__'):
         path = join("/home/bjb2chen/gamess/vibronics/template_examples/mar25_CH2O", 'model' + '.json')
         model = get_model_from_json_file(path, order)
     else:
-        path = join("/home/bjb2chen/scratch/VECC/vibronic_models/", 'model' + '.op')
+        path = join("/home/bjb2chen/gamess/vibronics/template_examples/mar25_CH2O/", 'mctdh' + '.op')
         model = get_model_from_op_file(path, order)
 
     # run CC code
@@ -451,8 +454,8 @@ if (__name__ == '__main__'):
             mctdh_t_final=t_final*0.5,
             mctdh_dt=0.1
         )
-    print('Do you want to plot the ABS spectra? Press c to continue.')
-    breakpoint()
+    # print('Do you want to plot the ABS spectra? Press c to continue.')
+    # breakpoint()
 
     # plot spectra
     print("-"*40 + "\nPlotting Spectrum\n" + "-"*40 + "\n")
