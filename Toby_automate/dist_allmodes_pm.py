@@ -3229,7 +3229,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             """ x """
 
             # JANKY AS-F import to make vmio work
-            vmio_dir = "/home/bjb2chen/gamess/vibronics/template_examples/apr26/vmio-SOC_prototype/"
+            vmio_dir = "/home/bjb2chen/VECC/"
             import sys
             sys.path.insert(0, vmio_dir)
             import vmio
@@ -3347,11 +3347,9 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 if True:  # just to diagnose the saving/loading didn't Fk any coefficients up
                     loaded_model = vIO.load_model_from_JSON(path)
                     # some kind of asserts to make sure all the values are the same
-                    breakpoint()
 
                 print("-"*60)
                 vIO.print_model_compact(loaded_model, highest_order=order)
-                breakpoint()
 
             return
 

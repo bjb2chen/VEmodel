@@ -26,6 +26,7 @@ from . import model_op
 # to improve reading of output/debug print statements/logs
 np.set_printoptions(precision=8, suppress=True)
 
+print('We are running vibronic_model_io.py May 28, 2024 version.')
 
 # ------------------------------------------------------------------------
 # ------------------------------------------------------------------------
@@ -131,7 +132,6 @@ def verify_model_parameters(kwargs):
         if (key == VMK.A) or (key == VMK.N):
             continue
         elif key in shape_dict:
-            print('key', key, ' shape_dict', shape_dict)
             assert kwargs[key].shape == shape_dict[key], (
             f"{key} has incorrect shape {kwargs[key].shape} instead of {shape_dict[key]}"
             )
