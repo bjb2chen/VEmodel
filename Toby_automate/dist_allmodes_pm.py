@@ -1279,7 +1279,7 @@ def fitting():
 
     For A == 1:                                                     (extract this)
 
-         1     E(REF-CI)=      -56.2499276613     E(GMC-PT2)=      -56.3710474990
+         1     E(REF-CI)=      -56.2499276613       -PT2)=      -56.3710474990
 
     For A > 1:                                     (extract this)
 
@@ -1411,6 +1411,11 @@ def fitting():
 
                     # convert to eV
                     array[a, a] = (fitting[(key, i, a+1)] - refG_fitting) * ha2ev
+
+                    # E(GMC-QDPT2)
+                    # if False:
+                    #     b_pattern
+                    #     fitting[(key, i, a+1)] = extract_in_Hartrees(linear_displacement_filenames[(key, i)], b_pattern.format(col=a+1))
 
                 x = int(key) * qsize
                 # y_vals = [array[a, a] for a in range(A)]
