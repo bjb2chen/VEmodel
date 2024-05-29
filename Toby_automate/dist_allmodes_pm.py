@@ -1325,7 +1325,7 @@ def fitting():
     large_N = [i for i in range(N) if _max_order(i) > 2]
 
     # ---------------------------------------------------------------------
-    def _extract_single_surface():
+    def _extract_single_surface(): 
         """
             for every list there is a list
             each element of the list is a row in the file contents
@@ -1413,9 +1413,17 @@ def fitting():
                     array[a, a] = (fitting[(key, i, a+1)] - refG_fitting) * ha2ev
 
                     # E(GMC-QDPT2)
-                    # if False:
-                    #     b_pattern
-                    #     fitting[(key, i, a+1)] = extract_in_Hartrees(linear_displacement_filenames[(key, i)], b_pattern.format(col=a+1))
+                    if True:
+                        print('E(GMC-QDPT2) set to True. GMC-PT diabatic energies for fitting instead of couplings.')
+                        column_specification_string = "head -1 | cut -c62-"
+                        backup_line_idx = slice(62, None)
+        
+                        ffitting[(key, i, a+1)] = _extract_energy_from_gamessoutput_grep(
+                            linear_displacement_filenames[(key, i)], 'E(GMC-QDPT2)',
+                            column_specification_string,
+                            backup_line_idx
+                        )
+                        array[a, a] = (fitting[(key, i, a+1)] - refG_fitting) * ha2ev
 
                 x = int(key) * qsize
                 # y_vals = [array[a, a] for a in range(A)]
