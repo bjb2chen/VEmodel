@@ -291,7 +291,7 @@ def gnuplot_spectrum(*args):
     # write the plotting commands to a file
     with open(path_plotting_file, 'w') as fp:
         fp.write(command)
-        fp.writte("\n")
+        fp.write("\n")
         fp.write(plotting_command)
 
     return path_plotting_file
