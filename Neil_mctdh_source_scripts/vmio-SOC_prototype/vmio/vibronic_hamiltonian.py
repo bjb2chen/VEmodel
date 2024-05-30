@@ -31,6 +31,7 @@ from project.residual_equations import create_truncation_order_object
 from project.residual_equations.symmetrize import symmetrize_tensor
 
 # testing generated equations
+from project.residual_equations import eT_zhz_eqs_H_2_P_4_T_1_exp_4_Z_1 as z_one_eqns
 from project.residual_equations import eT_zhz_eqs_H_2_P_4_T_1_exp_4_Z_2 as z_two_eqns
 from project.residual_equations import eT_zhz_eqs_H_2_P_4_T_1_exp_4_Z_3 as z_three_eqns
 
@@ -63,7 +64,8 @@ class vibronic_hamiltonian(object):
             cal_Z0=False, cal_t0=True, solve_t=False, Z_truncation_order=2, T_truncation_order=1,
             selected_surface=[],
             force_use_optimize=False,
-            ):
+            calculate_population_flag=True,
+    ):
         """
         trans: ?
         theta: only affects similarity_transformation (debugging?)
@@ -88,6 +90,8 @@ class vibronic_hamiltonian(object):
             self.op_einsum_flag = True
         else:
             self.op_einsum_flag = False
+
+        self.calculate_population_flag = bool(calculate_population_flag)
 
         # vibronic model
         self.model = model
@@ -186,8 +190,9 @@ class vibronic_hamiltonian(object):
         self.Norm = []
 
         # initialize state property
-        self.State_pop_DB = []
-        self.State_pop_AB = []
+        if self.calculate_population_flag:
+            self.State_pop_DB = []
+            self.State_pop_AB = []
 
         # set up step size
         self.step_size = 5e-3
@@ -230,6 +235,8 @@ class vibronic_hamiltonian(object):
             # self._initialize_einsum_paths()
             self._initialize_opt_einsum_paths()
             self._initialize_new_scheme_D_einsum_paths()
+            self._initialize_cal_H_bar_tilde_einsum_paths()
+            self._initialize_compute_C_matrix_einsum_paths()
 
         # these lines are only for testing against
         # Full configuration-interaction (FCI)
@@ -472,6 +479,8 @@ class vibronic_hamiltonian(object):
     def _initialize_opt_einsum_paths(self):
         """Store optimized paths as member of `self` for use in the `eT_zhz_eqs_***` module during integration."""
 
+        if self.Z_truncation_order == 1:
+            self.all_opt_paths = z_one_eqns.compute_all_optimized_paths(self.A, self.N, self.ansatz, self.gen_trunc)
         if self.Z_truncation_order == 2:
             self.all_opt_paths = z_two_eqns.compute_all_optimized_paths(self.A, self.N, self.ansatz, self.gen_trunc)
         if self.Z_truncation_order == 3:
@@ -501,6 +510,56 @@ class vibronic_hamiltonian(object):
         if self.Z_truncation_order >= 2:
             self.d2_opt_paths = [
                 oe.contract_expression('l,ylij->yij', (N,), (A, N, N, N), optimize='auto-hq'),
+            ]
+
+        return
+
+    def _initialize_cal_H_bar_tilde_einsum_paths(self):
+        """Store optimized paths as member of `self` for use in `_cal_H_bar_tilde`
+        This function should eventually be replaced with someone more permanent.
+        But for optimization for calculating Fe(CO)5 it is fine.
+        """
+        A, N = self.A, self.N
+
+        self.H_bar_tilde_paths = [
+            oe.contract_expression('k,abk->ab', (N,), (A, A, N), optimize='auto-hq'),
+            oe.contract_expression('k,l,abkl->ab', (N,), (N,), (A, A, N, N), optimize='auto-hq'),
+            oe.contract_expression('k,abik->abi', (N,), (A, A, N, N), optimize='auto-hq'),
+            oe.contract_expression('k,abki->abi', (N,), (A, A, N, N), optimize='auto-hq'),
+        ]
+
+        return
+
+    def _initialize_compute_C_matrix_einsum_paths(self):
+        """Store optimized paths as member of `self` for use in `_compute_C_matrix`
+        This function should eventually be replaced with someone more permanent.
+        But for optimization for calculating Fe(CO)5 it is fine.
+        """
+        A, N = self.A, self.N
+
+        self.Cmat_Z0_opt_paths = [
+            oe.contract_expression('k,xk->x', (N,), (A, N), optimize='auto-hq'),
+        ]
+
+        if self.Z_truncation_order >= 2:
+
+            self.Cmat_Z2_opt_paths = [
+                # s0
+                oe.contract_expression('k,l,xkl->x', (N,), (N,), (A, N, N), optimize='auto-hq'),
+                # s1
+                oe.contract_expression('k,xik->xi', (N,), (A, N, N), optimize='auto-hq'),
+                # no s2
+            ]
+
+        if self.Z_truncation_order >= 3:
+
+            self.Cmat_Z3_opt_paths = [
+                # s0
+                oe.contract_expression('k,l,m,xklm->x', (N,), (N,), (N,), (A, N, N, N), optimize='auto-hq'),
+                # s1
+                oe.contract_expression('k,l,xikl->xi', (N,), (N,), (A, N, N, N), optimize='auto-hq'),
+                # s2
+                oe.contract_expression('k, xkij->xij', (N,), (A, N, N, N), optimize='auto-hq'),
             ]
 
         return
@@ -821,27 +880,34 @@ class vibronic_hamiltonian(object):
         for idx, t in enumerate(sol.t):
             self.Norm_cc[idx, :] = N_dic[t]
 
-        self.state_pop_cc_DB = np.zeros([len(self.t_cc), self.A, self.A], dtype=complex)
+        if self.calculate_population_flag:
+            # store the diabatic populations --------------------
+            self.state_pop_cc_DB = np.zeros([len(self.t_cc), self.A, self.A], dtype=complex)
 
-        P_dic = {P[0]: P[1] for P in self.State_pop_DB}
-        for idx, t in enumerate(sol.t):
-            self.state_pop_cc_DB[idx, :] += P_dic[t]
-        # store diabatic state population
-        dic_diab_pop = {}
-        dic_diab_pop["time(fs)"] = self.t_cc
-        for x, y in it.product(range(self.A), repeat=2):
-            name = f"diab state pop {x} init state {y}"
-            dic_diab_pop[name]=self.state_pop_cc_DB[:,x, y].real
-        import pandas as pd
-        df = pd.DataFrame(dic_diab_pop)
-        df.to_csv(f"Diabatic_state_pop_{self.model_name}.csv", index=False)
+            P_dic = {P[0]: P[1] for P in self.State_pop_DB}
 
+            for idx, t in enumerate(sol.t):
+                self.state_pop_cc_DB[idx, :] += P_dic[t]
 
-        self.state_pop_cc_AB = np.zeros([len(self.t_cc), self.A, self.A], dtype=complex)
+            # store diabatic state population
+            dic_diab_pop = {}
+            dic_diab_pop["time(fs)"] = self.t_cc
 
-        P_dic = {P[0]: P[1] for P in self.State_pop_AB}
-        for idx, t in enumerate(sol.t):
-            self.state_pop_cc_AB[idx, :] += P_dic[t]
+            for x, y in it.product(range(self.A), repeat=2):
+                name = f"diab state pop {x} init state {y}"
+                dic_diab_pop[name] = self.state_pop_cc_DB[:, x, y].real
+
+            import pandas as pd
+            df = pd.DataFrame(dic_diab_pop)
+            df.to_csv(f"Diabatic_state_pop_{self.model_name}.csv", index=False)
+
+            # store the adiabatic populations --------------------
+            self.state_pop_cc_AB = np.zeros([len(self.t_cc), self.A, self.A], dtype=complex)
+
+            P_dic = {P[0]: P[1] for P in self.State_pop_AB}
+            for idx, t in enumerate(sol.t):
+                self.state_pop_cc_AB[idx, :] += P_dic[t]
+            # ---------------------------------------------------------------------------------
 
         if debug:
             # only extract the values which correspond to time steps in the solution
@@ -1035,8 +1101,10 @@ class vibronic_hamiltonian(object):
             log.info(z_amplitude_values_string)
 
             log.info(f'Norm of the wavefunction:\n{self.Norm[-1][1]}')
-            log.info(f'Diabatic  State population:\n {self.State_pop_DB[-1][1]}')
-            log.info(f'Adiabatic State population:\n {self.State_pop_AB[-1][1]}')
+
+            if self.calculate_population_flag:
+                log.info(f'Diabatic  State population:\n {self.State_pop_DB[-1][1]}')
+                log.info(f'Adiabatic State population:\n {self.State_pop_AB[-1][1]}')
 
             self.last_print = fs
             self.last_counter = 0
@@ -1090,7 +1158,9 @@ class vibronic_hamiltonian(object):
         return dT
 
     def _compute_z_residual_new_scheme(self, R, Z, T_conj, dT, C):
-        """ compute z compute z residue by subtracting t residue from net residue adopt the new scheme the introduce similarity transform"""
+        """ compute z compute z residue by subtracting t residue from net residue
+            adopt the new scheme the introduce similarity transform
+        """
         A, N = self.A, self.N
 
         T_conj_1 = T_conj[(0, 1)]
@@ -1384,7 +1454,6 @@ class vibronic_hamiltonian(object):
 
             return dz_ijk
 
-
         # compute the common factor (t^k)^*(idt^k/dtau)
         X = np.einsum('k,k->', T_conj[1], dT[1])
 
@@ -1550,8 +1619,8 @@ class vibronic_hamiltonian(object):
             Q = np.ones([N, N], dtype=complex) - Identity
 
             if self.Z_truncation_order >= 2:
-                C_2 +=  0.5 * np.einsum('xij,ij->x', Z[2], Q)
-                C_2 +=  1. / np.sqrt(2) * np.einsum('xij,ij->x',  Z[2], Identity)
+                C_2 += 0.5 * np.einsum('xij,ij->x', Z[2], Q)
+                C_2 += 1. / np.sqrt(2) * np.einsum('xij,ij->x',  Z[2], Identity)
 
             if self.Z_truncation_order >= 3:
                 C_2 += 0.5 * np.einsum('k,xkij,ij->x', T_conj[1], Z[3], Q)
@@ -1626,83 +1695,96 @@ class vibronic_hamiltonian(object):
 
         return state_pop_DB, state_pop_AB
 
-    def calculate_state_populations_new(self, C_args):
+    def calculate_CC_norm_new(self, C_args):
         """calculate state population from C tensors directly """
         # calculate norm
-        norm = 0.
+        norm = 0.0
         norm += np.einsum('x,x->', np.conj(C_args[(0, 0)]), C_args[(0, 0)])
         norm += np.einsum('xi,xi->', np.conj(C_args[(1, 0)]), C_args[(1, 0)])
+
         if self.Z_truncation_order >= 2:
             norm += 0.5 * np.einsum('xij,xij->', np.conj(C_args[(2, 0)]), C_args[(2, 0)])
         if self.Z_truncation_order >= 3:
             norm += 1. / 6. * np.einsum('xijk,xijk->', np.conj(C_args[(3, 0)]), C_args[(3, 0)])
 
-        # print(norm)
-        # sys.exit(0)
-        # calculate denisty matrix
-        D = np.zeros((self.A, self.A), dtype=complex)
-        D += np.einsum('x,y->xy', np.conj(C_args[(0, 0)]), C_args[(0, 0)])
-        D += np.einsum('xi,yi->xy', np.conj(C_args[(1, 0)]), C_args[(1, 0)])
+        return norm
+
+    def calculate_density_matrix_new(self, norm, C_args):
+        """calculate denisty matrix"""
+        d_matrix = np.zeros((self.A, self.A), dtype=complex)
+        d_matrix += np.einsum('x,y->xy', np.conj(C_args[(0, 0)]), C_args[(0, 0)])
+        d_matrix += np.einsum('xi,yi->xy', np.conj(C_args[(1, 0)]), C_args[(1, 0)])
         if self.Z_truncation_order >= 2:
-            D += 0.5 * np.einsum('xij,yij->xy', np.conj(C_args[(2, 0)]), C_args[(2, 0)])
+            d_matrix += 0.5 * np.einsum('xij,yij->xy', np.conj(C_args[(2, 0)]), C_args[(2, 0)])
         if self.Z_truncation_order >= 3:
-            D += 1. / 6. * np.einsum('xijk,yijk->xy', np.conj(C_args[(3, 0)]), C_args[(3, 0)])
+            d_matrix += 1. / 6. * np.einsum('xijk,yijk->xy', np.conj(C_args[(3, 0)]), C_args[(3, 0)])
 
-        # print(D)
+        d_matrix /= norm  # normalize density matrix
 
-        # normalize density matrix
-        D /= norm
+        return d_matrix
+
+    def calculate_state_populations_new(self, density_matrix):
+        """calculate state population from C tensors directly """
+
         # diagonalize density
-        E, V = np.linalg.eigh(D)
+        E, V = np.linalg.eigh(density_matrix)
 
         # diabatic state population
-        state_pop_DB = np.array(np.diag(D), dtype=complex)
+        state_pop_DB = np.array(np.diag(density_matrix), dtype=complex)
 
         # adiabatic state population
         state_pop_AB = np.array(E, dtype=complex)
 
-        return  state_pop_DB, state_pop_AB, norm
+        return state_pop_DB, state_pop_AB
 
-    def _cal_H_bar_tilde(self, input_tensor, T_conj):
+    def _cal_H_bar_tilde(self, input_tensor, T_conj, opt_flag=False):
         """calculate the second similarity transform the the Hamiltonian"""
         A, N = self.A, self.N
 
-        def f_s_0(O):
+        def f_s_0(O_mat):
             """return constant residue"""
             # initialize as zero
             R = np.zeros([A, A], dtype=complex)
 
-            R += O[(0, 0)]
-
-            R += np.einsum('k,abk->ab', T_conj[(0, 1)], O[(1, 0)])
-
-            R += 0.5 * np.einsum('k,l,abkl->ab', T_conj[(0, 1)], T_conj[(0, 1)], O[(2, 0)])
+            R += O_mat[(0, 0)]
+            if opt_flag:
+                optimized_einsum = iter(self.H_bar_tilde_paths)  # first two
+                R += next(optimized_einsum)(T_conj[(0, 1)], O_mat[(1, 0)])
+                R += 0.5 * next(optimized_einsum)(T_conj[(0, 1)], T_conj[(0, 1)], O_mat[(2, 0)])
+            else:  # old
+                R += np.einsum('k,abk->ab', T_conj[(0, 1)], O_mat[(1, 0)])
+                R += 0.5 * np.einsum('k,l,abkl->ab', T_conj[(0, 1)], T_conj[(0, 1)], O_mat[(2, 0)])
 
             return R
 
-        def f_s_I(O):
+        def f_s_I(O_mat):
             """return residue R_I"""
             R = np.zeros([A, A, N], dtype=complex)
 
-            R += O[(1, 0)]
+            R += O_mat[(1, 0)]
 
-            R += np.einsum('k,abik->abi', T_conj[(0, 1)], O[(2, 0)])
-
+            if opt_flag:
+                optimized_einsum = self.H_bar_tilde_paths[2]
+                R += optimized_einsum(T_conj[(0, 1)], O_mat[(2, 0)])
+            else:  # old
+                R += np.einsum('k,abik->abi', T_conj[(0, 1)], O_mat[(2, 0)])
             return R
 
-        def f_s_i(O):
+        def f_s_i(O_mat):
             """return residue R_i"""
             R = np.zeros([A, A, N], dtype=complex)
 
-            R += O[(0, 1)]
-
-            R += np.einsum('k,abki->abi', T_conj[(0, 1)], O[(1, 1)])
-
+            R += O_mat[(0, 1)]
+            if opt_flag:
+                optimized_einsum = self.H_bar_tilde_paths[3]
+                R += optimized_einsum(T_conj[(0, 1)], O_mat[(1, 1)])
+            else:  # old
+                R += np.einsum('k,abki->abi', T_conj[(0, 1)], O_mat[(1, 1)])
             return R
 
-        def f_s_Ij(O):
+        def f_s_Ij(O_mat):
             """return residue R_Ij"""
-            return O[(1, 1)]
+            return O_mat[(1, 1)]
 
         output_tensor = {
                 (0, 0): f_s_0(input_tensor),
@@ -1715,56 +1797,80 @@ class vibronic_hamiltonian(object):
 
         return output_tensor
 
-    def _compute_C_matrix(self, input_tensor, T_conj):
+    def _compute_C_matrix(self, input_tensor, T_conj, opt_flag=False):
         """"calculate intermediate quantity C"""
         A, N = self.A, self.N
 
-        def f_s_0(O):
+        def f_s_0(O_mat):
             """return constant residue"""
             # initialize as zero
             R = np.zeros([A], dtype=complex)
 
-            R += O[(0, 0)]
+            R += O_mat[(0, 0)]
 
-            R += np.einsum('k,xk->x', T_conj[(0, 1)], O[(1, 0)])
+            if opt_flag:
+                optimized_einsum = self.Cmat_Z0_opt_paths[0]
+                R += optimized_einsum(T_conj[(0, 1)], O_mat[(1, 0)])
+            else:
+                R += np.einsum('k,xk->x', T_conj[(0, 1)], O_mat[(1, 0)])
 
             if self.Z_truncation_order >= 2:
-                R += 0.5 * np.einsum('k,l,xkl->x', T_conj[(0, 1)], T_conj[(0, 1)], O[(2, 0)])
-
+                if opt_flag:
+                    optimized_einsum = self.Cmat_Z2_opt_paths[0]
+                    R += optimized_einsum(T_conj[(0, 1)], T_conj[(0, 1)], O_mat[(2, 0)])
+                else:
+                    R += 0.5 * np.einsum('k,l,xkl->x', T_conj[(0, 1)], T_conj[(0, 1)], O_mat[(2, 0)])
             if self.Z_truncation_order >= 3:
-                R += 1./6. * np.einsum('k,l,m,xklm->x', T_conj[(0, 1)], T_conj[(0, 1)], T_conj[(0, 1)], O[(3, 0)])
+                if opt_flag:
+                    optimized_einsum = self.Cmat_Z3_opt_paths[0]
+                    R += optimized_einsum(T_conj[(0, 1)], T_conj[(0, 1)], T_conj[(0, 1)], O_mat[(3, 0)])
+                else:
+                    R += 1./6. * np.einsum('k,l,m,xklm->x', T_conj[(0, 1)], T_conj[(0, 1)], T_conj[(0, 1)], O_mat[(3, 0)])
 
             return R
 
-        def f_s_1(O):
+        def f_s_1(O_mat):
             """return single residue"""
             R = np.zeros([A, N], dtype=complex)
 
-            R += O[(1, 0)]
+            R += O_mat[(1, 0)]
 
             if self.Z_truncation_order >= 2:
-                R += np.einsum('k,xik->xi', T_conj[(0, 1)], O[(2, 0)])
+                if opt_flag:
+                    optimized_einsum = self.Cmat_Z2_opt_paths[1]
+                    R += optimized_einsum(T_conj[(0, 1)], O_mat[(2, 0)])
+                else:
+                    R += np.einsum('k,xik->xi', T_conj[(0, 1)], O_mat[(2, 0)])
 
             if self.Z_truncation_order >= 3:
-                R += 0.5 * np.einsum('k,l,xikl->xi', T_conj[(0, 1)], T_conj[(0, 1)], O[(3, 0)])
+                if opt_flag:
+                    optimized_einsum = self.Cmat_Z3_opt_paths[1]
+                    R += 0.5 * optimized_einsum(T_conj[(0, 1)], T_conj[(0, 1)], O_mat[(3, 0)])
+                else:
+                    R += 0.5 * np.einsum('k,l,xikl->xi', T_conj[(0, 1)], T_conj[(0, 1)], O_mat[(3, 0)])
 
             return R
 
-        def f_s_2(O):
+        def f_s_2(O_mat):
             """return double residue"""
             R = np.zeros([A, N, N], dtype=complex)
 
             if self.Z_truncation_order >= 2:
-                R += O[(2, 0)]
+                # no optimization for simple addition
+                R += O_mat[(2, 0)]
 
             if self.Z_truncation_order >= 3:
-                R += np.einsum('k, xkij->xij', T_conj[(0, 1)], O[(3, 0)])
+                if opt_flag:
+                    optimized_einsum = self.Cmat_Z3_opt_paths[2]
+                    R += optimized_einsum(T_conj[(0, 1)], O_mat[(3, 0)])
+                else:
+                    R += np.einsum('k, xkij->xij', T_conj[(0, 1)], O_mat[(3, 0)])
 
             return R
 
-        def f_s_3(O):
+        def f_s_3(O_mat):
             """return triple residue"""
-            return O[(3, 0)]
+            return O_mat[(3, 0)]
 
         output_tensor = {
             (0, 0): f_s_0(input_tensor),
@@ -1814,8 +1920,15 @@ class vibronic_hamiltonian(object):
             # special prep for the generated equations
             generated_flag = True
 
-            if generated_flag:
-
+            if not generated_flag:
+                e_string = """
+                The current code only works using the generated equations.
+                It is possible to change the code to work without the generated equations but
+                it is not a simple task and requires understanding of how things work.
+                You need to contact Neil to generate new equations using termfactory.
+                """
+                raise Exception(e_string)
+            else:
                 # map Z into the correct keys for generated code
                 gen_Z = {(0, 0): Z[0]}
 
@@ -1842,14 +1955,26 @@ class vibronic_hamiltonian(object):
             # -------------------------------------
             if new_scheme_flag:
                 # compute C matrix
-                C = self._compute_C_matrix(gen_Z, _special_T_conj)
+                C = self._compute_C_matrix(gen_Z, _special_T_conj, opt_flag=True)
 
                 # compute H_bar_tilde matrix
-                H_bar_tilde = self._cal_H_bar_tilde(H_bar, _special_T_conj)
+                H_bar_tilde = self._cal_H_bar_tilde(H_bar, _special_T_conj, opt_flag=True)
 
             # -------------------------------------
             # compute net residue
             # -------------------------------------
+
+            generated_equation_exception_string = (
+                f"Currently optimized paths are only generated for Z2 or Z3 not {self.Z_truncation_order=}\n"
+                "You need to either:\n"
+                f"set {generated_flag=} to false\n"
+                f"set {opt_flag=} to false (note that it is forceably"
+                "set to True for models with N+A >= 15 (large models)\n"
+                f"contact Neil to generate more optimized paths for different Z values\n"
+            )
+            if generated_flag and opt_flag:
+                if self.Z_truncation_order not in [2, 3]:
+                    raise Exception(generated_equation_exception_string)
 
             # constant
             if not generated_flag:
@@ -1988,7 +2113,6 @@ class vibronic_hamiltonian(object):
             else:
                 dT = self._compute_t_residual(H_bar_tilde, Z, Z_conj_dict)
 
-
             if new_scheme_flag:
                 dZ = self._compute_z_residual_new_scheme(residual, Z, _special_T_conj, dT, C)
 
@@ -2039,8 +2163,10 @@ class vibronic_hamiltonian(object):
 
         # initialize new arrays
         self.norm = np.zeros(A, dtype=complex)
-        self.state_pop_DB = np.zeros((A, A), dtype=complex)
-        self.state_pop_AB = np.zeros((A, A), dtype=complex)
+
+        if self.calculate_population_flag:
+            self.state_pop_DB = np.zeros((A, A), dtype=complex)
+            self.state_pop_AB = np.zeros((A, A), dtype=complex)
 
         # will hold the total of the C(t) over all surfaces
         C_tau_ABS = 0.0
@@ -2082,31 +2208,45 @@ class vibronic_hamiltonian(object):
 
             # ## TO DO:
             # ## similarity transform the Hamiltonian over 1+Z and evaluate Z/T residue
-            dT, dZ , C= solve_z(H_bar, z_dict, t_dict, b, self.selected_surface)
+            dT, dZ, C = solve_z(H_bar, z_dict, t_dict, b, self.selected_surface)
 
             # compute ACF for ABS and ECD
             U = z_dict[0] * np.exp(t_dict[0])
             ACF_ABS = self.calculate_ACF_ABS(self.E_tdm, U, b)
             ACF_ECD = self.calculate_ACF_ECD(self.M_tdm, self.E_tdm, U, b)
 
-            # calculate the norm of this surface
-            # norm, C_args, s_0 = self.calculate_CC_norm(t_dict, z_dict, b)
-
-
-
             # accumulate the ACF's
             C_tau_ABS += ACF_ABS
             C_tau_ECD += ACF_ECD
-            if True:
-                pop_DB , pop_AB, norm = self.calculate_state_populations_new(C)
-            else:
-                pop_DB, pop_AB = self.calculate_state_populations(s_0, norm, C_args)
+
+            new_style_flag = True
+
+            # calculate the norm of this surface
+            if new_style_flag:
+                norm = self.calculate_CC_norm_new(C)
+            else:  # old style
+                """we no longer calculate `C_args` when calculating the norm, but instead
+                it is calculated above in `solve_z` and the variable `C` replaced `C_args`
+                """
+                norm, C_args, s_0 = self.calculate_CC_norm(t_dict, z_dict, b)
 
             # accumulate the norm
             self.norm[b] += norm
 
-            self.state_pop_DB[b, :] += pop_DB
-            self.state_pop_AB[b, :] += pop_AB
+            if self.calculate_population_flag:
+                if new_style_flag:  # new style
+                    density_matrix = self.calculate_density_matrix_new(norm, C)
+                    pop_DB, pop_AB = self.calculate_state_populations_new(density_matrix)
+                else:
+                    raise Exception('s_0 and C_args are not defined, need to confirm with Songhao; broken!?')
+                    """
+                    For some reason the `calculate_CC_norm` is commented out above, why?
+                    This old style of calculating state populations cannot work without s_0 and C_args
+                    """
+                    pop_DB, pop_AB = self.calculate_state_populations(s_0, norm, C_args)
+
+                self.state_pop_DB[b, :] += pop_DB
+                self.state_pop_AB[b, :] += pop_AB
 
             # compute dZ's
             self.dZ[0][b, :] += dZ[0]
@@ -2134,8 +2274,10 @@ class vibronic_hamiltonian(object):
 
         # store norm and state pops for plot
         self.Norm.append((time, self.norm))
-        self.State_pop_DB.append((time, self.state_pop_DB))
-        self.State_pop_AB.append((time, self.state_pop_AB))
+
+        if self.calculate_population_flag:
+            self.State_pop_DB.append((time, self.state_pop_DB))
+            self.State_pop_AB.append((time, self.state_pop_AB))
 
         return delta_y_tensor
 
@@ -2146,7 +2288,10 @@ class vibronic_hamiltonian(object):
         # ------------------------------------------------------------------------
         # initialize integration parameters
         # ------------------------------------------------------------------------
-        log.info(f"We are going to preform a RK4(5) integration")
+        log.info(
+            "We are going to preform a RK4(5) integration with"
+            f"{t_init=} {t_final=} {density=} {nof_points=} {debug_flag=}"
+        )
 
         A, N = self.A, self.N  # to reduce line lengths, for conciseness
 
