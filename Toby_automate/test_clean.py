@@ -39,7 +39,7 @@ order_dict = {
 }
 
 root_directory = os.getcwd()
-# file_name = "3st_water_mar19"
+file_name = "NH3_may30"
 # file_name = "CoF3"
 # file_name = "H2Ocat_ccd_gmcpt_C1_3st_diab"
 # file_name = "mar19"
@@ -47,7 +47,14 @@ root_directory = os.getcwd()
 # file_name = "water_xyz_uniquetdm"
 # file_name = "RhF3_SOC_15st"
 # file_name = "NH3_XONLY"
-file_name = "CH2O_VECC"
+#file_name = "CH2O_VECC"
+#file_name = "constants_ONLY_VECC_3D"
+
+#file_name = "constants_ONLY_VECC_3D_Z2_1e2"
+#file_name = "constants_ONLY_VECC_3D_Z2_1e4"
+#file_name = "constants_ONLY_VECC_3D_Z3_1e2"
+#file_name = "constants_ONLY_VECC_3D_Z3_1e4"
+#file_name = "constants_ONLY_VECC_3D_Z1_1e2"
 
 # file_name = "FeCO_fullmodes"
 # file_name = "VECC_screen_12modes"
@@ -111,7 +118,8 @@ def generate_acf_data(model, file_name, order, t_final=10.0, nof_steps=int(1e4) 
     hamiltonian = vibronic_hamiltonian(
         model, file_name, HO_size=nof_BF, build_H=compare_FCI,
         cc_truncation_order=order, hamiltonian_truncation_order=order, FC=FC,
-        Z_truncation_order=3, T_truncation_order=1, selected_surface=[]
+        Z_truncation_order=3, T_truncation_order=1, selected_surface=[],
+        calculate_population_flag=False,
     )
     # We truncation_order: flag to determine order of truncation in W amplitude
     # solve_W: flag to determine whether to include W in the ansatz
@@ -218,14 +226,14 @@ def gnuplot_spectrum(*args):
 
     # fourier transform
     command = (
-        "#autospec84 "
+        "#autospec86 "
         # "-g 1 "  # to print gnuplot commands or not
         f"-o {exec_name:s}.pl "
         f"-f {normalized_path_ABS:s} "
         f"-p {nof_points:d} "
         # f"-EP "
         # f"-e {harmonic_ground_state} eV " # x axis shift (left/right) to account for H.O. G.S.
-        f"{left_eV} {right_eV} eV "  # x axis limits (in eV)
+        f"{left_eV} {right_eV} ev "  # x axis limits (in eV)
         f"{tau:d} "   # tau value
         f"{iexp:d} "  # iexp value
     )
@@ -390,6 +398,8 @@ def get_model_from_op_file(path, order):
                 continue
             raw_model[VMK.G2][i, j, :, :] /= 2
 
+    vIO.save_model_to_JSON(path[:-3], raw_model)
+
     # swap order of electron / vibrational dimensions (VECC uses different order for computational efficiency)
     vIO.prepare_model_for_cc_integration(raw_model, order)
 
@@ -412,8 +422,8 @@ def get_model_from_json_file(path, order):
 
 if (__name__ == '__main__'):
 
-    use_JSON_flag = False
-    t_final = 100.0
+    use_JSON_flag = True
+    t_final = 10.0
     FC = False
     order = 2
     model_name = f"{file_name}_FC" if FC else f"{file_name}_vibronic"
@@ -425,14 +435,35 @@ if (__name__ == '__main__'):
     # read in model parameters
     if use_JSON_flag:
         # path = join("/home/bjb2chen/scratch/VECC/vibronic_models/", file_name + '.json')
-        path = join("/home/bjb2chen/gamess/vibronics/template_examples/mar25_CH2O", 'model' + '.json')
+        #path = join("/home/bjb2chen/gamess/vibronics/template_examples/Fe_pentaCO/constants_ONLY", 'constants_ONLY_VECC_3D' + '.json')
+        path = join("/home/bjb2chen/VECC/NH3", 'NH3_may30' + '.json')
         model = get_model_from_json_file(path, order)
+
+        if False:
+            for skey in VMK.soc_coupling_list():
+                if skey in model:
+                    break
+            else:
+                raise Exception(f"No SOC keys found in {model.keys()=}")
+            model[VMK.G1] = model[VMK.G1].astype(np.complex128)+model[VMK.S1]
+            model[VMK.G2] = model[VMK.S2].astype(np.complex128)+model[VMK.S2]
+
     else:
-        path = join("/home/bjb2chen/gamess/vibronics/template_examples/mar25_CH2O/", 'mctdh' + '.op')
+        #path = join("/home/bjb2chen/gamess/vibronics/template_examples/Fe_pentaCO/constants_ONLY", 'constants_ONLY_VECC_3D_Z1_1e2' + '.op')
+        path = join("/home/bjb2chen/VECC/NH3", 'NH3_may30' + '.op')
         model = get_model_from_op_file(path, order)
 
+    for key in [VMK.etdm, VMK.mtdm]:
+        for i in range(3):
+            for a in range(model[VMK.A]):
+                v = model[key][i,a]
+                if v == complex(0.0):
+                    model[key][i,a] = complex(1e-8)
+                else:
+                    print(i, a, v)
+
     # run CC code
-    output_path_ABS, output_path_ECD = generate_acf_data(model, model_name, order, t_final, FC=FC, compare_FCI=False)
+    output_path_ABS, output_path_ECD = generate_acf_data(model, model_name, order, t_final, FC=FC, compare_FCI=False, nof_steps=int(1e2))
 
     # interpolate for ACF(ABS)
     print("-"*40 + "\nInterpolating ABS\n" + "-"*40 + "\n")
