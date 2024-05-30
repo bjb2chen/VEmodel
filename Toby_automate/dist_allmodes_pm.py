@@ -3296,7 +3296,6 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                     return dipole_array
 
                 dipole_array = _make_dipole_array(model)
-                dipole_array *= QM_const.ha2ev # convert dipole_array from au to ev
                 json_model[VMK.etdm] = dipole_array 
                 json_model[VMK.mtdm] = dipole_array
 
