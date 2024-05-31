@@ -1414,15 +1414,15 @@ def fitting():
 
                     # E(GMC-QDPT2)
                     if True:
-                        print('E(GMC-QDPT2) set to True. GMC-PT diabatic energies for fitting instead of couplings.')
                         column_specification_string = "head -1 | cut -c62-"
                         backup_line_idx = slice(62, None)
         
-                        ffitting[(key, i, a+1)] = _extract_energy_from_gamessoutput_grep(
-                            linear_displacement_filenames[(key, i)], f' {col}     E(REF-CI)=',
+                        fitting[(key, i, a+1)] = _extract_energy_from_gamessoutput_grep(
+                            linear_displacement_filenames[(key, i)], f' {a+1}     E(REF-CI)=',
                             column_specification_string,
                             backup_line_idx
                         )
+                        print(f'State {a+1}, E(GMC-QDPT2) = {fitting[(key, i, a+1)]} from {linear_displacement_filenames[(key, i)]}')
                         array[a, a] = fitting[(key, i, a+1)]
 
                 x = int(key) * qsize
@@ -3209,7 +3209,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 linear_model[key][index] = full_model[key][index].copy()
 
             # handle SOC
-            if pp.SOC_flag:
+            if pp.SOC_flag and False:
                 assert False, "SOC CODE HERE IS NOT DONE YET!!!"
                 SOC_key = 'SOC'
                 for index in constant_model[SOC_key].keys():
