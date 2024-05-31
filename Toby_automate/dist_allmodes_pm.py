@@ -3154,13 +3154,13 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
         def make_op_file(full_model, simple=False):
             """ x """
-            def make_mctdh_file_contents(model):
+            def make_mctdh_file_contents(full_model):
                 job_title = f'{filnam} {A} states + ' + str(N) + ' modes'
                 file_contents = "\n".join([
                     make_op_section(job_title),
-                    make_parameter_section(model, A, N),
-                    make_hamiltonian_section(model, A, N),
-                    make_operator_onto_dipole_moments_section(model, A, N),
+                    make_parameter_section(full_model, A, N),
+                    make_hamiltonian_section(full_model, A, N),
+                    make_operator_onto_dipole_moments_section(full_model, A, N),
                     "end-operator\n"
                 ])
                 return file_contents
@@ -3226,8 +3226,8 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 (constant_model, "mctdh_constant"),
             ]
 
-            for model, path in arg_list:
-                file_contents = make_mctdh_file_contents(model)
+            for full_model, path in arg_list:
+                file_contents = make_mctdh_file_contents(full_model)
 
                 if toby_style:  # relabel all modes to toby's style
                     path += '_tobystyle'
@@ -3366,11 +3366,11 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             return
 
         # extract the model from 12 quadrillion files
-        model = _extract_gamess_model()
+        full_model = _extract_gamess_model()
 
         # make both files
-        make_op_file(model)
-        make_json_file(model)
+        make_op_file(full_model)
+        make_json_file(full_model)
         return
 
     def confirm_necessary_files_exist():
