@@ -1871,18 +1871,10 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             ]),
         ])
 
-    def effective_vibronic_coupling_screening(lin_dict, quad_dict, bi_lin_dict, A, N, vibron_ev, E0_array_eV, screen_val=pp.screen_val):
+    def effective_vibronic_coupling_screening(lin_dict, A, N, vibron_ev, E0_array_eV, screen_val=pp.screen_val):
         """ Screening function"""
         assert len(lin_dict.keys()) == N
         linear = [lin_dict[mode_map_dict[i]] for i in range(N)]
-
-        assert len(quad_dict.keys()) == N
-        quad = [quad_dict[mode_map_dict[i]] for i in range(N)]
-
-        bi_lin = {}
-        for old_key in bi_lin_dict.keys():
-            new_key = reverse_ij_map[old_key]
-            bi_lin[new_key] = bi_lin_dict[old_key]
 
         return '\n'.join([
             f"### SCREENING EFFECTIVE LINEAR VIBRONIC COUPLING, THRESHOLD: {screen_val} ###",
@@ -1906,51 +1898,6 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 if (a1 < a2)
                 and (not suppress_zeros or not np.isclose(linear[i][a1, a2], 0.0)) and
                 (np.log10(abs(linear[i][a1, a2]/(abs(E0_array_eV[a1, a1] - E0_array_eV[a2, a2]) - vibron_ev[i]))) > screen_val)
-            ]),
-            f"### SCREENING EFFECTIVE QUADRATIC VIBRONIC COUPLING, THRESHOLD: {screen_val} ###",
-            ''.join([
-                make_line(
-                    label=f"# C2_s{a+1:0>2d}s{a+1:0>2d}_v{i+1:0>2d}v{i+1:0>2d}",
-                    value=quad[i][a, a],
-                    units=f"    , ev   Ratio: {(np.log10(abs(quad[i][a, a]/(abs(E0_array_eV[a, a] - E0_array_eV[a, a]) - vibron_ev[i])))):>-10.4f}"
-                )
-                for a, i in it.product(range(A), range(N))
-                if (not suppress_zeros or not np.isclose(quad[i][a, a], 0.0)) and
-                (np.log10(abs(quad[i][a, a]/(abs(E0_array_eV[a, a] - E0_array_eV[a, a]) - vibron_ev[i]))) > screen_val)
-            ]),
-            ''.join([
-                make_line(
-                    label=f"# C2_s{a1+1:0>2d}s{a2+1:0>2d}_v{i+1:0>2d}v{i+1:0>2d}",
-                    value=quad[i][a1, a2],
-                    units=f"    , ev   Ratio: {(np.log10(abs(quad[i][a1, a2]/(abs(E0_array_eV[a1, a1] - E0_array_eV[a2, a2]) - vibron_ev[i])))):>-10.4f}"
-                )
-                for a1, a2, i in it.product(range(A), range(A), range(N))
-                if (a1 < a2)
-                and (not suppress_zeros or not np.isclose(quad[i][a1, a2], 0.0)) and
-                (np.log10(abs(quad[i][a1, a2]/(abs(E0_array_eV[a1, a1] - E0_array_eV[a2, a2]) - vibron_ev[i]))) > screen_val)
-            ]),
-            f"### SCREENING EFFECTIVE BILINEAR VIBRONIC COUPLING, THRESHOLD: {screen_val} ###",
-            ''.join([
-                make_line(
-                    label=f"# C1b_s{a+1:0>2d}s{a+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}",
-                    value=bi_lin[(j1, j2)][a, a],
-                    units=f"    , ev   Ratio: {(np.log10(abs(bi_lin[(j1, j2)][a, a]/(abs(E0_array_eV[a, a] - E0_array_eV[a, a]) - vibron_ev[i])))):>-10.4f}"
-                )
-                for a, j1, j2 in it.product(range(A), range(N), range(N))
-                if (j1 < j2)
-                and (not suppress_zeros or not np.isclose(bi_lin[(j1, j2)][a, a], 0.0)) and
-                (np.log10(abs(bi_lin[(j1, j2)][a, a]/(abs(E0_array_eV[a, a] - E0_array_eV[a, a]) - vibron_ev[i]))) > screen_val)
-            ]),
-            ''.join([
-                make_line(
-                    label=f"# C1b_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}",
-                    value=bi_lin[(j1, j2)][a1, a2],
-                    units=f"    , ev   Ratio: {(np.log10(abs(bi_lin[(j1, j2)][a1, a2]/(abs(E0_array_eV[a1, a1] - E0_array_eV[a2, a2]) - vibron_ev[i])))):>-10.4f}"
-                )
-                for a1, a2, j1, j2 in it.product(range(A), range(A), range(N), range(N))
-                if (a1 < a2) and (j1 < j2)
-                and (not suppress_zeros or not np.isclose(bi_lin[(j1, j2)][a1, a2], 0.0)) and
-                (np.log10(abs(bi_lin[(j1, j2)][a1, a2]/(abs(E0_array_eV[a1, a1] - E0_array_eV[a2, a2]) - vibron_ev[i]))) > screen_val)
             ]),
         ])
 
@@ -2096,7 +2043,9 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             return_list += [make_header(headers[key]),  build_bilinear_coupling(model[key], A, N)]
 
         if pp.screening:
-            return_list += [effective_vibronic_coupling_screening(model['Linear'], model['Quadratic'], model['BiLinear'], A, N, vibron_ev, E0_array_eV)]
+            key = 'Linear'
+            if key in model.keys():
+                return_list += [effective_vibronic_coupling_screening(model['Linear'], A, N, vibron_ev, E0_array_eV)]
 
         key = 'SOC'
         if key in model.keys():
@@ -3226,8 +3175,8 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 (constant_model, "mctdh_constant"),
             ]
 
-            for full_model, path in arg_list:
-                file_contents = make_mctdh_file_contents(full_model)
+            for model_type, path in arg_list:
+                file_contents = make_mctdh_file_contents(model_type)
 
                 if toby_style:  # relabel all modes to toby's style
                     path += '_tobystyle'
