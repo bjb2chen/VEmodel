@@ -3199,7 +3199,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             # ------------------------------------
 
             for order in [0, 1, 2]:
-                if pp.SOC_flag:
+                if pp.SOC_flag and False: # SOC JSON CODE IS NOT DONE YET!
                     json_model = vIO.soc_model_zeros_template_json_dict(A, N, highest_order=order)
                 else:
                     json_model = vIO.model_zeros_template_json_dict(A, N, highest_order=order)
@@ -3293,7 +3293,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
                 filename = "model"
 
-                if pp.SOC_flag:  # SOC couplings
+                if pp.SOC_flag and False:  # SOC couplings
                     assert False, "SOC CODE HERE IS NOT DONE YET!!!"
                     if order >= 1:
                         json_model[VMK.S1] = model['SOC']['Linear']
