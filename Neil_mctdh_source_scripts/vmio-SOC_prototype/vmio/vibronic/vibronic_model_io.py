@@ -1,4 +1,4 @@
-f"""vibronic_model_io.py should handle the majority of file I/O"""
+"""vibronic_model_io.py should handle the majority of file I/O"""
 
 # system imports
 import itertools as it
@@ -50,6 +50,21 @@ def model_shape_dict(A, N):
 
     return dictionary
 
+def soc_model_shape_dict(A, N):
+    """ returns a dictionary with the same keys as the .json file whose values are tuples representing the dimensionality of the associated value in the .json file
+    Takes A - number of surfaces and N - number of modes
+
+    """
+    dictionary = model_shape_dict(A, N)
+    dictionary.update({
+        VMK.S1: (N, A, A),
+        VMK.S2: (N, N, A, A),
+        VMK.S3: (N, N, N, A, A),
+        VMK.S4: (N, N, N, N, A, A),
+    })
+
+    return dictionary
+
 
 def diagonal_model_shape_dict(A, N):
     """ returns a dictionary with the same keys as the .json file whose values are tuples representing the dimensionality of the associated value in the .json file
@@ -93,6 +108,23 @@ def model_zeros_template_json_dict(A, N, highest_order=1):
 
     return dictionary
 
+def soc_model_zeros_template_json_dict(A, N, highest_order=1):
+    """ returns a dictionary that is a valid SOC model, where all values (other than states and modes) are set to 0
+    """
+    if highest_order > VMK.max_order():
+        e_str = f"VMK supports at most order {VMK.max_order()} coupling terms, not {highest_order=}\n"
+        raise Exception(e_str)
+
+    # make the dictionary like normal
+    dictionary = model_zeros_template_json_dict(A, N, highest_order=highest_order)
+
+    # add the SOC terms
+    soc_shape = soc_model_shape_dict(A, N)
+    for idx, key in enumerate(VMK.soc_coupling_list()):
+        if idx + 1 <= highest_order:
+            dictionary.update({key: np.zeros(soc_shape[key], dtype=C128)})
+
+    return dictionary
 
 def diagonal_model_zeros_template_json_dict(A, N, highest_order=1):
     """ returns a dictionary that is a valid diagonal model, where all values (other than states and modes) are set to 0
@@ -132,14 +164,31 @@ def verify_model_parameters(kwargs):
         if (key == VMK.A) or (key == VMK.N):
             continue
         elif key in shape_dict:
-            assert kwargs[key].shape == shape_dict[key], (
-            f"{key} has incorrect shape {kwargs[key].shape} instead of {shape_dict[key]}"
-            )
+            assert kwargs[key].shape == shape_dict[key], \
+                f"{key} has incorrect shape {kwargs[key].shape} instead of {shape_dict[key]}"
         else:
             log.debug(f"Found key {key} which is not present in the default dictionary")
 
     return
 
+def verify_soc_model_parameters(kwargs):
+    """make sure the provided model parameters follow the file conventions"""
+    assert VMK.N in kwargs, "need the number of modes"
+    assert VMK.A in kwargs, "need the number of surfaces"
+
+    A, N = _extract_dimensions_from_dictionary(kwargs)
+    shape_dict = soc_model_shape_dict(A, N)
+
+    for key, value in kwargs.items():
+        if (key == VMK.A) or (key == VMK.N) or key in [VMK.etdm, VMK.mtdm]:
+            continue
+        elif key in shape_dict:
+            assert kwargs[key].shape == shape_dict[key], \
+                f"{key} has incorrect shape {kwargs[key].shape} instead of {shape_dict[key]}"
+        else:
+            log.debug(f"Found key {key} which is not present in the default dictionary")
+
+    return
 
 def verify_diagonal_model_parameters(kwargs):
     """make sure the provided sample parameters follow the file conventions"""
@@ -1002,6 +1051,9 @@ def _save_to_JSON(path, dictionary):
                         [str(v) for v in value[i, :].tolist()]
                         for i in range(xyz)
                     ]
+                elif key in VMK.soc_coupling_list():
+                    # cast the values to string then store as list
+                    dict_copy[key] = value.astype('str').tolist()
                 else:
                     dict_copy[key] = value.tolist()
             else:
@@ -1078,6 +1130,9 @@ def _load_from_JSON(path):
                 # the transition dipole moment is complex
                 # the complex numbers are stored as strings in the JSON file
                 value = [[*map(complex, row)] for row in value]
+                input_dictionary[key] = np.array(value, dtype=C128)
+            elif key in VMK.soc_coupling_list():
+                # the SOC terms are also complex
                 input_dictionary[key] = np.array(value, dtype=C128)
             else:
                 # the rest of the model is doubles
@@ -1215,6 +1270,13 @@ def print_model(model, highest_order=None):
     for idx, key in enumerate(VMK.coupling_list()):
         if idx + 1 <= highest_order:
             print(f"{key.value}  {model[key].shape}\n{model[key]}\n")
+
+    for idx, key in enumerate(VMK.soc_coupling_list()):
+        if idx + 1 <= highest_order:
+            if key not in model:
+                print(f"{key.value} not present in model\n")
+            else:
+                print(f"{key.value}  {model[key].shape}\n{model[key]}\n")
     return
 
 def print_model_compact(model, highest_order=None):
@@ -1224,24 +1286,24 @@ def print_model_compact(model, highest_order=None):
         f"{VMK.N.value:<20}{model[VMK.N]}\n",
         sep='\n'
     )
- 
+
     for key in [VMK.w, VMK.etdm, VMK.mtdm, VMK.E]:
         name = key.value.replace('transition dipole moments', 'TDM')
         if key not in model:
             print(f"{name:<28s} not present in model")
         else:
             print(f"{name:<28s} {model[key].shape}")
- 
+
     if highest_order is None:
         highest_order = extract_maximum_order_of_model(model)
- 
+
     for idx, key in enumerate(VMK.coupling_list()):
         if idx + 1 <= highest_order:
             if key not in model:
                 print(f"{key.value:<28s} not present in model")
             else:
                 print(f"{key.value:<28s} {model[key].shape}")
- 
+
     for idx, key in enumerate(VMK.soc_coupling_list()):
         if idx + 1 <= highest_order:
             if key not in model:
