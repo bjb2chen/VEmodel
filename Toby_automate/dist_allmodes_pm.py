@@ -1898,7 +1898,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 if (a1 < a2)
                 and (not suppress_zeros or not np.isclose(linear[i][a1, a2], 0.0)) and
                 (np.log10(abs(linear[i][a1, a2]/(abs(E0_array_eV[a1, a1] - E0_array_eV[a2, a2]) - vibron_ev[i]))) > screen_val)
-            ]),
+            ]), # eliminated the quadratic and bilinear screenings because they have different formula according to TZ
         ])
 
     def build_spinorbit_coupling(soc_dict, A, N):
