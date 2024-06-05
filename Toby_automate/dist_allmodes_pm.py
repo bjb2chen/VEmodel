@@ -1413,7 +1413,7 @@ def fitting():
                     array[a, a] = (fitting[(key, i, a+1)] - refG_fitting) * ha2ev
 
                     # E(GMC-QDPT2)
-                    if True:
+                    if False:
                         column_specification_string = "head -1 | cut -c62-"
                         backup_line_idx = slice(62, None)
         
