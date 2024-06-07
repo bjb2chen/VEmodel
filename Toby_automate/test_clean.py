@@ -39,27 +39,34 @@ order_dict = {
 }
 
 root_directory = os.getcwd()
-file_name = "NH3_may30"
-# file_name = "CoF3"
-# file_name = "H2Ocat_ccd_gmcpt_C1_3st_diab"
-# file_name = "mar19"
-# file_name = "NH3_mar22"
-# file_name = "water_xyz_uniquetdm"
-# file_name = "RhF3_SOC_15st"
-# file_name = "NH3_XONLY"
-#file_name = "CH2O_VECC"
-#file_name = "constants_ONLY_VECC_3D"
 
-#file_name = "constants_ONLY_VECC_3D_Z2_1e2"
-#file_name = "constants_ONLY_VECC_3D_Z2_1e4"
-#file_name = "constants_ONLY_VECC_3D_Z3_1e2"
-#file_name = "constants_ONLY_VECC_3D_Z3_1e4"
-#file_name = "constants_ONLY_VECC_3D_Z1_1e2"
+#file_name = "full_modes_model_Z2_linear"
+#file_name = "model_screened12modes"
+#file_name = "model_VECCscreened12modes"
 
-# file_name = "FeCO_fullmodes"
-# file_name = "VECC_screen_12modes"
-# file_name = "VECC_screen_12modes_XONLY"
-# file_name = "FeCO_fullmodes_XONLY"
+#file_name = "v3_Z1_screened12modes_quadratic_200fs"
+#file_name = "v3_Z1_fullmodes_quadratic_200fs"
+#file_name = "v3_Z3_fullmodes_constant_100fs"
+
+#file_name = "Z3_fullmodes_quadratic_200fs"
+#file_name = "Z3_fullmodes_linear_200fs"
+
+#Jun 6 runs
+#file_name = "Jun6_Z3_fullmodes_quadratic_10fs"
+#file_name = "Jun6_Z3_fullmodes_quadratic_50fs"
+#file_name = "Jun6_Z2_fullmodes_linear_200fs"
+#file_name = "Jun6_Z2_fullmodes_constant_200fs"
+#file_name = "Jun6_Z1_fullmodes_constant_200fs"
+#file_name = "Jun6_Z1_12modes_constant"
+#file_name = "mod_Z1_fullmodes_constant_10fs"
+#file_name = "mod_Z1_fullmodes_constant_50fs"
+#file_name = "mod_Z1_fullmodes_constant_100fs"
+#file_name = "div2_Z1_fullmodes_constant_10fs"
+
+#file_name = "27tdm_fullmodes_Z1_10fs"
+#file_name = "1e-1tdm_fullmodes_Z1_10fs"
+#file_name = "1e-1tdm_fullmodes_Z1_20fs"
+file_name = "1e-1tdm_fullmodes_Z1_100fs"
 
 def process_data(filename):
     """ temporary formatted printing of profiling data """
@@ -118,7 +125,7 @@ def generate_acf_data(model, file_name, order, t_final=10.0, nof_steps=int(1e4) 
     hamiltonian = vibronic_hamiltonian(
         model, file_name, HO_size=nof_BF, build_H=compare_FCI,
         cc_truncation_order=order, hamiltonian_truncation_order=order, FC=FC,
-        Z_truncation_order=3, T_truncation_order=1, selected_surface=[],
+        Z_truncation_order=1, T_truncation_order=1, selected_surface=[],
         calculate_population_flag=False,
     )
     # We truncation_order: flag to determine order of truncation in W amplitude
@@ -398,8 +405,6 @@ def get_model_from_op_file(path, order):
                 continue
             raw_model[VMK.G2][i, j, :, :] /= 2
 
-    vIO.save_model_to_JSON(path[:-3], raw_model)
-
     # swap order of electron / vibrational dimensions (VECC uses different order for computational efficiency)
     vIO.prepare_model_for_cc_integration(raw_model, order)
 
@@ -411,8 +416,19 @@ def get_model_from_json_file(path, order):
 
     model = vIO.load_model_from_JSON(path)
 
+    A, N = vIO._extract_dimensions_from_dictionary(model)
+
     if False:  # if the model includes the ground state that you excited it from
         model = vIO.model_remove_ground_state(model)
+
+    if False:  # divide all off-diagonal (electronic) components by 2 (only if necessary)
+        for a, b in it.product(range(A), range(A)):
+            if a == b:
+                model[VMK.E][a, b] /= 2
+
+    if True:  # mult by 27 (conversion factor)
+        model[VMK.etdm].fill(complex(0.1))
+        model[VMK.mtdm].fill(complex(0.1))
 
     # swap electron / vibrational dimensions
     vIO.prepare_model_for_cc_integration(model, order)
@@ -423,9 +439,9 @@ def get_model_from_json_file(path, order):
 if (__name__ == '__main__'):
 
     use_JSON_flag = True
-    t_final = 10.0
+    t_final = 100.0
     FC = False
-    order = 2
+    order = 0
     model_name = f"{file_name}_FC" if FC else f"{file_name}_vibronic"
 
     project.log_conf.setLevelDebug()
@@ -435,35 +451,14 @@ if (__name__ == '__main__'):
     # read in model parameters
     if use_JSON_flag:
         # path = join("/home/bjb2chen/scratch/VECC/vibronic_models/", file_name + '.json')
-        #path = join("/home/bjb2chen/gamess/vibronics/template_examples/Fe_pentaCO/constants_ONLY", 'constants_ONLY_VECC_3D' + '.json')
-        path = join("/home/bjb2chen/VECC/NH3", 'NH3_may30' + '.json')
+        path = join("/home/bjb2chen/gamess/vibronics/template_examples/Fe_pentaCO/Apr26_model", 'full_modes_model' + '.json')
         model = get_model_from_json_file(path, order)
-
-        if False:
-            for skey in VMK.soc_coupling_list():
-                if skey in model:
-                    break
-            else:
-                raise Exception(f"No SOC keys found in {model.keys()=}")
-            model[VMK.G1] = model[VMK.G1].astype(np.complex128)+model[VMK.S1]
-            model[VMK.G2] = model[VMK.S2].astype(np.complex128)+model[VMK.S2]
-
     else:
-        #path = join("/home/bjb2chen/gamess/vibronics/template_examples/Fe_pentaCO/constants_ONLY", 'constants_ONLY_VECC_3D_Z1_1e2' + '.op')
-        path = join("/home/bjb2chen/VECC/NH3", 'NH3_may30' + '.op')
+        path = join("/home/bjb2chen/gamess/vibronics/template_examples/Fe_pentaCO/Apr26_model", 'full_modes_model' + '.op')
         model = get_model_from_op_file(path, order)
 
-    for key in [VMK.etdm, VMK.mtdm]:
-        for i in range(3):
-            for a in range(model[VMK.A]):
-                v = model[key][i,a]
-                if v == complex(0.0):
-                    model[key][i,a] = complex(1e-8)
-                else:
-                    print(i, a, v)
-
     # run CC code
-    output_path_ABS, output_path_ECD = generate_acf_data(model, model_name, order, t_final, FC=FC, compare_FCI=False, nof_steps=int(1e2))
+    output_path_ABS, output_path_ECD = generate_acf_data(model, model_name, order, t_final, FC=FC, compare_FCI=False, nof_steps=int(1e4))
 
     # interpolate for ACF(ABS)
     print("-"*40 + "\nInterpolating ABS\n" + "-"*40 + "\n")
