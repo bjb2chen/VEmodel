@@ -235,6 +235,7 @@ class vibronic_hamiltonian(object):
             # self._initialize_einsum_paths()
             self._initialize_opt_einsum_paths()
             self._initialize_new_scheme_D_einsum_paths()
+            self._initialize_cal_dT_Tran_C_einsum_paths()
             self._initialize_cal_H_bar_tilde_einsum_paths()
             self._initialize_compute_C_matrix_einsum_paths()
 
@@ -511,6 +512,21 @@ class vibronic_hamiltonian(object):
             self.d2_opt_paths = [
                 oe.contract_expression('l,ylij->yij', (N,), (A, N, N, N), optimize='auto-hq'),
             ]
+
+        return
+
+    def _initialize_cal_dT_Tran_C_einsum_paths(self):
+        """Store optimized paths as member of `self` for use in `_cal_dT_Tran_C`
+        This function should eventually be replaced with someone more permanent.
+        But for optimization for calculating Fe(CO)5 it is fine.
+        """
+        A, N = self.A, self.N
+
+        self.cal_dT_Tran_C_paths = [
+            oe.contract_expression('i,y->yi', (N,), (A,), optimize='auto-hq'),
+            oe.contract_expression('i,yj->yij', (N,), (A, N,), optimize='auto-hq'),
+            oe.contract_expression('i,yjk->yijk', (N,), (A, N, N,), optimize='auto-hq'),
+        ]
 
         return
 
@@ -1058,8 +1074,17 @@ class vibronic_hamiltonian(object):
 
         fs = self.remove_time_step_conversion(time)
 
+
         at_least_1_femtosecond_has_passed_since_last_print = bool((fs-self.last_print) > 1.0)
-        time_is_a_multiple_of_ten_percent_of_t_final = np.isclose(round(fs, 1) % (t_final / 10), 0.1)
+        # at_least_5_femtosecond_has_passed_since_last_print = bool((fs-self.last_print) > 5.0)
+
+        # compute the fs mod 10% of the final runtime and check to see if its close to a small non-zero value.
+        small_delta, fs_mod_10p = 0.1, round(fs, 1) % (t_final * 0.1)
+        time_is_a_multiple_of_ten_percent_of_t_final = np.isclose(small_delta, fs_mod_10p)
+
+        # compute the fs mod 5% of the final runtime and check to see if its close to a small non-zero value.
+        # small_delta, fs_mod_5p = 0.1, round(fs, 1) % (t_final * 0.05)
+        # time_is_a_multiple_of_five_percent_of_t_final = np.isclose(small_delta, fs_mod_5p)
 
         print_flag = bool(
             self.last_counter >= int(1e4)
@@ -1157,7 +1182,7 @@ class vibronic_hamiltonian(object):
 
         return dT
 
-    def _compute_z_residual_new_scheme(self, R, Z, T_conj, dT, C):
+    def _compute_z_residual_new_scheme(self, R, Z, T_conj, dT, C, opt_flag=False):
         """ compute z compute z residue by subtracting t residue from net residue
             adopt the new scheme the introduce similarity transform
         """
@@ -1175,36 +1200,48 @@ class vibronic_hamiltonian(object):
 
         def _cal_D_0(T_conj_1, dz_1, dz_2, dz_3):
             """calculate constant D_0"""
+            assert self.Z_truncation_order >= 1, f"{self.Z_truncation_order=} < 1"
+
             D_0 = np.zeros(self.A, dtype=complex)
 
             if not self.op_einsum_flag:
                 D_0 += np.einsum('k,yk->y', T_conj_1, dz_1)
-                D_0 += 0.5 * np.einsum('k,l,ykl->y', T_conj_1, T_conj_1, dz_2)
-                D_0 += (1.0 / 6.0) * np.einsum('k,l,m,yklm->y', T_conj_1, T_conj_1, T_conj_1, dz_3)
+                if self.Z_truncation_order >= 2:
+                    D_0 += 0.5 * np.einsum('k,l,ykl->y', T_conj_1, T_conj_1, dz_2)
+                if self.Z_truncation_order >= 3:
+                    D_0 += (1.0 / 6.0) * np.einsum('k,l,m,yklm->y', T_conj_1, T_conj_1, T_conj_1, dz_3)
             else:
                 optimized_einsum = iter(self.d0_opt_paths)
                 D_0 += next(optimized_einsum)(T_conj_1, dz_1)
-                D_0 += 0.5 * next(optimized_einsum)(T_conj_1, T_conj_1, dz_2)
-                D_0 += (1.0 / 6.0) * next(optimized_einsum)(T_conj_1, T_conj_1, T_conj_1, dz_3)
+                if self.Z_truncation_order >= 2:
+                    D_0 += 0.5 * next(optimized_einsum)(T_conj_1, T_conj_1, dz_2)
+                if self.Z_truncation_order >= 3:  # skip if all zeros
+                    D_0 += (1.0 / 6.0) * next(optimized_einsum)(T_conj_1, T_conj_1, T_conj_1, dz_3)
 
             return D_0
 
         def _cal_D_1(T_conj_1, dz_2, dz_3):
             """calculate single D_1"""
+            assert self.Z_truncation_order >= 2, f"{self.Z_truncation_order=} < 2"
+
             D_1 = np.zeros([self.A, self.N], dtype=complex)
 
             if not self.op_einsum_flag:
                 D_1 += np.einsum('k,yki->yi', T_conj_1, dz_2)
-                D_1 += 0.5 * np.einsum('k,l,ykli->yi', T_conj_1, T_conj_1, dz_3)
+                if self.Z_truncation_order >= 3:  # skip if all zeros
+                    D_1 += 0.5 * np.einsum('k,l,ykli->yi', T_conj_1, T_conj_1, dz_3)
             else:
                 optimized_einsum = iter(self.d1_opt_paths)
                 D_1 += next(optimized_einsum)(T_conj_1, dz_2)
-                D_1 += 0.5 * next(optimized_einsum)(T_conj_1, T_conj_1, dz_3)
+                if self.Z_truncation_order >= 3:  # skip if all zeros
+                    D_1 += 0.5 * next(optimized_einsum)(T_conj_1, T_conj_1, dz_3)
 
             return D_1
 
         def _cal_D_2(T_conj_1, dz_3):
             """calculate double D_2"""
+            assert self.Z_truncation_order >= 3, f"{self.Z_truncation_order=} < 3"
+
             D_2 = np.zeros([self.A, self.N, self.N], dtype=complex)
 
             if not self.op_einsum_flag:
@@ -1218,8 +1255,8 @@ class vibronic_hamiltonian(object):
         def _cal_dT_Tran_C(dT_trans, C):
             """calculation dT_bar * C"""
 
+            # aliases (added views just in case?)
             C_0, C_1, C_2, C_3 = C[(0, 0)], C[(1, 0)], C[(2, 0)], C[(3, 0)]
-
             dT_trans_0, dT_trans_1 = dT_trans[(0, 0)], dT_trans[(1, 0)]
 
             output_tensor = {
@@ -1227,16 +1264,37 @@ class vibronic_hamiltonian(object):
             }
 
             if self.Z_truncation_order >= 1:
-                output_tensor[(1, 0)] = np.einsum('i,y->yi', dT_trans_1, C_0)
-                output_tensor[(1, 0)] += dT_trans_0 * C_1
+                if opt_flag:
+                    optimized_einsum = self.cal_dT_Tran_C_paths[0]
+                    R = optimized_einsum(dT_trans_1, C_0)
+                    R += dT_trans_0 * C_1
+                else:
+                    R = np.einsum('i,y->yi', dT_trans_1, C_0)
+                    R += dT_trans_0 * C_1
+
+                output_tensor[(1, 0)] = R
 
             if self.Z_truncation_order >= 2:
-                output_tensor[(2, 0)] = np.einsum('i,yj->yij', dT_trans_1, C_1)
-                output_tensor[(2, 0)] += 0.5 * dT_trans_0 * C_2
+                if opt_flag:
+                    optimized_einsum = self.cal_dT_Tran_C_paths[1]
+                    R = optimized_einsum(dT_trans_1, C_1)
+                    R += 0.5 * dT_trans_0 * C_2
+                else:
+                    R = np.einsum('i,yj->yij', dT_trans_1, C_1)
+                    R += 0.5 * dT_trans_0 * C_2
+
+                output_tensor[(2, 0)] = R
 
             if self.Z_truncation_order >= 3:
-                output_tensor[(3, 0)] = 0.5 * np.einsum('i,yjk->yijk', dT_trans_1, C_2)
-                output_tensor[(3, 0)] += (1.0 / 6.0) * dT_trans_0 * C_3
+                if opt_flag:
+                    optimized_einsum = self.cal_dT_Tran_C_paths[2]
+                    R = 0.5 * optimized_einsum(dT_trans_1, C_2)
+                    R += (1.0 / 6.0) * dT_trans_0 * C_3
+                else:
+                    R = 0.5 * np.einsum('i,yjk->yijk', dT_trans_1, C_2)
+                    R += (1.0 / 6.0) * dT_trans_0 * C_3
+
+                output_tensor[(3, 0)] = R
 
             return output_tensor
 
@@ -1247,33 +1305,44 @@ class vibronic_hamiltonian(object):
         X = _cal_dT_Tran_C(dT_bar, C)
 
         # calculate dz_3
-        dz_3 = np.zeros([A, N, N, N], dtype=complex)
         if self.Z_truncation_order >= 3:
-            dz_3 += R[3] - X[(3, 0)]
+            dz_3 = R[3] - X[(3, 0)]
             dz_3 = symmetrize_tensor(self.N, dz_3, order=3)
+        else:
+            dz_3 = np.zeros([A, N, N, N], dtype=complex)
 
         # calculate dz_2
-        dz_2 = np.zeros([A, N, N], dtype=complex)
         if self.Z_truncation_order >= 2:
-            D_2 = _cal_D_2(T_conj_1, dz_3)
-            dz_2 += R[2]
-            dz_2 -= X[(2, 0)]
-            dz_2 -= D_2
+            dz_2 = R[2] - X[(2, 0)]
+
+            if self.Z_truncation_order >= 3:
+                # if dz_3 is all zeros then D_2 will be all zeros
+                D_2 = _cal_D_2(T_conj_1, dz_3)
+                dz_2 -= D_2
+
             dz_2 = symmetrize_tensor(self.N, dz_2, order=2)
+        else:
+            dz_2 = np.zeros([A, N, N], dtype=complex)
 
         # calculate dz_1
-        dz_1 = np.zeros([A, N], dtype=complex)
-        if self.Z_truncation_order >= 2:
-            D_1 = _cal_D_1(T_conj_1, dz_2, dz_3)
-            dz_1 += R[1].copy()
-            dz_1 -= X[(1, 0)]
-            dz_1 -= D_1
+        if self.Z_truncation_order >= 1:
+            dz_1 = R[1] - X[(1, 0)]
+
+            if self.Z_truncation_order >= 2:
+                # if both dz_2 and dz_3 are all zeros
+                # then D_1 will be all zeros
+                D_1 = _cal_D_1(T_conj_1, dz_2, dz_3)
+                dz_1 -= D_1
+        else:
+            dz_1 = np.zeros([A, N], dtype=complex)
 
         # calculate dz_0
-        D_0 = _cal_D_0(T_conj_1, dz_1, dz_2, dz_3)
-        dz_0 = R[0].copy()
-        dz_0 -= X[(0, 0)]
-        dz_0 -= D_0
+        dz_0 = R[0] - X[(0, 0)]
+
+        if self.Z_truncation_order >= 1:
+            # if Z_truncation_order is 0 then all dz's will be zero
+            D_0 = _cal_D_0(T_conj_1, dz_1, dz_2, dz_3)
+            dz_0 -= D_0
 
         output_tensor = {
             0: dz_0,
@@ -1551,24 +1620,28 @@ class vibronic_hamiltonian(object):
 
         return R_y
 
-    def calculate_ACF_ABS(self, E_tdm, U, b, cross=False):
-        """ compute ACF from the CC amplitudes """
-
-        if not cross:  # abandon cross correlation
+    def calculate_ACF_ABS(self, E_tdm, U, b, exclude_cross=False):
+        """ compute ACF from the CC amplitudes
+        `exclude_cross` flag was used to get better results when comparing with Hexahelicene.
+        Don't use in general case.
+        """
+        if exclude_cross:  # abandon cross correlation
             new_U = np.zeros_like(U)
             new_U[b] = U[b]
             U = new_U
-
+ 
         return np.einsum('ab,b,a ->', E_tdm, U, E_tdm[:, b])
-
-    def calculate_ACF_ECD(self, M_tdm, E_tdm, U, b, cross=False):
-        """ compute ACF from the CC amplitudes """
-
-        if not cross:  # abandon cross correlation
+ 
+    def calculate_ACF_ECD(self, M_tdm, E_tdm, U, b, exclude_cross=False):
+        """ compute ACF from the CC amplitudes
+        `exclude_cross` flag was used to get better results when comparing with Hexahelicene.
+        Don't use in general case.
+        """
+        if exclude_cross:  # abandon cross correlation
             new_U = np.zeros_like(U)
             new_U[b] = U[b]
             U = new_U
-
+ 
         return np.einsum('ab,b,a ->', M_tdm, U, E_tdm[:, b])
 
     def calculate_CC_norm(self, T, Z, b):
@@ -1743,10 +1816,10 @@ class vibronic_hamiltonian(object):
 
         def f_s_0(O_mat):
             """return constant residue"""
-            # initialize as zero
-            R = np.zeros([A, A], dtype=complex)
 
+            R = np.zeros([A, A], dtype=complex)
             R += O_mat[(0, 0)]
+
             if opt_flag:
                 optimized_einsum = iter(self.H_bar_tilde_paths)  # first two
                 R += next(optimized_einsum)(T_conj[(0, 1)], O_mat[(1, 0)])
@@ -1759,8 +1832,8 @@ class vibronic_hamiltonian(object):
 
         def f_s_I(O_mat):
             """return residue R_I"""
-            R = np.zeros([A, A, N], dtype=complex)
 
+            R = np.zeros([A, A, N], dtype=complex)
             R += O_mat[(1, 0)]
 
             if opt_flag:
@@ -1772,9 +1845,10 @@ class vibronic_hamiltonian(object):
 
         def f_s_i(O_mat):
             """return residue R_i"""
-            R = np.zeros([A, A, N], dtype=complex)
 
+            R = np.zeros([A, A, N], dtype=complex)
             R += O_mat[(0, 1)]
+
             if opt_flag:
                 optimized_einsum = self.H_bar_tilde_paths[3]
                 R += optimized_einsum(T_conj[(0, 1)], O_mat[(1, 1)])
@@ -1798,42 +1872,64 @@ class vibronic_hamiltonian(object):
         return output_tensor
 
     def _compute_C_matrix(self, input_tensor, T_conj, opt_flag=False):
-        """"calculate intermediate quantity C"""
+        """"calculate intermediate quantity C
+
+        Note that the `input_tensor` is actually the dictionary of Z matrices `gen_Z`.
+        For efficiency reasons we will directly map to those memory locations, but be warned.
+        This has not been rigorously tested, if there are accuracy concerns then re-enable the
+        zero array allocations.
+        It seems though that in the new scheme gen_Z is not used after the C_matrix is calculated.
+        So in-theory we should be fine.
+        """
         A, N = self.A, self.N
 
         def f_s_0(O_mat):
             """return constant residue"""
+
             # initialize as zero
-            R = np.zeros([A], dtype=complex)
+            # R = np.zeros([A], dtype=complex)
+            # R += O_mat[(0, 0)]
 
-            R += O_mat[(0, 0)]
+            if self.Z_truncation_order == 0:
+                return O_mat[(0, 0)]
 
-            if opt_flag:
-                optimized_einsum = self.Cmat_Z0_opt_paths[0]
-                R += optimized_einsum(T_conj[(0, 1)], O_mat[(1, 0)])
-            else:
-                R += np.einsum('k,xk->x', T_conj[(0, 1)], O_mat[(1, 0)])
+            R = O_mat[(0, 0)].copy()
+
+            if self.Z_truncation_order >= 1:
+                if opt_flag:
+                    optimized_einsum = self.Cmat_Z0_opt_paths[0]
+                    R += optimized_einsum(T_conj[(0, 1)], O_mat[(1, 0)])
+                else:
+                    R += np.einsum('k,xk->x', T_conj[(0, 1)], O_mat[(1, 0)])
 
             if self.Z_truncation_order >= 2:
                 if opt_flag:
                     optimized_einsum = self.Cmat_Z2_opt_paths[0]
-                    R += optimized_einsum(T_conj[(0, 1)], T_conj[(0, 1)], O_mat[(2, 0)])
+                    R += 0.5 * optimized_einsum(T_conj[(0, 1)], T_conj[(0, 1)], O_mat[(2, 0)])
                 else:
                     R += 0.5 * np.einsum('k,l,xkl->x', T_conj[(0, 1)], T_conj[(0, 1)], O_mat[(2, 0)])
+
             if self.Z_truncation_order >= 3:
                 if opt_flag:
                     optimized_einsum = self.Cmat_Z3_opt_paths[0]
-                    R += optimized_einsum(T_conj[(0, 1)], T_conj[(0, 1)], T_conj[(0, 1)], O_mat[(3, 0)])
+                    R += (1.0 / 6.0) * optimized_einsum(T_conj[(0, 1)], T_conj[(0, 1)], T_conj[(0, 1)], O_mat[(3, 0)])
                 else:
-                    R += 1./6. * np.einsum('k,l,m,xklm->x', T_conj[(0, 1)], T_conj[(0, 1)], T_conj[(0, 1)], O_mat[(3, 0)])
+                    R += (1.0 / 6.0) * np.einsum('k,l,m,xklm->x', T_conj[(0, 1)], T_conj[(0, 1)], T_conj[(0, 1)], O_mat[(3, 0)])
 
             return R
 
         def f_s_1(O_mat):
             """return single residue"""
-            R = np.zeros([A, N], dtype=complex)
+            assert self.Z_truncation_order >= 1, f"{self.Z_truncation_order=} < 1"
 
-            R += O_mat[(1, 0)]
+            # initialize as zero
+            # R = np.zeros([A, N], dtype=complex)
+            # R += O_mat[(1, 0)]
+
+            if self.Z_truncation_order == 1:
+                return O_mat[(1, 0)]
+
+            R = O_mat[(1, 0)].copy()
 
             if self.Z_truncation_order >= 2:
                 if opt_flag:
@@ -1853,11 +1949,16 @@ class vibronic_hamiltonian(object):
 
         def f_s_2(O_mat):
             """return double residue"""
-            R = np.zeros([A, N, N], dtype=complex)
+            assert self.Z_truncation_order >= 2, f"{self.Z_truncation_order=} < 2"
 
-            if self.Z_truncation_order >= 2:
-                # no optimization for simple addition
-                R += O_mat[(2, 0)]
+            # initialize as zero
+            # R = np.zeros([A, N, N], dtype=complex)
+            # R += O_mat[(2, 0)]
+
+            if self.Z_truncation_order == 2:
+                return O_mat[(2, 0)]
+
+            R = O_mat[(2, 0)].copy()
 
             if self.Z_truncation_order >= 3:
                 if opt_flag:
@@ -1870,6 +1971,13 @@ class vibronic_hamiltonian(object):
 
         def f_s_3(O_mat):
             """return triple residue"""
+            assert self.Z_truncation_order >= 3, f"{self.Z_truncation_order=} < 3"
+
+            # initialize as zero
+            # R = np.zeros([A, N, N, N], dtype=complex)
+            # R += O_mat[(3, 0)]
+
+            # it appears that this is okay as we don't modify the O_mat later on
             return O_mat[(3, 0)]
 
         output_tensor = {
@@ -2085,22 +2193,26 @@ class vibronic_hamiltonian(object):
 
                         if not opt_flag:
                             z_three_eqns.add_m0_n3_HZ_terms(
-                                residual[3], self.ansatz, self.gen_trunc, _special_T_conj, H_bar_tilde, C
+                                residual[3], self.ansatz, self.gen_trunc,
+                                _special_T_conj, H_bar_tilde, C
                             )
                         else:
                             z_three_eqns.add_m0_n3_HZ_terms_optimized(
                                 residual[3], self.ansatz, self.gen_trunc,
-                                _special_T_conj, H_bar_tilde, C, self.all_opt_paths[(0, 3)][0]
+                                _special_T_conj, H_bar_tilde, C,
+                                self.all_opt_paths[(0, 3)][0]
                             )
                     else:
                         if not opt_flag:
                             residual[3] = z_three_eqns.compute_m0_n3_amplitude(
-                                A, N, self.ansatz, self.gen_trunc, _special_T_conj, H_bar, gen_Z
+                                A, N, self.ansatz, self.gen_trunc,
+                                _special_T_conj, H_bar, gen_Z
                             )
                         else:
                             residual[3] = z_three_eqns.compute_m0_n3_amplitude_optimized(
                                 A, N, self.ansatz, self.gen_trunc,
-                                _special_T_conj, H_bar, gen_Z, self.all_opt_paths[(0, 3)]
+                                _special_T_conj, H_bar, gen_Z,
+                                self.all_opt_paths[(0, 3)]
                             )
 
                 # symmetrize
@@ -2109,13 +2221,11 @@ class vibronic_hamiltonian(object):
             # --------------------------------------------------------------------------------
             if new_scheme_flag:
                 dT = self._compute_t_residual_new(H_bar_tilde, C)
-
             else:
                 dT = self._compute_t_residual(H_bar_tilde, Z, Z_conj_dict)
 
             if new_scheme_flag:
-                dZ = self._compute_z_residual_new_scheme(residual, Z, _special_T_conj, dT, C)
-
+                dZ = self._compute_z_residual_new_scheme(residual, Z, _special_T_conj, dT, C, opt_flag=opt_flag)
             else:
                 dZ = self._compute_z_residual(residual, Z, T_conj_dict, dT, z_opt_flag=False)
 
@@ -2289,8 +2399,8 @@ class vibronic_hamiltonian(object):
         # initialize integration parameters
         # ------------------------------------------------------------------------
         log.info(
-            "We are going to preform a RK4(5) integration with"
-            f"{t_init=} {t_final=} {density=} {nof_points=} {debug_flag=}"
+            "We are going to preform a RK4(5) integration with: "
+            f"({t_init=} {t_final=} {density=} {nof_points=} {debug_flag=})"
         )
 
         A, N = self.A, self.N  # to reduce line lengths, for conciseness
