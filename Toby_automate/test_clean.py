@@ -40,33 +40,13 @@ order_dict = {
 
 root_directory = os.getcwd()
 
-#file_name = "full_modes_model_Z2_linear"
-#file_name = "model_screened12modes"
-#file_name = "model_VECCscreened12modes"
-
-#file_name = "v3_Z1_screened12modes_quadratic_200fs"
-#file_name = "v3_Z1_fullmodes_quadratic_200fs"
-#file_name = "v3_Z3_fullmodes_constant_100fs"
-
-#file_name = "Z3_fullmodes_quadratic_200fs"
-#file_name = "Z3_fullmodes_linear_200fs"
-
-#Jun 6 runs
-#file_name = "Jun6_Z3_fullmodes_quadratic_10fs"
-#file_name = "Jun6_Z3_fullmodes_quadratic_50fs"
-#file_name = "Jun6_Z2_fullmodes_linear_200fs"
-#file_name = "Jun6_Z2_fullmodes_constant_200fs"
-#file_name = "Jun6_Z1_fullmodes_constant_200fs"
-#file_name = "Jun6_Z1_12modes_constant"
-#file_name = "mod_Z1_fullmodes_constant_10fs"
-#file_name = "mod_Z1_fullmodes_constant_50fs"
-#file_name = "mod_Z1_fullmodes_constant_100fs"
-#file_name = "div2_Z1_fullmodes_constant_10fs"
-
-#file_name = "27tdm_fullmodes_Z1_10fs"
-#file_name = "1e-1tdm_fullmodes_Z1_10fs"
-#file_name = "1e-1tdm_fullmodes_Z1_20fs"
-file_name = "1e-1tdm_fullmodes_Z1_100fs"
+#file_name = "CoF3_Z1_H1_100fs"
+#file_name = "CoF3_Z2_H2_100fs"
+#file_name = "CoF3_Z1_H1_1000fs"
+#file_name = "CoF3_Z3_H1_100fs"
+#file_name = "CoF3_Z3_H2_300fs"
+#file_name = "CoF3_Z2_H1_1000fs"
+file_name = "CoF3_Z2_H2_300fs"
 
 def process_data(filename):
     """ temporary formatted printing of profiling data """
@@ -125,7 +105,7 @@ def generate_acf_data(model, file_name, order, t_final=10.0, nof_steps=int(1e4) 
     hamiltonian = vibronic_hamiltonian(
         model, file_name, HO_size=nof_BF, build_H=compare_FCI,
         cc_truncation_order=order, hamiltonian_truncation_order=order, FC=FC,
-        Z_truncation_order=1, T_truncation_order=1, selected_surface=[],
+        Z_truncation_order=2, T_truncation_order=1, selected_surface=[],
         calculate_population_flag=False,
     )
     # We truncation_order: flag to determine order of truncation in W amplitude
@@ -223,9 +203,9 @@ def gnuplot_spectrum(*args):
     exec_name, normalized_path_ABS, model_name, order, t, FC = args
 
 
-    left_eV, right_eV = 21.0, 8.5
+    left_eV, right_eV = -2, 2
     min_y, max_y = -3, 60
-    nof_points = 5000
+    nof_points = 13000
     tau = 40
     iexp = 1
 
@@ -233,7 +213,7 @@ def gnuplot_spectrum(*args):
 
     # fourier transform
     command = (
-        "#autospec86 "
+        "#~/LOCAL/mctdh/mctdh86.4/bin/binary/x86_64/autospec86 "
         # "-g 1 "  # to print gnuplot commands or not
         f"-o {exec_name:s}.pl "
         f"-f {normalized_path_ABS:s} "
@@ -439,9 +419,9 @@ def get_model_from_json_file(path, order):
 if (__name__ == '__main__'):
 
     use_JSON_flag = True
-    t_final = 100.0
+    t_final = 300.0
     FC = False
-    order = 0
+    order = 2
     model_name = f"{file_name}_FC" if FC else f"{file_name}_vibronic"
 
     project.log_conf.setLevelDebug()
@@ -451,10 +431,10 @@ if (__name__ == '__main__'):
     # read in model parameters
     if use_JSON_flag:
         # path = join("/home/bjb2chen/scratch/VECC/vibronic_models/", file_name + '.json')
-        path = join("/home/bjb2chen/gamess/vibronics/template_examples/Fe_pentaCO/Apr26_model", 'full_modes_model' + '.json')
+        path = join("/home/bjb2chen/gamess/vibronics/template_examples/CoF3/SOC_15st", 'model' + '.json')
         model = get_model_from_json_file(path, order)
     else:
-        path = join("/home/bjb2chen/gamess/vibronics/template_examples/Fe_pentaCO/Apr26_model", 'full_modes_model' + '.op')
+        path = join("/home/bjb2chen/gamess/vibronics/template_examples/CoF3/SOC_15st", 'model' + '.op')
         model = get_model_from_op_file(path, order)
 
     # run CC code
