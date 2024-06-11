@@ -78,7 +78,7 @@ username = os.getlogin() # $USER
 
 user_root = abspath(base_dir.split(username)[1]) # format is /user/(.../*) <- obtain (this)
 home_root = abspath(f"/home/{username}/{user_root}/{project_name}/")
-work_root = abspath(f"/work/{username}/{user_root}/mctdh/{project_name}/")
+work_root = abspath(f"/home/{username}/{user_root}/mctdh/{project_name}/")
 
 ## COMPUTE CANADA SETTINGS
 if is_compute_canada:
