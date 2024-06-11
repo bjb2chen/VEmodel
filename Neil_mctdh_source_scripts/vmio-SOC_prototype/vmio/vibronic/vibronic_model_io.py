@@ -26,7 +26,6 @@ from . import model_op
 # to improve reading of output/debug print statements/logs
 np.set_printoptions(precision=8, suppress=True)
 
-print('We are running vibronic_model_io.py May 28, 2024 version.')
 
 # ------------------------------------------------------------------------
 # ------------------------------------------------------------------------
@@ -49,6 +48,7 @@ def model_shape_dict(A, N):
     }
 
     return dictionary
+
 
 def soc_model_shape_dict(A, N):
     """ returns a dictionary with the same keys as the .json file whose values are tuples representing the dimensionality of the associated value in the .json file
@@ -108,6 +108,7 @@ def model_zeros_template_json_dict(A, N, highest_order=1):
 
     return dictionary
 
+
 def soc_model_zeros_template_json_dict(A, N, highest_order=1):
     """ returns a dictionary that is a valid SOC model, where all values (other than states and modes) are set to 0
     """
@@ -125,6 +126,7 @@ def soc_model_zeros_template_json_dict(A, N, highest_order=1):
             dictionary.update({key: np.zeros(soc_shape[key], dtype=C128)})
 
     return dictionary
+
 
 def diagonal_model_zeros_template_json_dict(A, N, highest_order=1):
     """ returns a dictionary that is a valid diagonal model, where all values (other than states and modes) are set to 0
@@ -159,18 +161,19 @@ def verify_model_parameters(kwargs):
     shape_dict = model_shape_dict(A, N)
 
     for key, value in kwargs.items():
-        # if (key == VMK.A) or (key == VMK.N) or key in [VMK.etdm, VMK.mtdm]:
-        # might need to revert if this breaks
         if (key == VMK.A) or (key == VMK.N):
             continue
         elif key in shape_dict:
-            assert kwargs[key].shape == shape_dict[key], \
+            assert kwargs[key].shape == shape_dict[key], (
                 f"{key} has incorrect shape {kwargs[key].shape} instead of {shape_dict[key]}"
+            )
         else:
             log.debug(f"Found key {key} which is not present in the default dictionary")
 
     return
 
+
+# alternatively we could add if-statement inside `verify_model_parameters`
 def verify_soc_model_parameters(kwargs):
     """make sure the provided model parameters follow the file conventions"""
     assert VMK.N in kwargs, "need the number of modes"
@@ -180,15 +183,17 @@ def verify_soc_model_parameters(kwargs):
     shape_dict = soc_model_shape_dict(A, N)
 
     for key, value in kwargs.items():
-        if (key == VMK.A) or (key == VMK.N) or key in [VMK.etdm, VMK.mtdm]:
+        if (key == VMK.A) or (key == VMK.N):
             continue
         elif key in shape_dict:
-            assert kwargs[key].shape == shape_dict[key], \
+            assert kwargs[key].shape == shape_dict[key], (
                 f"{key} has incorrect shape {kwargs[key].shape} instead of {shape_dict[key]}"
+            )
         else:
             log.debug(f"Found key {key} which is not present in the default dictionary")
 
     return
+
 
 def verify_diagonal_model_parameters(kwargs):
     """make sure the provided sample parameters follow the file conventions"""
@@ -202,8 +207,9 @@ def verify_diagonal_model_parameters(kwargs):
         if (key == VMK.A) or (key == VMK.N):
             continue
         elif key in shape_dict:
-            assert kwargs[key].shape == shape_dict[key], \
+            assert kwargs[key].shape == shape_dict[key], (
                 f"{key} has incorrect shape {kwargs[key].shape} instead of {shape_dict[key]}"
+            )
         else:
             log.debug(f"Found key {key} which is not present in the default dictionary")
 
@@ -713,7 +719,7 @@ def swap_coupling_coefficient_axes(model, coeff_order):
     Currently the CC integration code expects the coefficients to have the surface dimensions first.
     When they are read in from the .op file they are the last dimensions.
     Therefore we need to shift their position.
-    We do this by shifting the mode dimensions around the surface dimensions.
+    We do this by shifting the vibrational (mode) dimensions around the surface dimensions.
     """
 
     if coeff_order == 0:
@@ -723,10 +729,21 @@ def swap_coupling_coefficient_axes(model, coeff_order):
     index = VMK.key_list()[coeff_order]
     source_list = [i for i in range(coeff_order)]
     destination_list = [i for i in range(-coeff_order, 0)]
-    log.debug(f"Original electronic dimension(s) indices: {source_list}")
-    log.debug(f"New electronic dimension(s) indices:      {destination_list}")
+    log.debug(f"Original vibrational dimension(s) indices: {source_list}")
+    log.debug(f"New vibrational dimension(s) indices:      {destination_list}")
 
     model[index] = np.moveaxis(model[index], source_list, destination_list)
+
+    # if SOC is present
+    index = VMK.soc_coupling_list()[coeff_order-1]
+    source_list = [i for i in range(coeff_order)]
+    if index in model.keys():
+        destination_list = [i for i in range(-coeff_order, 0)]
+        log.debug(f"Original SOC vibrational dimension(s) indices: {source_list}")
+        log.debug(f"New SOC vibrational dimension(s) indices:      {destination_list}")
+
+        model[index] = np.moveaxis(model[index], source_list, destination_list)
+
     return
 
 
@@ -784,6 +801,15 @@ def prepare_model_for_cc_integration(model, highest_order):
                 model[key] = np.zeros(model_shape_dict(A, N)[key], dtype=float)
 
             swap_coupling_coefficient_axes(model, coeff_order=index)
+
+        # swap the SOC if they are present
+        # key = VMK.soc_coupling_list()[index]
+        # if highest_order >= index:
+        #     swap_coupling_coefficient_axes(model, coeff_order=index)
+
+
+
+
     return
 
 # ------------------------------------------------------------------------
@@ -1031,28 +1057,29 @@ def create_coupling_from_op_file(dest_path, path_file_op):
 # ------------------------------------------------------------------------
 def _save_to_JSON(path, dictionary):
     dict_copy = copy.deepcopy(dictionary)
-    VMK.change_dictionary_keys_from_enum_members_to_strings(dict_copy)
     """ converts each numpy array to a list so that json can serialize them properly"""
 
     for key, value in list(dict_copy.items()):
         if isinstance(value, (np.ndarray, np.generic)):
             if np.count_nonzero(value) > 0:
-                if key in [VMK.etdm.value, VMK.mtdm.value]:
+                if key in [VMK.etdm, VMK.mtdm]:
 
                     # validation (temporary fix)
                     assert len(value.shape) == 2, f"{value.shape=} is not 2 dimensional?"
                     xyz, A = value.shape
 
                     assert xyz in [1, 2, 3], f"dim1 (x,y,z) {value.shape[0]=} can only be 1,2, or 3"
-                    assert A == dict_copy[VMK.A.value], f"dim2 {value.shape[1]=} is not {dict_copy[VMK.A.value]}"
+                    assert A == dict_copy[VMK.A], f"dim2 {value.shape[1]=} is not {dict_copy[VMK.A]}"
 
                     # convert to a list of lists containing strings
                     dict_copy[key] = [
                         [str(v) for v in value[i, :].tolist()]
                         for i in range(xyz)
                     ]
+
                 elif key in VMK.soc_coupling_list():
                     # cast the values to string then store as list
+                    # because all the SOC couplings are complex #'s
                     dict_copy[key] = value.astype('str').tolist()
                 else:
                     dict_copy[key] = value.tolist()
@@ -1060,6 +1087,9 @@ def _save_to_JSON(path, dictionary):
                 del dict_copy[key]
         else:
             log.debug(f"Value {value} with Key {key} does not appear to be an ndarray")
+
+    # change enum keys to string keys JUST before saving to JSON
+    VMK.change_dictionary_keys_from_enum_members_to_strings(dict_copy)
 
     with open(path, mode='w', encoding='UTF8') as target_file:
         target_file.write(json.dumps(dict_copy))
@@ -1122,6 +1152,7 @@ def _load_from_JSON(path):
     with open(path, mode='r', encoding='UTF8') as file:
         input_dictionary = json.loads(file.read())
 
+    # change string keys to enum keys right after loading
     VMK.change_dictionary_keys_from_strings_to_enum_members(input_dictionary)
 
     for key, value in input_dictionary.items():
@@ -1143,6 +1174,12 @@ def _load_from_JSON(path):
         A, N = _extract_dimensions_from_dictionary(input_dictionary)
         shape = model_shape_dict(A, N)
         input_dictionary[VMK.E] = np.zeros(shape[VMK.E], dtype=F64)
+
+    # special case to always create an array of frequencies that are 0.0 if not provided in the .json file
+    if VMK.w not in input_dictionary:
+        A, N = _extract_dimensions_from_dictionary(input_dictionary)
+        shape = model_shape_dict(A, N)
+        input_dictionary[VMK.w] = np.zeros(shape[VMK.w], dtype=F64)
 
     # TODO - design decision about which arrays to fill with zeros by default?
 
@@ -1262,14 +1299,20 @@ def print_model(model, highest_order=None):
     )
 
     for key in [VMK.w, VMK.etdm, VMK.mtdm, VMK.E]:
-        print(f"{key.value}  {model[key].shape}\n{model[key]}\n")
+        if key not in model:
+            print(f"{key.value} not present in model\n")
+        else:
+            print(f"{key.value}  {model[key].shape}\n{model[key]}\n")
 
     if highest_order is None:
         highest_order = extract_maximum_order_of_model(model)
 
     for idx, key in enumerate(VMK.coupling_list()):
         if idx + 1 <= highest_order:
-            print(f"{key.value}  {model[key].shape}\n{model[key]}\n")
+            if key not in model:
+                print(f"{key} not present in model\n")
+            else:
+                print(f"{key.value}  {model[key].shape}\n{model[key]}\n")
 
     for idx, key in enumerate(VMK.soc_coupling_list()):
         if idx + 1 <= highest_order:
@@ -1278,6 +1321,7 @@ def print_model(model, highest_order=None):
             else:
                 print(f"{key.value}  {model[key].shape}\n{model[key]}\n")
     return
+
 
 def print_model_compact(model, highest_order=None):
     """Prints all arguments of the `model` up to `highest_order` """

@@ -733,6 +733,17 @@ def swap_coupling_coefficient_axes(model, coeff_order):
     log.debug(f"New vibrational dimension(s) indices:      {destination_list}")
 
     model[index] = np.moveaxis(model[index], source_list, destination_list)
+
+    # if SOC is present
+    index = VMK.soc_coupling_list()[coeff_order-1]
+    source_list = [i for i in range(coeff_order)]
+    if index in model.keys():
+        destination_list = [i for i in range(-coeff_order, 0)]
+        log.debug(f"Original SOC vibrational dimension(s) indices: {source_list}")
+        log.debug(f"New SOC vibrational dimension(s) indices:      {destination_list}")
+
+        model[index] = np.moveaxis(model[index], source_list, destination_list)
+
     return
 
 
@@ -790,6 +801,15 @@ def prepare_model_for_cc_integration(model, highest_order):
                 model[key] = np.zeros(model_shape_dict(A, N)[key], dtype=float)
 
             swap_coupling_coefficient_axes(model, coeff_order=index)
+
+        # swap the SOC if they are present
+        # key = VMK.soc_coupling_list()[index]
+        # if highest_order >= index:
+        #     swap_coupling_coefficient_axes(model, coeff_order=index)
+
+
+
+
     return
 
 # ------------------------------------------------------------------------
@@ -1068,7 +1088,7 @@ def _save_to_JSON(path, dictionary):
         else:
             log.debug(f"Value {value} with Key {key} does not appear to be an ndarray")
 
-    # change enum keys to strings JUST before saving to JSON
+    # change enum keys to string keys JUST before saving to JSON
     VMK.change_dictionary_keys_from_enum_members_to_strings(dict_copy)
 
     with open(path, mode='w', encoding='UTF8') as target_file:
@@ -1132,6 +1152,7 @@ def _load_from_JSON(path):
     with open(path, mode='r', encoding='UTF8') as file:
         input_dictionary = json.loads(file.read())
 
+    # change string keys to enum keys right after loading
     VMK.change_dictionary_keys_from_strings_to_enum_members(input_dictionary)
 
     for key, value in input_dictionary.items():
