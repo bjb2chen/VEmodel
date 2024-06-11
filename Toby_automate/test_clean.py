@@ -29,6 +29,11 @@ from project.vibronic import vIO, VMK, model_op, vIO_wrapper
 import project.spectra
 import project.log_conf
 
+assert len(sys.argv) == 6, f"{len(sys.argv)=}"
+nZ, nH, ntf, job_name, root = sys.argv[1:]
+nZ, nH, ntf = int(nZ), int(nH), int(ntf)
+SOC_flag = bool("SOC" in job_name)
+print(type(nZ), type(nH), type(ntf), type(job_name))
 
 order_dict = {
     0: "constant",
@@ -40,13 +45,31 @@ order_dict = {
 
 root_directory = os.getcwd()
 
-#file_name = "CoF3_Z1_H1_100fs"
-#file_name = "CoF3_Z2_H2_100fs"
-#file_name = "CoF3_Z1_H1_1000fs"
-#file_name = "CoF3_Z3_H1_100fs"
-#file_name = "CoF3_Z3_H2_300fs"
-#file_name = "CoF3_Z2_H1_1000fs"
-file_name = "CoF3_Z2_H2_300fs"
+#file_name = "RhF3_Z2_H1_10000fs"
+
+m_name = job_name.split('_')[0]
+file_name = f"{m_name:s}_Z{nZ:d}_H{nH:d}" + ("_SOC" if SOC_flag else "")
+#file_name = "RhF3_Z1_H1_1000fs"
+#file_name = "RhF3_Z2_H1_1000fs"
+#file_name = "RhF3_Z2_H2_300fs" #diverged
+#file_name = "RhF3_Z3_H2_300fs" #diverged
+#file_name = "RhF3_Z3_H2_1000fs" #diverged
+#file_name = "RhF3_Z2_H2_1000fs" #diverged
+#file_name = "RhF3_Z3_H1_1000fs"
+
+#file_name = "RhF3_Z3_H2_180fs" # no diverge good up to 180fs only 
+#file_name = "RhF3_Z2_H2_180fs" #good
+#file_name = "RhF3_Z1_h2_180fs"
+
+#--------------------------------------------
+
+#file_name = "RhF3_Z1_H2_1000fs" # this was actually a 500fs run, but with SOC
+#file_name = "RhF3_Z1_H2_300fs" #SOC
+
+#file_name = "SOC_RhF3_Z1_H1_1000fs"
+#file_name = "SOC_RhF3_Z2_H1_1000fs"
+#file_name = "SOC_RhF3_Z3_H1_1000fs"
+#file_name = "SOC_RhF3_Z1_H2_1000fs"
 
 def process_data(filename):
     """ temporary formatted printing of profiling data """
@@ -105,7 +128,7 @@ def generate_acf_data(model, file_name, order, t_final=10.0, nof_steps=int(1e4) 
     hamiltonian = vibronic_hamiltonian(
         model, file_name, HO_size=nof_BF, build_H=compare_FCI,
         cc_truncation_order=order, hamiltonian_truncation_order=order, FC=FC,
-        Z_truncation_order=1, T_truncation_order=1, selected_surface=[],
+        Z_truncation_order=nZ, T_truncation_order=1, selected_surface=[],
         calculate_population_flag=False,
     )
     # We truncation_order: flag to determine order of truncation in W amplitude
@@ -418,11 +441,11 @@ def get_model_from_json_file(path, order):
 
 if (__name__ == '__main__'):
 
-    SOC_flag = True
+    #SOC_flag = True
     use_JSON_flag = True
-    t_final = 1000.0
+    t_final = float(ntf)
     FC = False
-    order = 1
+    order = nH
     model_name = f"{file_name}_FC" if FC else f"{file_name}_vibronic"
 
     project.log_conf.setLevelDebug()
@@ -432,7 +455,8 @@ if (__name__ == '__main__'):
     # read in model parameters
     if use_JSON_flag:
         # path = join("/home/bjb2chen/scratch/VECC/vibronic_models/", file_name + '.json')
-        path = join("/home/bjb2chen/gamess/vibronics/template_examples/Fe_pentaCO/Apr26_model/CROSS", 'model' + ('_soc' if SOC_flag else '') + '.json')
+        #path = join("/home/bjb2chen/gamess/vibronics/RhF3/SOC_15st", 'model' + ('_soc' if SOC_flag else '') + '.json')
+        path = join(root, 'model' + ('_soc' if SOC_flag else '') + '.json')
         model = get_model_from_json_file(path, order)
 
         if SOC_flag:
@@ -449,7 +473,7 @@ if (__name__ == '__main__'):
                     # model[VMK.G2] = zeros + model[VMK.G2] + model[VMK.S2]
                     model[VMK.G2] = model[VMK.S2] + model[VMK.G2]
     else:
-        path = join("/home/bjb2chen/gamess/vibronics/template_examples/Fe_pentaCO/Apr26_model/CROSS", 'model' + '.op')
+        path = join("/home/bjb2chen/gamess/vibronics/RhF3/SOC_15st", 'model' + '.op')
         model = get_model_from_op_file(path, order)
 
     # run CC code
