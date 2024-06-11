@@ -105,7 +105,7 @@ def generate_acf_data(model, file_name, order, t_final=10.0, nof_steps=int(1e4) 
     hamiltonian = vibronic_hamiltonian(
         model, file_name, HO_size=nof_BF, build_H=compare_FCI,
         cc_truncation_order=order, hamiltonian_truncation_order=order, FC=FC,
-        Z_truncation_order=2, T_truncation_order=1, selected_surface=[],
+        Z_truncation_order=1, T_truncation_order=1, selected_surface=[],
         calculate_population_flag=False,
     )
     # We truncation_order: flag to determine order of truncation in W amplitude
@@ -418,10 +418,11 @@ def get_model_from_json_file(path, order):
 
 if (__name__ == '__main__'):
 
+    SOC_flag = True
     use_JSON_flag = True
-    t_final = 300.0
+    t_final = 1000.0
     FC = False
-    order = 2
+    order = 1
     model_name = f"{file_name}_FC" if FC else f"{file_name}_vibronic"
 
     project.log_conf.setLevelDebug()
@@ -431,10 +432,24 @@ if (__name__ == '__main__'):
     # read in model parameters
     if use_JSON_flag:
         # path = join("/home/bjb2chen/scratch/VECC/vibronic_models/", file_name + '.json')
-        path = join("/home/bjb2chen/gamess/vibronics/template_examples/CoF3/SOC_15st", 'model' + '.json')
+        path = join("/home/bjb2chen/gamess/vibronics/template_examples/Fe_pentaCO/Apr26_model/CROSS", 'model' + ('_soc' if SOC_flag else '') + '.json')
         model = get_model_from_json_file(path, order)
+
+        if SOC_flag:
+            # if SOC terms are present then add them in
+            if order >= 1:
+                if VMK.S1 in model and VMK.G1 in model:
+                    # zeros = np.zeros(model[VMK.G1].shape, dtype=np.complex128)
+                    # model[VMK.G1] = zeros + model[VMK.G1] + model[VMK.S1]
+                    model[VMK.G1] = model[VMK.S1] + model[VMK.G1]
+             
+            if order >= 2:
+                if VMK.S2 in model and VMK.G2 in model:
+                    # zeros = np.zeros(model[VMK.G1].shape, dtype=np.complex128)
+                    # model[VMK.G2] = zeros + model[VMK.G2] + model[VMK.S2]
+                    model[VMK.G2] = model[VMK.S2] + model[VMK.G2]
     else:
-        path = join("/home/bjb2chen/gamess/vibronics/template_examples/CoF3/SOC_15st", 'model' + '.op')
+        path = join("/home/bjb2chen/gamess/vibronics/template_examples/Fe_pentaCO/Apr26_model/CROSS", 'model' + '.op')
         model = get_model_from_op_file(path, order)
 
     # run CC code
