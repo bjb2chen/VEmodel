@@ -1416,7 +1416,7 @@ def fitting():
                     if False:
                         column_specification_string = "head -1 | cut -c62-"
                         backup_line_idx = slice(62, None)
-        
+
                         fitting[(key, i, a+1)] = _extract_energy_from_gamessoutput_grep(
                             linear_displacement_filenames[(key, i)], f' {a+1}     E(REF-CI)=',
                             column_specification_string,
@@ -1909,10 +1909,10 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             linear_soc = [lin_dict[mode_map_dict[i]] for i in range(N)]
 
             return ''.join([
-                make_line_cm(
+                make_line(
                     label=f"C1_s{a1+1:0>2d}_s{a2+1:0>2d}_v{i+1:0>2d}r",
                     value=linear_soc[i][a1, a2].real
-                ) + make_line_cm(
+                ) + make_line(
                     label=f"C1_s{a1+1:0>2d}_s{a2+1:0>2d}_v{i+1:0>2d}i",
                     value=linear_soc[i][a1, a2].imag
                 )
@@ -1927,10 +1927,10 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             quad = [quad_dict[mode_map_dict[i]] for i in range(N)]
 
             return ''.join([
-                make_line_cm(
+                make_line(
                     label=f"C2_s{a1+1:0>2d}s{a2+1:0>2d}_v{i+1:0>2d}v{i+1:0>2d}r",
                     value=quad[i][a1, a2].real
-                ) + make_line_cm(
+                ) + make_line(
                     label=f"C2_s{a1+1:0>2d}s{a2+1:0>2d}_v{i+1:0>2d}v{i+1:0>2d}i",
                     value=quad[i][a1, a2].imag
                 )
@@ -1947,10 +1947,10 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 bi_lin[new_key] = bi_lin_dict[old_key]
 
             return ''.join([
-                make_line_cm(
+                make_line(
                     label=f"C1b_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}r", # C2 for VECC compatibility
                     value=bi_lin[(j1, j2)][a1, a2].real
-                ) + make_line_cm(
+                ) + make_line(
                     label=f"C1b_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}i",
                     value=bi_lin[(j1, j2)][a1, a2].imag
                 )
@@ -1967,10 +1967,10 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 total[new_key] = total_dict[old_key]
 
             return ''.join([
-                make_line_cm(
+                make_line(
                     label=f"SOC_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}r",
                     value=total[(j1, j2)][a1, a2].real
-                ) + make_line_cm(
+                ) + make_line(
                     label=f"SOC_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}i",
                     value=total[(j1, j2)][a1, a2].imag
                 )
@@ -1979,12 +1979,32 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 and (not suppress_zeros or not np.isclose(total[(j1, j2)][a1, a2], 0.0))
             ]) + '\n'
 
-        return '\n'.join([
-            build_linear_SOC(soc_dict['Linear'], A, N),
-            build_quadratic_SOC(soc_dict['Quadratic'], A, N),
-            build_BiLinear_SOC(soc_dict['BiLinear'], A, N),
-            build_Total_SOC(soc_dict['Total'], A, N),
-        ]) + '\n'
+        return_list = []
+
+        key = 'Linear'
+        if key in soc_dict.keys():
+            return_list += [build_linear_SOC(soc_dict[key], A, N)]
+
+        key = 'Quadratic'
+        if key in soc_dict.keys():
+            return_list += [build_quadratic_SOC(soc_dict[key], A, N)]
+
+        key = 'BiLinear'
+        if key in soc_dict.keys():
+            return_list += [build_BiLinear_SOC(soc_dict[key], A, N)]
+
+        key = 'Total'
+        if key in soc_dict.keys():
+            return_list += [build_Total_SOC(soc_dict[key], A, N)]
+
+        return '\n'.join(return_list) + '\n'
+
+        # return '\n'.join([
+        #     build_linear_SOC(soc_dict['Linear'], A, N),
+        #     build_quadratic_SOC(soc_dict['Quadratic'], A, N),
+        #     build_BiLinear_SOC(soc_dict['BiLinear'], A, N),
+        #     build_Total_SOC(soc_dict['Total'], A, N),
+        # ]) + '\n'
 
     def make_parameter_section(model, A, N):
         """Returns a string which defines the `PARAMETER-SECTION` of an .op file"""
@@ -2213,6 +2233,10 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         -I*SOC_s09s15_v01v02i        |1 Z15&9   |2  q     |3  q
         """
 
+        def label_constant_SOC(constant_matrix, A):
+            """ not implemented yet """
+            return
+
         def label_linear_SOC(lin_dict, A, N):
             """Return a string containing the linear spin orbit coupling (SOC) terms"""
             spacer = '|'
@@ -2354,12 +2378,27 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                     make_line(label=f"-I*{l4}i", link=f"|1 S{a}&{b} | {j+1} q")
 
         if True:
-            string = "\n".join([
-                label_linear_SOC(soc_dict['Linear'], A, N),
-                label_quadratic_SOC(soc_dict['Quadratic'], A, N),
-                label_BiLinear_SOC(soc_dict['BiLinear'], A, N),
-                label_Total_SOC(soc_dict['Total'], A, N),
-            ]) + '\n'
+            return_list = []
+
+            # return_list +=  label_constant_SOC(soc_dict['constant'], A),
+
+            key = 'Linear'
+            if key in soc_dict.keys():
+                return_list += [label_linear_SOC(soc_dict[key], A, N)]
+
+            key = 'Quadratic'
+            if key in soc_dict.keys():
+                return_list += [label_quadratic_SOC(soc_dict[key], A, N)]
+
+            key = 'BiLinear'
+            if key in soc_dict.keys():
+                return_list += [label_BiLinear_SOC(soc_dict[key], A, N)]
+
+            key = 'Total'
+            if key in soc_dict.keys():
+                return_list += [label_Total_SOC(soc_dict[key], A, N)]
+
+            return '\n'.join(return_list) + '\n'
 
         else:  # not implemented
             string = _toby_bash_style()
@@ -2905,11 +2944,11 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 return (temp_dict["+1"] - temp_dict["-1"]) / (2*qsize)
 
             def _compute_using_forloop_style(i, temp_dict):
-                linear_ev = np.zeros(shape)
+                linear = np.zeros(shape)
                 for a, b in upper_triangle_loop_indices(range(A), 2):
-                    linear_ev[b, a] = (temp_dict["+1"][b, a] - temp_dict["-1"][b, a]) / (2*qsize)
+                    linear[b, a] = (temp_dict["+1"][b, a] - temp_dict["-1"][b, a]) / (2*qsize)
 
-                return linear_ev
+                return linear
 
             lin_dict = {}  # store return values in here
             for i in range(N):  # do the 1D spin_orbit_coupling terms
@@ -2920,18 +2959,20 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 for key in ['+1', '-1']:
                     assert key in linear_disp_keys, f"{key=} not in {linear_disp_keys=}"
                     path = linear_displacement_filenames[(key, i)]
-                    temp_dict[key] = extract_DSOME(path, A)
+                    temp_dict[key] = extract_DSOME(path, A)  # DSOME extracts cm^-1
 
                 # ----------------------------------------------------------
                 # preform the math / calculation using the values we just extracted
                 if not array_style:  # do it with for loops
-                    soc_ev = _compute_using_forloop_style(i, temp_dict)
+                    soc_cm = _compute_using_forloop_style(i, temp_dict)
                 else:
-                    soc_ev = _compute_using_array_style(temp_dict)
+                    soc_cm = _compute_using_array_style(temp_dict)
 
                 # ----------------------------------------------------------
+                # convert from wavenumbers to electronvolts
+                soc_eV = soc_cm * pp.QM_const.wn2ev
                 # store the value in the dictionary
-                lin_dict[pp.mode_map_dict[i]] = soc_ev
+                lin_dict[pp.mode_map_dict[i]] = soc_eV
 
             print("Finished extracting linear SOC")
             return lin_dict
@@ -2941,20 +2982,20 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             `SOC_E0` is the SOC energy values extracted from `ref_geom_path` i.e. refG
             """
             def _compute_using_array_style(temp_dict):
-                quad_ev = temp_dict["+2"] + temp_dict["-2"] - 2.0 * SOC_E0
-                quad_ev /= (2. * qsize) ** 2
-                return quad_ev
+                quad = temp_dict["+2"] + temp_dict["-2"] - 2.0 * SOC_E0
+                quad /= (2. * qsize) ** 2
+                return quad
 
             def _compute_using_forloop_style(i, j, temp_dict):
-                quad_ev = np.zeros(shape)
+                quad = np.zeros(shape)
                 for a in range(A):
-                    quad_ev[a, a] = temp_dict["+2"][a, a] + temp_dict["-2"][a, a] - 2.0 * SOC_E0[a, a]
-                    quad_ev[a, a] /= (4.0 * qsize * qsize)
+                    quad[a, a] = temp_dict["+2"][a, a] + temp_dict["-2"][a, a] - 2.0 * SOC_E0[a, a]
+                    quad[a, a] /= (4.0 * qsize * qsize)
 
                     for b in range(a):
-                        quad_ev[b, a] = temp_dict["+2"][b, a] + temp_dict["-2"][b, a] - 2.0 * SOC_E0[b, a]
-                        quad_ev[b, a] /= (4.0 * qsize * qsize)
-                return quad_ev
+                        quad[b, a] = temp_dict["+2"][b, a] + temp_dict["-2"][b, a] - 2.0 * SOC_E0[b, a]
+                        quad[b, a] /= (4.0 * qsize * qsize)
+                return quad
 
             quad_dict = {}  # store return values in here
             for i in range(N):
@@ -2964,7 +3005,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 for key in ['+2', '-2']:
                     assert key in linear_disp_keys, f"{key=} not in {linear_disp_keys=}"
                     path = linear_displacement_filenames[(key, i)]
-                    temp_dict[key] = extract_DSOME(path, A)
+                    temp_dict[key] = extract_DSOME(path, A)  # DSOME extracts cm^-1
                     # the extracted value is a dictionary of complex numbers indexed by the surfaces
 
                 if False and __debug__: print(temp_dict["+2"], '\n', temp_dict["-2"]); breakpoint()
@@ -2972,13 +3013,15 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 # ----------------------------------------------------------
                 # preform the math / calculation using the values we just extracted
                 if not array_style:  # do it with for loops
-                    soc_ev = _compute_using_forloop_style(i, temp_dict)
+                    soc_cm = _compute_using_forloop_style(i, temp_dict)
                 else:
-                    soc_ev = _compute_using_array_style(temp_dict)
+                    soc_cm = _compute_using_array_style(temp_dict)
 
                 # ----------------------------------------------------------
+                # convert from wavenumbers to electronvolts
+                soc_eV = soc_cm * pp.QM_const.wn2ev
                 # store the value in the dictionary
-                quad_dict[pp.mode_map_dict[i]] = soc_ev
+                quad_dict[pp.mode_map_dict[i]] = soc_eV
 
             print("Finished extracting quadratic SOC")
             return quad_dict
@@ -2986,24 +3029,24 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         def _extract_bilinear_soc():
             """ x """
             def _compute_using_array_style(temp_dict):
-                bilin_ev = np.zeros(shape, dtype=C128)
-                bilin_ev += temp_dict['++'] - temp_dict['+-']
-                bilin_ev += temp_dict['--'] - temp_dict['-+']
-                bilin_ev /= (2. * qsize) ** 2
-                return bilin_ev
+                bilin = np.zeros(shape, dtype=C128)
+                bilin += temp_dict['++'] - temp_dict['+-']
+                bilin += temp_dict['--'] - temp_dict['-+']
+                bilin /= (2. * qsize) ** 2
+                return bilin
 
             def _compute_using_forloop_style(i, j, temp_dict):
                 """ only use i,j for debug print statements """
-                bilin_ev = np.zeros(shape, dtype=C128)
+                bilin = np.zeros(shape, dtype=C128)
                 for a in range(A):
-                    bilin_ev[a, a] += temp_dict['++'][a, a] - temp_dict['+-'][a, a]
-                    bilin_ev[a, a] += temp_dict['--'][a, a] - temp_dict['-+'][a, a]
-                    bilin_ev[a, a] /= (4.0 * qsize * qsize)
+                    bilin[a, a] += temp_dict['++'][a, a] - temp_dict['+-'][a, a]
+                    bilin[a, a] += temp_dict['--'][a, a] - temp_dict['-+'][a, a]
+                    bilin[a, a] /= (4.0 * qsize * qsize)
                     for b in range(a):
-                        bilin_ev[b, a] += temp_dict['++'][b, a] - temp_dict['+-'][b, a]
-                        bilin_ev[b, a] += temp_dict['--'][b, a] - temp_dict['-+'][b, a]
-                        bilin_ev[b, a] /= (4.0 * qsize * qsize)
-                return bilin_ev
+                        bilin[b, a] += temp_dict['++'][b, a] - temp_dict['+-'][b, a]
+                        bilin[b, a] += temp_dict['--'][b, a] - temp_dict['-+'][b, a]
+                        bilin[b, a] /= (4.0 * qsize * qsize)
+                return bilin
 
             bilin_dict = {}
             for i, j in upper_triangle_loop_indices(N, 2):
@@ -3013,20 +3056,22 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 temp_dict = {}  # stores temporary arrays (different every single i,j \in N x N loop)
                 for key in bi_linear_disp_keys:
                     path = bi_linear_displacement_filenames[(key, i, j)]
-                    temp_dict[key] = extract_DSOME(path, A)
+                    temp_dict[key] = extract_DSOME(path, A)  # DSOME extracts cm^-1
                     # the extracted value is a dictionary of complex numbers indexed by the surfaces
 
                 # ----------------------------------------------------------
                 # preform the math / calculation using the values we just extracted
                 if not array_style:  # do it with for loops
-                    soc_ev = _compute_using_forloop_style(i, j, temp_dict)
+                    soc_cm = _compute_using_forloop_style(i, j, temp_dict)
                 else:
-                    soc_ev = _compute_using_array_style(temp_dict)
+                    soc_cm = _compute_using_array_style(temp_dict)
 
                 # ----------------------------------------------------------
+                # convert from wavenumbers to electronvolts
+                soc_eV = soc_cm * pp.QM_const.wn2ev
                 # store the value in the dictionary
                 key = ij_map[(i, j)]
-                bilin_dict[key] = soc_ev
+                bilin_dict[key] = soc_eV
 
             print("Finished extracting BiLinear SOC")
             return bilin_dict
@@ -3038,7 +3083,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             # methods are just different syntax
 
             if True:  # method 1
-                C = soc_dict['constant']  # alias
+                C = soc_dict['constant'] * pp.QM_const.wn2ev # alias
                 Lin = soc_dict['Linear']  # alias
                 Quad = soc_dict['Quadratic']  # alias
                 BiLin = soc_dict['BiLinear']  # alias
@@ -3047,10 +3092,11 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                     i, j = ij_map[(i, j)]  # remap to 8,9 etc..
                     # adding (A,A) shape arrays together element-wise
                     total_dict[(i, j)] = C + Lin[i] + Quad[i] + BiLin[(i, j)]
+
             else:  # method 1
                 for i, j in upper_triangle_loop_indices(N, 2):
                     i, j = ij_map[(i, j)]  # remap to 8,9 etc..
-                    total_dict[(i, j)] = soc_dict['constant']
+                    total_dict[(i, j)] = soc_dict['constant'] * pp.QM_const.wn2ev
                     total_dict[(i, j)] += soc_dict['Linear'][i]
                     total_dict[(i, j)] += soc_dict['Quadratic'][i]
                     total_dict[(i, j)] += soc_dict['BiLinear'][(i, j)]
@@ -3059,7 +3105,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             return total_dict
 
         soc_dict = {}
-        soc_dict['constant'] = extract_DSOME(ref_geom_path, A)
+        soc_dict['constant'] = extract_DSOME(ref_geom_path, A) # DSOME extracts cm^-1
         soc_dict['Linear'] = _extract_linear_soc()
         soc_dict['Quadratic'] = _extract_quadratic_soc(soc_dict['constant'])
         soc_dict['BiLinear'] = _extract_bilinear_soc()
@@ -3158,14 +3204,16 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 linear_model[key][index] = full_model[key][index].copy()
 
             # handle SOC
-            if pp.SOC_flag and False:
-                assert False, "SOC CODE HERE IS NOT DONE YET!!!"
+            if pp.SOC_flag:
                 SOC_key = 'SOC'
-                for index in constant_model[SOC_key].keys():
-                    constant_model[SOC_key][index] = np.zeros_like(full_model[key][index])
+                # constant_model[SOC_key] = {"constant": {}}
+                linear_model[SOC_key] = {"constant": {}, "Linear": {}}
 
-                for index in linear_model[SOC_key].keys():
-                    linear_model[SOC_key][index] = np.zeros_like(full_model[key][index])
+                # the constant model has no linear or higher order terms, thus no SOC
+                # constant_model[SOC_key]['constant'] = full_model[SOC_key]['constant'].copy()
+
+                for index in full_model[SOC_key]['Linear'].keys():
+                    linear_model[SOC_key]["Linear"][index] = full_model[SOC_key]["Linear"][index].copy()
 
             # ----------------------------------------------------------------------------------------
             # save the different files
@@ -3199,7 +3247,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             # ------------------------------------
 
             for order in [0, 1, 2]:
-                if pp.SOC_flag and False: # SOC JSON CODE IS NOT DONE YET!
+                if pp.SOC_flag: # SOC JSON CODE IS NOT DONE YET!
                     json_model = vIO.soc_model_zeros_template_json_dict(A, N, highest_order=order)
                 else:
                     json_model = vIO.model_zeros_template_json_dict(A, N, highest_order=order)
@@ -3209,7 +3257,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 # symmetrize w.r.t electronic surfaces (A)
                 for a, b in it.combinations(range(A), 2):
                     json_model[VMK.E][b, a] = json_model[VMK.E][a, b]
-                    
+
                 json_model[VMK.w] = model['vibron eV'].copy()
 
                 def _make_dipole_array(model):
@@ -3222,7 +3270,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
                         if True:  # for 3 dimensional dipoles
                             dipole_array[:, j-1] = np.array(model['dipoles'][key])
-                            
+
 
                         else:  # for 1 dimensional dipoles only
                             x, y, z = model['dipoles'][key]
@@ -3245,7 +3293,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                     return dipole_array
 
                 dipole_array = _make_dipole_array(model)
-                json_model[VMK.etdm] = dipole_array 
+                json_model[VMK.etdm] = dipole_array
                 json_model[VMK.mtdm] = dipole_array
 
                 # normal couplings
@@ -3275,7 +3323,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                         # maps idx=0 -> jdx=7, 1 -> 8 etc.
                         for i, vdiag in pp.mode_map_dict.items():
                             quadratic_array[i, i, :, :] = model['Quadratic'][vdiag].copy()
- 
+
                         # maps k(0,1) -> v=(7,8), etc.
                         for k, v in pp.ij_map.items():
                             quadratic_array[k[0], k[1], :, :] = model['BiLinear'][v].copy()
@@ -3293,12 +3341,50 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
                 filename = "model"
 
-                if pp.SOC_flag and False:  # SOC couplings
-                    assert False, "SOC CODE HERE IS NOT DONE YET!!!"
+                if pp.SOC_flag:  # SOC couplings
+
+                    # json_model[VMK.S0] = model['SOC']['constant']  # turned off for now
+
                     if order >= 1:
-                        json_model[VMK.S1] = model['SOC']['Linear']
+                        def _make_linear_soc_array(model):
+                            linear_array = np.zeros_like(json_model[VMK.S1])
+
+                            # maps idx=0 -> jdx=7, 1 -> 8 etc.
+                            for idx, jdx in pp.mode_map_dict.items():
+                                upper_tri = model['SOC']['Linear'][jdx]
+                                linear_array[idx, :, :] = upper_tri.copy()
+
+                            # flip all triangles down (for all modes; vectorized)
+                            for a, b in it.combinations(range(A), 2):
+                                linear_array[:, b, a] = linear_array[:, a, b]
+
+                            return linear_array
+
+                        linear_array = _make_linear_soc_array(model)
+                        json_model[VMK.S1] = linear_array
+
                     if order >= 2:
-                        json_model[VMK.S2] = model['SOC']['Quadratic'] + model['SOC']['BiLinear']
+                        def _make_quadratic_SOC_array(model):
+                            quadratic_array = np.zeros_like(json_model[VMK.S2])
+
+                            # maps idx=0 -> jdx=7, 1 -> 8 etc.
+                            for i, vdiag in pp.mode_map_dict.items():
+                                quadratic_array[i, i, :, :] = model['SOC']['Quadratic'][vdiag].copy()
+
+                            # maps k(0,1) -> v=(7,8), etc.
+                            for k, v in pp.ij_map.items():
+                                quadratic_array[k[0], k[1], :, :] = model['SOC']['BiLinear'][v].copy()
+
+                            model_op.mode_symmetrize_from_upper_triangle_quadratic_terms(N, range(A), quadratic_array)
+
+                            # flip all triangles down (for all modes; vectorized)
+                            for a, b in it.combinations(range(A), 2):
+                                quadratic_array[:, :, b, a] = quadratic_array[:, :, a, b]
+
+                            return quadratic_array
+
+                        quadratic_SOC_array = _make_quadratic_SOC_array(model)
+                        json_model[VMK.S2] = quadratic_SOC_array
 
                     filename += '_soc'
 
