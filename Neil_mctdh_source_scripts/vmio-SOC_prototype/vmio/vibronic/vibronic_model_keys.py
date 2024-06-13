@@ -18,6 +18,11 @@ class VibronicModelKeys(Enum):
     quartic_couplings = "quartic couplings"
 
     # Spin Orbit Couplings (SOC)
+    """ Note that the `soc_constant_couplings` are technically the SOC corrections to the energies (`E`).
+    However we treat them in a similar matter to the other couplings, for a consistent naming scheme.
+    You could argue that the energies should be G0... fair enough, not going to drastically change all the code right now.
+    """
+    soc_constant_couplings = "SOC constant couplings"
     soc_linear_couplings = "SOC linear couplings"
     soc_quadratic_couplings = "SOC quadratic couplings"
     soc_cubic_couplings = "SOC cubic couplings"
@@ -36,6 +41,7 @@ class VibronicModelKeys(Enum):
     G4 = quartic_couplings
 
     # Spin Orbit Couplings (SOC)
+    S0 = soc_constant_couplings
     S1 = soc_linear_couplings
     S2 = soc_quadratic_couplings
     S3 = soc_cubic_couplings
@@ -76,7 +82,7 @@ class VibronicModelKeys(Enum):
         """Return a list of enum members corresponding to `soc coupling terms`.
 
         These are coefficients for the spin-orbit-coupling degrees of freedom."""
-        return [cls.S1, cls.S2, cls.S3, cls.S4]
+        return [cls.S0, cls.S1, cls.S2, cls.S3, cls.S4]
 
     @classmethod
     def max_order(cls):

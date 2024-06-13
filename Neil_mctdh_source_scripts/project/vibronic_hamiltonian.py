@@ -2067,6 +2067,7 @@ class vibronic_hamiltonian(object):
 
                 # compute H_bar_tilde matrix
                 H_bar_tilde = self._cal_H_bar_tilde(H_bar, _special_T_conj, opt_flag=opt_flag)
+                #print(f'Made H_bar_tilde, time: {time}')
 
             # -------------------------------------
             # compute net residue
