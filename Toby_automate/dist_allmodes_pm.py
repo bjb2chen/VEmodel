@@ -1898,11 +1898,27 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 if (a1 < a2)
                 and (not suppress_zeros or not np.isclose(linear[i][a1, a2], 0.0)) and
                 (np.log10(abs(linear[i][a1, a2]/(abs(E0_array_eV[a1, a1] - E0_array_eV[a2, a2]) - vibron_ev[i]))) > screen_val)
-            ]), # eliminated the quadratic and bilinear screenings because they have different formula according to TZ
+            ]),  # eliminated the quadratic and bilinear screenings because they have different formula according to TZ
         ])
 
     def build_spinorbit_coupling(soc_dict, A, N):
         """ x """
+
+        def build_constant_SOC(const_soc, A, N):
+            assert const_soc.shape == (A, A)
+
+            return ''.join([
+                make_line(
+                    label=f"C0_s{a1+1:0>2d}_s{a2+1:0>2d}r",
+                    value=const_soc[a1, a2].real
+                ) + make_line(
+                    label=f"C0_s{a1+1:0>2d}_s{a2+1:0>2d}i",
+                    value=const_soc[a1, a2].imag
+                )
+                for a1, a2 in it.product(range(A), range(A))
+                if (a1 < a2)
+                and (not suppress_zeros or not np.isclose(const_soc[a1, a2], 0.0j))
+            ]) + '\n'
 
         def build_linear_SOC(lin_dict, A, N):
             assert len(lin_dict.keys()) == N
@@ -1918,7 +1934,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 )
                 for a1, a2, i in it.product(range(A), range(A), range(N))
                 if (a1 < a2)
-                and (not suppress_zeros or not np.isclose(linear_soc[i][a1, a2], 0.0))
+                and (not suppress_zeros or not np.isclose(linear_soc[i][a1, a2], 0.0j))
             ]) + '\n'
 
         def build_quadratic_SOC(quad_dict, A, N):
@@ -1936,7 +1952,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 )
                 for a1, a2, i in it.product(range(A), range(A), range(N))
                 if (a1 < a2)
-                and (not suppress_zeros or not np.isclose(quad[i][a1, a2], 0.0))
+                and (not suppress_zeros or not np.isclose(quad[i][a1, a2], 0.0j))
             ]) + '\n'
 
         def build_BiLinear_SOC(bi_lin_dict, A, N):
@@ -1948,7 +1964,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
             return ''.join([
                 make_line(
-                    label=f"C1b_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}r", # C2 for VECC compatibility
+                    label=f"C1b_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}r",  # C2 for VECC compatibility
                     value=bi_lin[(j1, j2)][a1, a2].real
                 ) + make_line(
                     label=f"C1b_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}i",
@@ -1956,30 +1972,14 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 )
                 for a1, a2, j1, j2 in it.product(range(A), range(A), range(N), range(N))
                 if (a1 < a2) and (j1 < j2)
-                and (not suppress_zeros or not np.isclose(bi_lin[(j1, j2)][a1, a2], 0.0))
-            ]) + '\n'
-
-        def build_Total_SOC(total_dict, A, N):
-
-            total = {}
-            for old_key in total_dict.keys():
-                new_key = reverse_ij_map[old_key]  # (0, 1) <- (7, 8) for NH3
-                total[new_key] = total_dict[old_key]
-
-            return ''.join([
-                make_line(
-                    label=f"SOC_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}r",
-                    value=total[(j1, j2)][a1, a2].real
-                ) + make_line(
-                    label=f"SOC_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}i",
-                    value=total[(j1, j2)][a1, a2].imag
-                )
-                for a1, a2, j1, j2 in it.product(range(A), range(A), range(N), range(N))
-                if (a1 < a2) and (j1 < j2)
-                and (not suppress_zeros or not np.isclose(total[(j1, j2)][a1, a2], 0.0))
+                and (not suppress_zeros or not np.isclose(bi_lin[(j1, j2)][a1, a2], 0.0j))
             ]) + '\n'
 
         return_list = []
+
+        key = 'constant'
+        if key in soc_dict.keys():
+            return_list += [build_constant_SOC(soc_dict[key], A, N)]
 
         key = 'Linear'
         if key in soc_dict.keys():
@@ -1992,10 +1992,6 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         key = 'BiLinear'
         if key in soc_dict.keys():
             return_list += [build_BiLinear_SOC(soc_dict[key], A, N)]
-
-        key = 'Total'
-        if key in soc_dict.keys():
-            return_list += [build_Total_SOC(soc_dict[key], A, N)]
 
         return '\n'.join(return_list) + '\n'
 
@@ -2234,8 +2230,25 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         """
 
         def label_constant_SOC(constant_matrix, A):
-            """ not implemented yet """
-            return
+            """Return a string containing the constant spin orbit coupling (SOC) terms"""
+            spacer = '|'
+            assert constant_matrix.shape == (A, A)
+
+            return '\n'.join([
+                (
+                    f"   C0_s{a1:0>2d}_s{a2:0>2d}r"
+                    f"{spacer:>11}1 S{a1:d}&{a2:d}"
+                ) + '\n' + (
+                    f" I*C0_s{a1:0>2d}_s{a2:0>2d}i"
+                    f"{spacer:>11}1 Z{a1:d}&{a2:d}"
+                ) + '\n' + (
+                    f"-I*C0_s{a1:0>2d}_s{a2:0>2d}i"
+                    f"{spacer:>11}1 Z{a2:d}&{a1:d}"
+                )
+                for a1, a2 in it.product(range(1, A+1), range(1, A+1))
+                if (a1 < a2)
+                and (not suppress_zeros or not np.isclose(constant_matrix[a1-1, a2-1], 0.0j))
+            ]) + '\n'
 
         def label_linear_SOC(lin_dict, A, N):
             """Return a string containing the linear spin orbit coupling (SOC) terms"""
@@ -2252,14 +2265,14 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                     f" I*C1_s{a1:0>2d}_s{a2:0>2d}_v{i:0>2d}i"
                     f"{spacer:>11}1 Z{a1:d}&{a2:d}"
                     f"{spacer:>4}{i+1}  q"
-                ) +'\n' + (
+                ) + '\n' + (
                     f"-I*C1_s{a1:0>2d}_s{a2:0>2d}_v{i:0>2d}i"
                     f"{spacer:>11}1 Z{a2:d}&{a1:d}"
                     f"{spacer:>4}{i+1}  q"
                 )
                 for a1, a2, i in it.product(range(1, A+1), range(1, A+1), range(1, N+1))
                 if (a1 < a2)
-                and (not suppress_zeros or not np.isclose(linear_terms[i-1][a1-1, a2-1], 0.0))
+                and (not suppress_zeros or not np.isclose(linear_terms[i-1][a1-1, a2-1], 0.0j))
             ]) + '\n'
 
         def label_quadratic_SOC(quad_dict, A, N):
@@ -2284,7 +2297,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 )
                 for a1, a2, i in it.product(range(1, A+1), range(1, A+1), range(1, N+1))
                 if (a1 < a2)
-                if not suppress_zeros or not np.isclose(quadratic_terms[i-1][a1-1, a2-1], 0.0)
+                if not suppress_zeros or not np.isclose(quadratic_terms[i-1][a1-1, a2-1], 0.0j)
             ]) + '\n'
 
         def label_BiLinear_SOC(bi_lin_dict, A, N):
@@ -2311,34 +2324,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 )
                 for a1, a2, j1, j2 in it.product(range(1, A+1), range(1, A+1), range(1, N+1), range(1, N+1))
                 if (a1 < a2) and (j1 < j2)
-                and (not suppress_zeros or not np.isclose(bilinear_terms[(j1-1, j2-1)][a1-1, a2-1], 0.0))
-            ]) + '\n'
-
-        def label_Total_SOC(total_dict, A, N):
-            """Return a string containing the BiLinear spin orbit coupling (SOC) terms"""
-            spacer = '|'
-            total_terms = {}
-            for old_key in total_dict.keys():  # i should make a backwards mapping dictionary
-                new_key = reverse_ij_map[old_key] # (0, 1) <- (7, 8) for NH3
-                total_terms[new_key] = total_dict[old_key]
-
-            return '\n'.join([
-                (
-                    f"   SOC_s{a1:0>2d}s{a2:0>2d}_v{j1:0>2d}v{j2:0>2d}r"
-                    f"{spacer:>9}1 S{a1:d}&{a2:d}"
-                    f"{spacer:>4}{j1+1}  q{spacer:>6}{j2+1}  q"
-                ) + '\n' + (
-                    f" I*SOC_s{a1:0>2d}s{a2:0>2d}_v{j1:0>2d}v{j2:0>2d}i"
-                    f"{spacer:>9}1 Z{a1:d}&{a2:d}"
-                    f"{spacer:>4}{j1+1}  q{spacer:>6}{j2+1}  q"
-                ) + '\n' + (
-                    f"-I*SOC_s{a1:0>2d}s{a2:0>2d}_v{j1:0>2d}v{j2:0>2d}i"
-                    f"{spacer:>9}1 Z{a2:d}&{a1:d}"
-                    f"{spacer:>4}{j1+1}  q{spacer:>6}{j2+1}  q"
-                )
-                for a1, a2, j1, j2 in it.product(range(1, A+1), range(1, A+1), range(1, N+1), range(1, N+1))
-                if (a1 < a2) and (j1 < j2)
-                and (not suppress_zeros or not np.isclose(total_terms[(j1-1, j2-1)][a1-1, a2-1], 0.0))
+                and (not suppress_zeros or not np.isclose(bilinear_terms[(j1-1, j2-1)][a1-1, a2-1], 0.0j))
             ]) + '\n'
 
         def _toby_bash_style():
@@ -2380,7 +2366,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         if True:
             return_list = []
 
-            # return_list +=  label_constant_SOC(soc_dict['constant'], A),
+            return_list +=  [label_constant_SOC(soc_dict['constant'], A)]
 
             key = 'Linear'
             if key in soc_dict.keys():
@@ -2393,11 +2379,6 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             key = 'BiLinear'
             if key in soc_dict.keys():
                 return_list += [label_BiLinear_SOC(soc_dict[key], A, N)]
-
-            key = 'Total'
-            if key in soc_dict.keys():
-                return_list += [label_Total_SOC(soc_dict[key], A, N)]
-
             return '\n'.join(return_list) + '\n'
 
         else:  # not implemented
@@ -2938,6 +2919,13 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         """ x """
         shape = (A, A)
 
+        def _extract_constant_soc():
+            """ x """
+            soc_const_cm = extract_DSOME(ref_geom_path, A)  # DSOME extracts cm^-1
+            soc_const_eV = soc_const_cm * pp.QM_const.wn2ev
+            # return both
+            return soc_const_eV, soc_const_cm
+
         def _extract_linear_soc():
             """ x """
             def _compute_using_array_style(temp_dict):
@@ -2980,6 +2968,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         def _extract_quadratic_soc(SOC_E0):
             """
             `SOC_E0` is the SOC energy values extracted from `ref_geom_path` i.e. refG
+            It is units of wavenumbers.
             """
             def _compute_using_array_style(temp_dict):
                 quad = temp_dict["+2"] + temp_dict["-2"] - 2.0 * SOC_E0
@@ -3076,42 +3065,13 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             print("Finished extracting BiLinear SOC")
             return bilin_dict
 
-        def compute_total_soc(soc_dict):
-            """ compute the full spin orbit couplings """
-            total_dict = {}
-
-            # methods are just different syntax
-
-            if True:  # method 1
-                C = soc_dict['constant'] * pp.QM_const.wn2ev # alias
-                Lin = soc_dict['Linear']  # alias
-                Quad = soc_dict['Quadratic']  # alias
-                BiLin = soc_dict['BiLinear']  # alias
-
-                for i, j in upper_triangle_loop_indices(N, 2):
-                    i, j = ij_map[(i, j)]  # remap to 8,9 etc..
-                    # adding (A,A) shape arrays together element-wise
-                    total_dict[(i, j)] = C + Lin[i] + Quad[i] + BiLin[(i, j)]
-
-            else:  # method 1
-                for i, j in upper_triangle_loop_indices(N, 2):
-                    i, j = ij_map[(i, j)]  # remap to 8,9 etc..
-                    total_dict[(i, j)] = soc_dict['constant'] * pp.QM_const.wn2ev
-                    total_dict[(i, j)] += soc_dict['Linear'][i]
-                    total_dict[(i, j)] += soc_dict['Quadratic'][i]
-                    total_dict[(i, j)] += soc_dict['BiLinear'][(i, j)]
-
-            print("Finished calculating the Total SOC")
-            return total_dict
-
         soc_dict = {}
-        soc_dict['constant'] = extract_DSOME(ref_geom_path, A) # DSOME extracts cm^-1
-        soc_dict['Linear'] = _extract_linear_soc()
-        soc_dict['Quadratic'] = _extract_quadratic_soc(soc_dict['constant'])
-        soc_dict['BiLinear'] = _extract_bilinear_soc()
 
-        # compute the total
-        soc_dict['Total'] = compute_total_soc(soc_dict)
+        soc_const_eV, soc_const_wavenumbers = _extract_constant_soc()
+        soc_dict['constant'] = soc_const_eV
+        soc_dict['Linear'] = _extract_linear_soc()
+        soc_dict['Quadratic'] = _extract_quadratic_soc(soc_const_wavenumbers)
+        soc_dict['BiLinear'] = _extract_bilinear_soc()
 
         return soc_dict
 
@@ -3206,11 +3166,11 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             # handle SOC
             if pp.SOC_flag:
                 SOC_key = 'SOC'
-                # constant_model[SOC_key] = {"constant": {}}
+                constant_model[SOC_key] = {"constant": {}}
                 linear_model[SOC_key] = {"constant": {}, "Linear": {}}
 
-                # the constant model has no linear or higher order terms, thus no SOC
-                # constant_model[SOC_key]['constant'] = full_model[SOC_key]['constant'].copy()
+                constant_model[SOC_key]['constant'] = full_model[SOC_key]['constant'].copy()
+                linear_model[SOC_key]['constant'] = full_model[SOC_key]['constant'].copy()
 
                 for index in full_model[SOC_key]['Linear'].keys():
                     linear_model[SOC_key]["Linear"][index] = full_model[SOC_key]["Linear"][index].copy()
@@ -3342,8 +3302,8 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 filename = "model"
 
                 if pp.SOC_flag:  # SOC couplings
-
-                    # json_model[VMK.S0] = model['SOC']['constant']  # turned off for now
+                    breakpoint()
+                    json_model[VMK.S0] = model['SOC']['constant']  # turned off for now
 
                     if order >= 1:
                         def _make_linear_soc_array(model):

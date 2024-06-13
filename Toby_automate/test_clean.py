@@ -45,6 +45,8 @@ order_dict = {
 
 root_directory = os.getcwd()
 
+#file_name = "RhF3_Z2_H1_10000fs"
+
 m_name = job_name.split('_')[0]
 file_name = f"{m_name:s}_Z{nZ:d}_H{nH:d}" + ("_SOC" if SOC_flag else "")
 
@@ -431,19 +433,21 @@ if (__name__ == '__main__'):
 
     # read in model parameters
     if use_JSON_flag:
-        # path = join("/home/bjb2chen/scratch/VECC/vibronic_models/", file_name + '.json')
-        #path = join("/home/bjb2chen/gamess/vibronics/RhF3/SOC_15st", 'model' + ('_soc' if SOC_flag else '') + '.json')
         path = join(root, 'model' + ('_soc' if SOC_flag else '') + '.json')
         model = get_model_from_json_file(path, order)
 
         if SOC_flag:
+
             # if SOC terms are present then add them in
+            if VMK.S0 in model:
+                model[VMK.E] = model[VMK.S0] + model[VMK.E]
+
             if order >= 1:
                 if VMK.S1 in model and VMK.G1 in model:
                     # zeros = np.zeros(model[VMK.G1].shape, dtype=np.complex128)
                     # model[VMK.G1] = zeros + model[VMK.G1] + model[VMK.S1]
                     model[VMK.G1] = model[VMK.S1] + model[VMK.G1]
-             
+
             if order >= 2:
                 if VMK.S2 in model and VMK.G2 in model:
                     # zeros = np.zeros(model[VMK.G1].shape, dtype=np.complex128)
