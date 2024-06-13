@@ -65,7 +65,7 @@ nof_displacements_per_mode = {
 # instead it simply prints out what the commands would be to the terminal
 dry_run = False
 is_compute_canada = False
-suppress_zeros = False
+suppress_zeros = True
 SOC_flag = False
 VECC_flag = False
 screening = False
