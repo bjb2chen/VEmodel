@@ -45,31 +45,8 @@ order_dict = {
 
 root_directory = os.getcwd()
 
-#file_name = "RhF3_Z2_H1_10000fs"
-
 m_name = job_name.split('_')[0]
 file_name = f"{m_name:s}_Z{nZ:d}_H{nH:d}" + ("_SOC" if SOC_flag else "")
-#file_name = "RhF3_Z1_H1_1000fs"
-#file_name = "RhF3_Z2_H1_1000fs"
-#file_name = "RhF3_Z2_H2_300fs" #diverged
-#file_name = "RhF3_Z3_H2_300fs" #diverged
-#file_name = "RhF3_Z3_H2_1000fs" #diverged
-#file_name = "RhF3_Z2_H2_1000fs" #diverged
-#file_name = "RhF3_Z3_H1_1000fs"
-
-#file_name = "RhF3_Z3_H2_180fs" # no diverge good up to 180fs only 
-#file_name = "RhF3_Z2_H2_180fs" #good
-#file_name = "RhF3_Z1_h2_180fs"
-
-#--------------------------------------------
-
-#file_name = "RhF3_Z1_H2_1000fs" # this was actually a 500fs run, but with SOC
-#file_name = "RhF3_Z1_H2_300fs" #SOC
-
-#file_name = "SOC_RhF3_Z1_H1_1000fs"
-#file_name = "SOC_RhF3_Z2_H1_1000fs"
-#file_name = "SOC_RhF3_Z3_H1_1000fs"
-#file_name = "SOC_RhF3_Z1_H2_1000fs"
 
 def process_data(filename):
     """ temporary formatted printing of profiling data """
