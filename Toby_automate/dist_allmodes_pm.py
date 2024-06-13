@@ -3302,7 +3302,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 filename = "model"
 
                 if pp.SOC_flag:  # SOC couplings
-                    breakpoint()
+
                     json_model[VMK.S0] = model['SOC']['constant']  # turned off for now
 
                     if order >= 1:
