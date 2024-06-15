@@ -424,7 +424,7 @@ if (__name__ == '__main__'):
     use_JSON_flag = True
     t_final = float(ntf)
     FC = False
-    SOC_order = 0
+    SOC_order = 2
     H_order = nH
     model_name = f"{file_name}_FC" if FC else f"{file_name}_vibronic"
 
