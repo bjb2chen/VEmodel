@@ -3305,6 +3305,10 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
                     json_model[VMK.S0] = model['SOC']['constant']  # turned off for now
 
+                    # symmetrize SOC w.r.t electronic surfaces (A)
+                    for a, b in it.combinations(range(A), 2):
+                        json_model[VMK.S0][b, a] = json_model[VMK.S0][a, b]
+
                     if order >= 1:
                         def _make_linear_soc_array(model):
                             linear_array = np.zeros_like(json_model[VMK.S1])
