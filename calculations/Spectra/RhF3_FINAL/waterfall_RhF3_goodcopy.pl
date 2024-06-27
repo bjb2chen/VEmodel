@@ -58,12 +58,30 @@ f32 = 'RhF3_Z3_H2_vibronic_quadratic_tf180.pl'
 f33 = ''                                           # extra space, the VECC long prop are no good.
 f34 = 'RhF3_Z1_H1_SOC_vibronic_linear_tf50.pl'     # RhF3 short prop
 f35 = 'RhF3_Z1_H1_SOC_vibronic_linear_tf100.pl' 
-f36 = ''
+f36 = 'RhF3_Z1_H1_SOC_vibronic_linear_tf30.pl'
+
+f40 = 'op_RhF36Q_15st_PBF40_tf180.00_auto_total_S0_SOC'
+f41 = 'op_RhF36Q_15st_PBF40_tf182.00_auto_total_S0_nosoc'
+f42 = 'RhF3_Z3_H0_SOC_S0_constant_tf180.pl'
+f43 = 'RhF3_Z3_H0_S0_constant_tf180.pl'
+f44 = 'RhF3_Z1_H0_SOC_S0_constant_tf100.pl'
+f45 = 'RhF3_Z2_H0_SOC_S0_constant_tf100.pl'
+f46 = 'RhF3_Z3_H0_SOC_S0_constant_tf100.pl'
+f47 = 'RhF3_Z3_H0_SOC_S0_constant_tf300.pl'
+f48 = 'RhF3_Z3_H0_SOC_S0_constant_tf500.pl'
+f49 = 'RhF3_Z3_H0_SOC_S0_constant_tf25.pl'
+f50 = 'MCTDH_old_25fs.pl'
+f51 = 'RhF3_Z3_H0_S0_constant_tf25.pl'
+f52 = 'RhF3_Z3_H0_SOC_S0_constant_tf17.pl'
+f53 = 'MCTDH_17fs.pl'
+f54 = 'MCTDH_12fs.pl'
+f55 = 'MCTDH_nosoc_25fs.pl'
+
 
 
 #---------------------------------------------------------------------------------------------------
 
-set title 'RhF_3 Vibronic Spectrum Composite - 180 fs ; 40 tau' font 'Helvetica,18'
+set title 'RhF_3 Vibronic Spectrum Composite' font 'Helvetica,18'
 set output month_day.'_RhF3_waterfall_composite.png'; set yr [ -1: 100]; set xr [ -1.5: 0]
 plot \
 f02 using 1:2 w lines lw 2.25 lc 'black'      dashtype 1 title 'MCTDH H1 SOC', \
@@ -165,9 +183,64 @@ set title 'RhF_3 Vibronic Spectrum Composite - 180 fs PBF Comparison' font 'Helv
 set output month_day.'_RhF3_50_100_180_1000fs.png'; set yr [ -1: 100]; set xr [ -1.0: -0.4]
 plot \
 f10 using 1:2 w lines lw 2.25 lc 'black'      dashtype 1 title 'MCTDH H1 SOC 1000fs', \
-f21 using 1:3 w lines lw 1.00 lc 'web-blue'   dashtype 1 title 'VECC    H1 SOC 180fs Z1', \
-f34 using 1:3 w lines lw 1.00 lc 'violet'     dashtype 1 title 'VECC    H1 SOC 100fs Z1', \
-f35 using 1:3 w lines lw 1.00 lc 'orange-red' dashtype 1 title 'VECC    H1 SOC 50fs Z1', \
+f02 using 1:2 w lines lw 1.00 lc 'dark-green' dashtype 1 title 'MCTDH H1 SOC 180fs', \
+f23 using 1:3 w lines lw 1.00 lc 'web-blue'   dashtype 1 title 'VECC    H1 SOC 48fs Z3', \
+f36 using 1:3 w lines lw 1.00 lc 'violet'     dashtype 1 title 'VECC    H1 SOC 30fs Z1', \
+
+# f34 using 1:3 w lines lw 1.00 lc 'violet'     dashtype 1 title 'VECC    H1 SOC 100fs Z1', \ # this is not symmetrized
+# f35 using 1:3 w lines lw 1.00 lc 'orange-red' dashtype 1 title 'VECC    H1 SOC 50fs Z1', \  # this is not symmetrized
+
+#---------------------------------------------------------------------------------------------------
+
+set title 'RhF_3 Vibronic Spectrum Composite - Constants' font 'Helvetica,18'
+set output month_day.'_RhF3_constants1.png'; set yr [ -1: 200]; set xr [ -2.0: 0.5]
+plot \
+f40 using 1:2 w lines lw 2.25 lc 'black'      dashtype 1 title 'MCTDH H0 SOC 180fs', \
+f41 using 1:2 w lines lw 1.00 lc 'web-blue'   dashtype 1 title 'MCTDH H0 180fs', \
+f55 using 1:2 w lines lw 2.00 lc 'web-blue'   dashtype 3 title 'MCTDH H0 25fs', \
+f50 using 1:2 w lines lw 1.00 lc 'black'      dashtype 3 title 'MCTDH H0 SOC 25fs', \
+f53 using 1:2 w lines lw 1.00 lc 'black'      dashtype 6 title 'MCTDH H0 SOC 17fs', \
+f51 using 1:3 w lines lw 1.00 lc 'orange-red' dashtype 2 title 'VECC    H0 25fs', \
+f49 using 1:3 w lines lw 1.00 lc 'green'      dashtype 1 title 'VECC    H0 SOC Z3 25fs', \
+
+
+set title 'RhF_3 Vibronic Spectrum Composite - Constants' font 'Helvetica,18'
+set output month_day.'_RhF3_constants2.png'; set yr [ -1: 100]; set xr [ -1.25: -0.8]
+plot \
+f40 using 1:2 w lines lw 2.25 lc 'black'      dashtype 1 title 'MCTDH H0 SOC 180fs', \
+f41 using 1:2 w lines lw 1.00 lc 'web-blue'   dashtype 1 title 'MCTDH H0 180fs', \
+f55 using 1:2 w lines lw 2.00 lc 'web-blue'   dashtype 3 title 'MCTDH H0 25fs', \
+f50 using 1:2 w lines lw 1.00 lc 'black'      dashtype 3 title 'MCTDH H0 SOC 25fs', \
+f53 using 1:2 w lines lw 1.00 lc 'black'      dashtype 6 title 'MCTDH H0 SOC 17fs', \
+f51 using 1:3 w lines lw 1.00 lc 'orange-red' dashtype 2 title 'VECC    H0 25fs', \
+f49 using 1:3 w lines lw 1.00 lc 'green'      dashtype 1 title 'VECC    H0 SOC Z3 25fs', \
+
+
+set title 'RhF_3 Vibronic Spectrum Composite - Constants' font 'Helvetica,18'
+set output month_day.'_RhF3_constants3.png'; set yr [ -1: 200]; set xr [ -0.8: -0.5]
+plot \
+f40 using 1:2 w lines lw 2.25 lc 'black'      dashtype 1 title 'MCTDH H0 SOC 180fs', \
+f41 using 1:2 w lines lw 1.00 lc 'web-blue'   dashtype 1 title 'MCTDH H0 180fs', \
+f55 using 1:2 w lines lw 2.00 lc 'web-blue'   dashtype 3 title 'MCTDH H0 25fs', \
+f50 using 1:2 w lines lw 1.00 lc 'black'      dashtype 3 title 'MCTDH H0 SOC 25fs', \
+f53 using 1:2 w lines lw 1.00 lc 'black'      dashtype 6 title 'MCTDH H0 SOC 17fs', \
+f51 using 1:3 w lines lw 1.00 lc 'orange-red' dashtype 2 title 'VECC    H0 25fs', \
+f49 using 1:3 w lines lw 1.00 lc 'green'      dashtype 1 title 'VECC    H0 SOC Z3 25fs', \
+
+
+# f52 using 1:3 w lines lw 1.00 lc 'blue'       dashtype 2 title 'VECC    H0 SOC Z3 17fs', \
+# f54 using 1:3 w lines lw 1.00 lc 'brown'      dashtype 1 title 'VECC    H0 17fs', \
+# f44 using 1:3 w lines lw 1.00 lc 'violet'     dashtype 1 title 'VECC    H0 SOC Z1 100fs', \
+
+
+# f42 using 1:3 w lines lw 1.00 lc 'violet'     dashtype 1 title 'OLD VECC    H0 SOC Z3 180fs', \
+
+# f45 using 1:3 w lines lw 2.00 lc 'coral'      dashtype 2 title 'VECC    H0 SOC Z2 100fs', \
+# f46 using 1:3 w lines lw 1.00 lc 'dark-green' dashtype 1 title 'VECC    H0 SOC Z3 100fs', \
+# f47 using 1:3 w lines lw 1.00 lc 'goldrenrod' dashtype 1 title 'VECC    H0 SOC Z3 300fs', \
+# f48 using 1:3 w lines lw 1.00 lc 'navy'       dashtype 1 title 'VECC    H0 SOC Z3 500fs', \
+
+
 
 # 'black'    
 # 'yellow'   
