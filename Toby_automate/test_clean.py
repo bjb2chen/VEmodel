@@ -424,55 +424,65 @@ if (__name__ == '__main__'):
     use_JSON_flag = True
     t_final = float(ntf)
     FC = False
-    SOC_order = 2
-    H_order = nH
+    order = nH
     model_name = f"{file_name}_FC" if FC else f"{file_name}_vibronic"
-
-    if True:
-        model_name = f"{file_name}_S{SOC_order}"
 
     project.log_conf.setLevelDebug()
     # ----------------------------------------------------------------
     print("We are running calculation for {:} model!".format(file_name))
-    print(f"SOC flag status: {SOC_flag} | SOC order is set to {SOC_order}.")
 
     # read in model parameters
     if use_JSON_flag:
         path = join(root, 'model' + ('_soc' if SOC_flag else '') + '.json')
-        model = get_model_from_json_file(path, H_order)
+        model = get_model_from_json_file(path, order)
 
-        if SOC_flag: # if SOC terms are present then add them in
-            if SOC_order >= 0 and H_order >= 0:
+        if SOC_flag:
+
+            # if SOC terms are present then add them in
+            # breakpoint()
+            # print("VMK.S0.real:\n", model[VMK.S0].real)
+            # print("\nVMK.S0.imag:\n", model[VMK.S0].imag)
+            # print("\nVMK.E:\n", model[VMK.E])
+            if VMK.S0 in model:
                 print("Adding SOC corrections for constant terms")
-                if VMK.S0 in model and VMK.E in model:
-                    model[VMK.E] = model[VMK.S0] + model[VMK.E]
-                else:
-                    print(f"Missing {VMK.S0=} or {VMK.E=} from:\n{model.keys()=}")
+                model[VMK.E] = model[VMK.S0] + model[VMK.E]
+            # print("\nAFTER SUM VMK.E.real:\n", model[VMK.E].real)
+            # print("\nAFTER SUM VMK.E.imag:\n", model[VMK.E].imag)
+            # breakpoint()
 
-            if SOC_order >= 1 and H_order >= 1:
-                print("Adding SOC corrections for Linear terms")
+            if order >= 1:
+                #breakpoint()
+                #print("VMK.S1.real:\n", model[VMK.S1].real)
+                #print("\nVMK.S1.imag:\n", model[VMK.S1].imag)
+                #print("\nVMK.G1:\n", model[VMK.G1])
                 if VMK.S1 in model and VMK.G1 in model:
-                        # zeros = np.zeros(model[VMK.G1].shape, dtype=np.complex128)
-                        # model[VMK.G1] = zeros + model[VMK.G1] + model[VMK.S1]
+                    print("Adding SOC corrections for Linear terms")
+                    # zeros = np.zeros(model[VMK.G1].shape, dtype=np.complex128)
+                    # model[VMK.G1] = zeros + model[VMK.G1] + model[VMK.S1]
                     model[VMK.G1] = model[VMK.S1] + model[VMK.G1]
-                else:
-                    print(f"Missing {VMK.S1=} or {VMK.G1=} from:\n{model.keys()=}")
-    
-            if SOC_order >= 2 and H_order >= 2:
-                print("Adding SOC corrections for Quadratic terms")
+                    #print("\nAFTER SUM VMK.G1.real:\n", model[VMK.G1].real)
+                    #print("\nAFTER SUM VMK.G1.imag:\n", model[VMK.G1].imag)
+                    #breakpoint()
+
+            if order >= 2:
+                #breakpoint()
+                #print("VMK.S2.real:\n", model[VMK.S2].real)
+                #print("\nVMK.S2.imag:\n", model[VMK.S2].imag)
+                #print("\nVMK.G2:\n", model[VMK.G2])
                 if VMK.S2 in model and VMK.G2 in model:
+                    print("Adding SOC corrections for Quadratic terms")
                     # zeros = np.zeros(model[VMK.G1].shape, dtype=np.complex128)
                     # model[VMK.G2] = zeros + model[VMK.G2] + model[VMK.S2]
                     model[VMK.G2] = model[VMK.S2] + model[VMK.G2]
-                else:
-                    print(f"Missing {VMK.S2=} or {VMK.G2=} from:\n{model.keys()=}")
-
+                    #print("\nAFTER SUM VMK.G2.real:\n", model[VMK.G2].real)
+                    #print("\nAFTER SUM VMK.G2.imag:\n", model[VMK.G2].imag)
+                    #breakpoint()
     else:
         path = join("/home/bjb2chen/gamess/vibronics/RhF3/SOC_15st", 'model' + '.op')
-        model = get_model_from_op_file(path, H_order)
+        model = get_model_from_op_file(path, order)
 
     # run CC code
-    output_path_ABS, output_path_ECD = generate_acf_data(model, model_name, H_order, t_final, FC=FC, compare_FCI=False, nof_steps=int(1e4)*(100/t_final))
+    output_path_ABS, output_path_ECD = generate_acf_data(model, model_name, order, t_final, FC=FC, compare_FCI=False, nof_steps=int(1e4))
 
     # interpolate for ACF(ABS)
     print("-"*40 + "\nInterpolating ABS\n" + "-"*40 + "\n")
@@ -500,10 +510,10 @@ if (__name__ == '__main__'):
     # plot spectra
     print("-"*40 + "\nPlotting Spectrum\n" + "-"*40 + "\n")
     gnuplot_spectrum(
-         f"{model_name}_{order_dict[H_order]}_tf{int(t_final):}",
+         f"{model_name}_{order_dict[order]}_tf{int(t_final):}",
          basename(normalized_path_ABS),
-         f"{model_name}_{order_dict[H_order]}",
-         H_order,
+         f"{model_name}_{order_dict[order]}",
+         order,
          t_final,
          FC,
      )
