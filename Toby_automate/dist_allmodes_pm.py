@@ -3309,7 +3309,8 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                     for a, b in it.combinations(range(A), 2):
                         # json_model[VMK.S0][a, b] = np.conj(json_model[VMK.S0][a, b]) # this makes the upper triangle * -i, matching with MCTDH
                         json_model[VMK.S0][b, a] = np.conj(json_model[VMK.S0][a, b]) # copy over to off-diag for Hermiticity
-                        # json_model[VMK.S0][b, a] = json_model[VMK.S0][a, b]            # original
+                        # json_model[VMK.S0][b, a] = complex(json_model[VMK.S0][a, b].real, -json_model[VMK.S0][a, b].imag) # tested to be exactly same as line above
+                        #json_model[VMK.S0][b, a] = json_model[VMK.S0][a, b]            # original
 
                     if order >= 1:
                         def _make_linear_soc_array(model):
@@ -3324,7 +3325,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                             for a, b in it.combinations(range(A), 2):
                                 # linear_array[:, a, b] = np.conj(linear_array[:, a, b])
                                 linear_array[:, b, a] = np.conj(linear_array[:, a, b])
-                                #linear_array[:, b, a] = linear_array[:, a, b]             # original
+                                # linear_array[:, b, a] = linear_array[:, a, b]             # original
 
                             return linear_array
 
@@ -3349,7 +3350,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                             for a, b in it.combinations(range(A), 2):
                                 # quadratic_array[:, :, a, b] = np.conj(quadratic_array[:, :, a, b])
                                 quadratic_array[:, :, b, a] = np.conj(quadratic_array[:, :, a, b])
-                                #quadratic_array[:, :, b, a] = quadratic_array[:, :, a, b]             # original
+                                # quadratic_array[:, :, b, a] = quadratic_array[:, :, a, b]             # original
 
                             return quadratic_array
 
