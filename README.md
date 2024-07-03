@@ -32,24 +32,46 @@ Video recording on how to run the diabatization code (assuming you have GAMESS w
 
 - [x] [Project Poster Reference](https://github.com/bjb2chen/vmodels/files/10171706/SCP2022_bjc_20685630_White.pdf)
 
-![manual_supervision](https://github.com/bjb2chen/VEmodel/assets/51763900/e472d956-8c66-41d8-9d24-1e581f2c235d)
+![nice_protocol](https://github.com/bjb2chen/VEmodel/assets/51763900/8ea2d42e-e0ec-4aac-b2f2-47cb1d31348e)
 
-## Spectra
+## Vibronic Spectra - Test Case Molecules
 
-![H2O_waterfall](https://github.com/bjb2chen/VEmodel/assets/51763900/f01cc671-b5e7-4bbd-9f38-be7a30756994)
+### $H_2O^+$
 
-![NH3_waterfall](https://github.com/bjb2chen/VEmodel/assets/51763900/5831817f-7516-41fc-b5e7-c968615593a2)
+![H2O_waterfall](https://github.com/bjb2chen/VEmodel/assets/51763900/a793d492-7580-487f-81a2-4ff793b3f7c2)
 
-### Transition metal spectra
+### $NH_3^+$
+
+![NH3_waterfall](https://github.com/bjb2chen/VEmodel/assets/51763900/9d201627-a57e-483c-9850-f920759051c5)
+
+### $PH_3^+$
+
+![Jun_12_PH3_composite](https://github.com/bjb2chen/VEmodel/assets/51763900/12dd6e52-24f2-4f1d-861d-842f0caad53f)
+
+### $CH_2O^+$
+
+![Jun_13_CH2O_composite](https://github.com/bjb2chen/VEmodel/assets/51763900/af4d06a3-d6da-4917-97c7-8f07cbab10a5)
+
+## Vibronic Spectra - Transition Metal Complexes
+
+### $Fe(CO)_5$
+
+![Jun_25_FeCO_waterfall_composite_collated](https://github.com/bjb2chen/VEmodel/assets/51763900/83e94785-24c1-4635-88dc-fe145d9fc277)
 
 <img width="1013" alt="waterfall_FeCO" src="https://github.com/bjb2chen/VEmodel/assets/51763900/09098d89-2252-4fe2-80d8-00c8af03f0d2">
 
 ![FeCO_PBF5_200fs_coupledmodes](https://github.com/bjb2chen/VEmodel/assets/51763900/a3f18842-0c68-46ff-b59f-cd49ec27553a)
 
+### $D_{3h}$ $RhF_3$
+
 (tf = 2000fs, tau = 2000, iexp = 1)
 ![RhF3_spectrum](https://github.com/bjb2chen/VEmodel/assets/51763900/97234174-5bd0-4f83-a691-374efb1cabd3)
 
-![CoF3_spectra](https://github.com/bjb2chen/VEmodel/assets/51763900/49773dc6-d3df-4afc-a31b-f67a4542d08c)
+![Jun_28_RhF3_waterfall_composite](https://github.com/bjb2chen/VEmodel/assets/51763900/2f56330b-f330-43aa-873d-578d8d99bc76)
+
+### $D_{3h}$ $CoF_3$
+
+![Jun_28_CoF3_waterfall_composite](https://github.com/bjb2chen/VEmodel/assets/51763900/7a13b0ee-7e74-448b-8aea-995359f69aea)
 
 ![CoF4](https://github.com/bjb2chen/vmodels/assets/51763900/eb5d7752-d0d4-4151-9af5-d399e079bf3a)
 
