@@ -2103,6 +2103,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             and (not suppress_zeros or not np.isclose(energy[a1-1, a2-1], 0.0))
         ]) + '\n'
 
+        # if pp.SOC_flag: here we could print only the diagonal
         string = diag_block + "\n" + off_diag_block
 
         if VECC_flag:
@@ -3104,6 +3105,19 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 except Exception as e:
                     print(str(e), "\nFailed to extract SOC! Continue?")
                     breakpoint()
+
+                if False: # temporary!!!! July 04
+                    model["SOC"]["constants"] += model["E0 eV"]
+                
+                    for i in range(4):
+
+                        model["SOC"]["Linear"] += model["Linear"]
+
+                    for i, j in range(4):
+
+                        model["SOC"]["Quadratic"] += model["Quadratic"]
+
+                    # if this works, these values are the sum of both VMK.E + VMK.S0
 
             return model
 
