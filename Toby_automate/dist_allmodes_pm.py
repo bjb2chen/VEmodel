@@ -1562,9 +1562,11 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
     # -------------------------------------------------------------------------
     # bad practice, works for now and we can refactor once we've finished figuring out the end product
     MCTDH_parameter_section_format_string = "{label:<25s}={value:>-15.9f}{units:>8s}\n"
+    MCTDH_parameter_section_format_string_SOC = "{label:<25s}={value:>40s}{units:>8s}\n"
     make_line = functools.partial(MCTDH_parameter_section_format_string.format, units=", ev")
     make_line_cm = functools.partial(MCTDH_parameter_section_format_string.format, units=", cm-1")
     make_line_au = functools.partial(MCTDH_parameter_section_format_string.format, units=", au")
+    make_line_SOC = functools.partial(MCTDH_parameter_section_format_string_SOC.format, units=", ev")
     # -------------------------------------------------------------------------
 
     def make_op_section(job_title):
@@ -1908,9 +1910,9 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             assert const_soc.shape == (A, A)
 
             return ''.join([
-                make_line(
+                make_line_SOC(
                     label=f"C0_s{a1+1:0>2d}_s{a2+1:0>2d}r",
-                    value=const_soc[a1, a2].real
+                    value=f"{float(const_soc[a1, a2].real):.9f}+EH_s{a1+1:0>2d}_s{a2+1:0>2d}"
                 ) + make_line(
                     label=f"C0_s{a1+1:0>2d}_s{a2+1:0>2d}i",
                     value=const_soc[a1, a2].imag
@@ -1925,9 +1927,9 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             linear_soc = [lin_dict[mode_map_dict[i]] for i in range(N)]
 
             return ''.join([
-                make_line(
+                make_line_SOC(
                     label=f"C1_s{a1+1:0>2d}_s{a2+1:0>2d}_v{i+1:0>2d}r",
-                    value=linear_soc[i][a1, a2].real
+                    value=f"{float(linear_soc[i][a1, a2].real):.9f}+C1_s{a1+1:0>2d}_s{a2+1:0>2d}_v{i+1:0>2d}"
                 ) + make_line(
                     label=f"C1_s{a1+1:0>2d}_s{a2+1:0>2d}_v{i+1:0>2d}i",
                     value=linear_soc[i][a1, a2].imag
@@ -1943,9 +1945,9 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             quad = [quad_dict[mode_map_dict[i]] for i in range(N)]
 
             return ''.join([
-                make_line(
+                make_line_SOC(
                     label=f"C2_s{a1+1:0>2d}s{a2+1:0>2d}_v{i+1:0>2d}v{i+1:0>2d}r",
-                    value=quad[i][a1, a2].real
+                    value=f"{float(quad[i][a1, a2].real):.9f}+C2_s{a1+1:0>2d}s{a2+1:0>2d}_v{i+1:0>2d}v{i+1:0>2d}"
                 ) + make_line(
                     label=f"C2_s{a1+1:0>2d}s{a2+1:0>2d}_v{i+1:0>2d}v{i+1:0>2d}i",
                     value=quad[i][a1, a2].imag
@@ -1963,9 +1965,9 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
                 bi_lin[new_key] = bi_lin_dict[old_key]
 
             return ''.join([
-                make_line(
+                make_line_SOC(
                     label=f"C1b_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}r",  # C2 for VECC compatibility
-                    value=bi_lin[(j1, j2)][a1, a2].real
+                    value=f"{float(bi_lin[(j1, j2)][a1, a2].real):.9f}+C1b_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}"
                 ) + make_line(
                     label=f"C1b_s{a1+1:0>2d}s{a2+1:0>2d}_v{j1+1:0>2d}v{j2+1:0>2d}i",
                     value=bi_lin[(j1, j2)][a1, a2].imag
@@ -3321,7 +3323,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
                     # symmetrize SOC w.r.t electronic surfaces (A)
                     for a, b in it.combinations(range(A), 2):
-                        # json_model[VMK.S0][a, b] = np.conj(json_model[VMK.S0][a, b]) # this makes the upper triangle * -i, matching with MCTDH
+                        #json_model[VMK.S0][a, b] = np.conj(json_model[VMK.S0][a, b]) # this makes the upper triangle * -i, matching with MCTDH
                         json_model[VMK.S0][b, a] = np.conj(json_model[VMK.S0][a, b]) # copy over to off-diag for Hermiticity
                         # json_model[VMK.S0][b, a] = complex(json_model[VMK.S0][a, b].real, -json_model[VMK.S0][a, b].imag) # tested to be exactly same as line above
                         #json_model[VMK.S0][b, a] = json_model[VMK.S0][a, b]            # original
