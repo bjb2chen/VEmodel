@@ -1662,8 +1662,8 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
         string = diag_block + "\n" + off_diag_block
 
-        if VECC_flag:
-            string = diag_block
+        # if VECC_flag:
+        #     string = diag_block
 
         if True:  # add fictious surface
             string += '\n'
@@ -2105,11 +2105,13 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
             and (not suppress_zeros or not np.isclose(energy[a1-1, a2-1], 0.0))
         ]) + '\n'
 
-        # if pp.SOC_flag: here we could print only the diagonal
         string = diag_block + "\n" + off_diag_block
 
-        if VECC_flag:
-            string = diag_block # VECC can only take diagonal
+        # if VECC_flag:
+        #     string = diag_block # VECC can only take diagonal
+
+        if pp.SOC_flag:
+            string = diag_block # July 4 overwrite prevention, do not label off-diag E0 when SOC
 
         if True:  # add fictious surface
             string += '\n'
