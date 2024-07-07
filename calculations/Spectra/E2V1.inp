@@ -1,0 +1,54 @@
+#######################################################################
+###     2-state 1-mode multi-set                            ####
+#######################################################################
+
+RUN-SECTION
+name = E2V1
+#diagonalisation = 2000
+title = E2V1
+tout = 0.10 tfinal = 90.00 tpsi=1.0
+propagation
+geninwf
+#timing
+auto=once
+#genoper
+#lanczvec  eigvec
+end-run-section
+
+OPERATOR-SECTION
+opname = E2V1
+end-operator-section
+
+SPF-BASIS-SECTION
+multi-set
+ v1=1,1
+end-spf-basis-section
+
+PRIMITIVE-BASIS-SECTION
+  v1   HO  256  0.0  1.0  1.0
+  el   el  2
+end-primitive-basis-section
+
+INIT_WF-SECTION
+build
+  init_state = 2
+  v1  HO  0.0  0.0  0.0
+end-build
+end-init_wf-section
+ALLOC-SECTION
+maxpar  =    1000
+maxkoe  =    1000
+maxhtm  =    1000
+maxhop  =    1000
+maxfac  =     500
+maxdef  =     240
+maxmuld =      20
+maxLMR  =      20
+maxedim =      50
+maxsub  =     200
+maxreadspf=    10
+maxnhtmshift=  10
+end-alloc-section
+
+
+end-input
