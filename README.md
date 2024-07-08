@@ -54,6 +54,21 @@ Video recording on how to run the diabatization code (assuming you have GAMESS w
 
 ## Vibronic Spectra - Transition Metal Complexes
 
+### $D_{3h}$ $RhF_3$
+
+(tf = 2000fs, tau = 2000, iexp = 1)
+![RhF3_spectrum](https://github.com/bjb2chen/VEmodel/assets/51763900/97234174-5bd0-4f83-a691-374efb1cabd3)
+
+![Jul_08_RhF3_constantsH0S0](https://github.com/bjb2chen/VEmodel/assets/51763900/fe67e2b4-c3b1-4ce4-8496-11782e9b101c)
+![Jul_08_RhF3_Linears](https://github.com/bjb2chen/VEmodel/assets/51763900/e4a96feb-a74e-40cf-90bf-65432419748a)
+![Jul_08_RhF3_Quadratics](https://github.com/bjb2chen/VEmodel/assets/51763900/3f78443d-941e-4064-9a6d-84e87573a579)
+
+### $D_{3h}$ $CoF_3$
+
+![Jul_08_CoF3_constants](https://github.com/bjb2chen/VEmodel/assets/51763900/fa47ffd0-13e0-443e-8d23-93aad02f73b0)
+![Jul_08_CoF3_Linears](https://github.com/bjb2chen/VEmodel/assets/51763900/248b6df7-2046-43ac-8f8f-cfaa86640c8b)
+![Jul_08_CoF3_Quadratics](https://github.com/bjb2chen/VEmodel/assets/51763900/0107f704-7b9d-486c-be1a-c0e51fe5b54f)
+
 ### $Fe(CO)_5$
 
 ![Jun_25_FeCO_waterfall_composite_collated](https://github.com/bjb2chen/VEmodel/assets/51763900/83e94785-24c1-4635-88dc-fe145d9fc277)
@@ -61,17 +76,6 @@ Video recording on how to run the diabatization code (assuming you have GAMESS w
 <img width="1013" alt="waterfall_FeCO" src="https://github.com/bjb2chen/VEmodel/assets/51763900/09098d89-2252-4fe2-80d8-00c8af03f0d2">
 
 ![FeCO_PBF5_200fs_coupledmodes](https://github.com/bjb2chen/VEmodel/assets/51763900/a3f18842-0c68-46ff-b59f-cd49ec27553a)
-
-### $D_{3h}$ $RhF_3$
-
-(tf = 2000fs, tau = 2000, iexp = 1)
-![RhF3_spectrum](https://github.com/bjb2chen/VEmodel/assets/51763900/97234174-5bd0-4f83-a691-374efb1cabd3)
-
-![Jun_28_RhF3_waterfall_composite](https://github.com/bjb2chen/VEmodel/assets/51763900/2f56330b-f330-43aa-873d-578d8d99bc76)
-
-### $D_{3h}$ $CoF_3$
-
-![Jun_28_CoF3_waterfall_composite](https://github.com/bjb2chen/VEmodel/assets/51763900/7a13b0ee-7e74-448b-8aea-995359f69aea)
 
 ![CoF4](https://github.com/bjb2chen/vmodels/assets/51763900/eb5d7752-d0d4-4151-9af5-d399e079bf3a)
 
