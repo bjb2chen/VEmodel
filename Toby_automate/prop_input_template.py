@@ -12,6 +12,9 @@ wavefunction_single_precision = "psi steps gridpop"
 
 # this specifies the 1st order
 auto_scheme = "auto=once"
+###
+# IF SOC RUN, IMAGINARY NEEDS 'cross' INSTEAD OF 'auto'
+###
 # second order is only needed for filter-diagonalization scheme
 # auto_scheme = "auto=twice"
 
@@ -27,11 +30,11 @@ run_section_propagation = "\n".join([
     basic_propagation_scheme,
     generate_initial_wavefunction,
     wavefunction_single_precision,
-    auto_scheme,
+    # auto_scheme,
+    "{auto_or_SOCcross}", # 'cross' if SOC run
     "usepthreads = {ncpus}", # parallelized
     run_end,
 ])
-
 
 # --------------------------------------------------------------------------------------------
 # --------------------------------------------------------------------------------------------

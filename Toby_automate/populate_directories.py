@@ -35,12 +35,13 @@ def create_input_file(source_dir, *args):
 
         If H2O 3 state calculation, A=3.
         We need fictitious ground state, '4th state'
-        Therefore, range(1, A+2) gives init_state=4,3,2,1.     
+        Therefore, range(1, A+2) gives init_state=4,3,2,1.
         """
         xyz_name = f"{project_name}_init_st{operate_string}"
+        auto_or_SOCcross = "cross" if SOC_flag else "auto"
 
         input_string = "\n\n".join([
-            prop_input_template.run_section_propagation.format(tfinal=tf/2, tout=0.1, name=name, ncpus=ncpus),
+            prop_input_template.run_section_propagation.format(tfinal=tf/2, tout=0.1, name=name, ncpus=ncpus, auto_or_SOCcross=auto_or_SOCcross),
             prop_input_template.operator_section.format(opfile_name=f"{xyz_name:}"),
             prop_input_template.generate_basic_multi_set_spf_basis_section(nof_spf, selected_mode_list, A),
             prop_input_template.generate_basic_harmonic_oscillator_primative_basis_section(nof_pbf, selected_mode_list, A),

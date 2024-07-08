@@ -510,7 +510,7 @@ if __name__ == "__main__":
             root_dir = join(work_root, calculation_spec, f"init_st{operate_string}")
             print(f'root_dir: {root_dir}')
     
-            path_mctdh_acf = join(model_name, "auto")
+            path_mctdh_acf = join(model_name, "cross" if SOC_flag else "auto")
             #print("path_mctdh_acf", path_mctdh_acf, "\n")
     
             path_mctdh_spectrum = f"{configuration}_spectrum_{dir_string.format(model_name, *param_list)}"
@@ -633,7 +633,7 @@ if __name__ == "__main__":
                     continue
     
             # copy auto files over
-            src_acf_path = join(path_to_mctdh_execution_folder, 'auto')
+            src_acf_path = join(path_to_mctdh_execution_folder, "cross" if SOC_flag else "auto")
             print(f'src_acf_path: {src_acf_path}')
             dst_acf_path = join(auto_dir, f"auto_{calculation_spec}_init_st{operate_string}")
             print(f'dst_acf_path: {dst_acf_path}')
