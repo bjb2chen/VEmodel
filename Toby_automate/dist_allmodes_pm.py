@@ -1662,8 +1662,8 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
         string = diag_block + "\n" + off_diag_block
 
-        # if VECC_flag:
-        #     string = diag_block
+        if VECC_flag:
+            string = diag_block
 
         if True:  # add fictious surface
             string += '\n'
