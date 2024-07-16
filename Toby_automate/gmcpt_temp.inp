@@ -28,14 +28,14 @@
  -contrl relwfn=LUT-IOTC $end
  -scf  diis=.t. soscf=.f. ethrsh=10.0 $end
  -gmcpt nsolut=100 $end
- -guess norder=1 iorder(25)=27,25,26 $end
+ -guess iorder(25)=27,25,26 $end
  !
  !#############################################################################
  !
  ! TURN ON THIS SECTION IF GMCPT, CHANGE runtyp=energy, scftyp=mcscf, change nosym=1
  !
  !#############################################################################
- -guess   guess=moread norb=28 purify=.t. $end
+ -guess   guess=moread norb=28 purify=.t. norder=1 $end
  -mcscf   cistep=gmcci fullnr=.t. finci=mos
           acurcy=1.d-5 maxit=200 $end
  -mrmp    mrpt=gmcpt rdvecs=.f. $end
@@ -49,7 +49,7 @@
  !
  ! IF temp.inp, TURN OFF $data SECTION here, add $data title C1 AT END OF FILE
  !
- !    IF SOC, $transt $end, turn knospn=.t., restart from gmcpt states calc
+ !    IF SOC, $transt $end, turn knospn=.t. restart from gmcpt states calc
  !
  !#############################################################################
  $data
