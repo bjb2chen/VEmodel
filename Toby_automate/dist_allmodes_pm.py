@@ -268,7 +268,7 @@ def extract_lines_between_patterns(path, start_pattern, end_pattern, collecting=
 
 
 def _make_displacement_filenames():
-    """ x """
+    """ Create displacement filenames according to sign/order requested in pp"""
 
     # import certain constants from project_parameters
     from project_parameters import file_name, N
@@ -1562,9 +1562,11 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
     # -------------------------------------------------------------------------
     # bad practice, works for now and we can refactor once we've finished figuring out the end product
     MCTDH_parameter_section_format_string = "{label:<25s}={value:>-15.9f}{units:>8s}\n"
+    MCTDH_parameter_section_format_string_SOC = "{label:<25s}={value:>40s}{units:>8s}\n"
     make_line = functools.partial(MCTDH_parameter_section_format_string.format, units=", ev")
     make_line_cm = functools.partial(MCTDH_parameter_section_format_string.format, units=", cm-1")
     make_line_au = functools.partial(MCTDH_parameter_section_format_string.format, units=", au")
+    make_line_SOC = functools.partial(MCTDH_parameter_section_format_string_SOC.format, units=", ev")
     # -------------------------------------------------------------------------
 
     def make_op_section(job_title):
@@ -1902,7 +1904,7 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
         ])
 
     def build_spinorbit_coupling(soc_dict, A, N):
-        """ x """
+        """ Label the spin orbit coupling terms. """
 
         def build_constant_SOC(const_soc, A, N):
             assert const_soc.shape == (A, A)
