@@ -1,8 +1,8 @@
 # VEmodel
 ## Repository for vibronic models construction.
 <div align="center">
-  
-[![VEmodel_scheme](https://github.com/bjb2chen/VEmodel/assets/51763900/7ee3d88b-7645-4715-914f-3b297a7b7997)]()
+
+[![VEmodel_scheme](https://github.com/user-attachments/assets/aa00f924-b0d1-4ef7-8b54-d0a9fcde8ece)]()
 
 <h3>
 
