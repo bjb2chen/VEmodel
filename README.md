@@ -2,7 +2,7 @@
 ## Repository for vibronic models construction.
 <div align="center">
 
-[![VEmodel_scheme](https://github.com/user-attachments/assets/aa00f924-b0d1-4ef7-8b54-d0a9fcde8ece)]()
+![VEmodel_scheme](https://github.com/user-attachments/assets/65604285-ce71-4c55-b9ea-ffd212dab3e2)
 
 <h3>
 
