@@ -3623,7 +3623,7 @@ def read_reference_structure(file_path, verbose=True):
         H           1.0   0.9306535400   0.0000000000   0.2564602281
         ###############################
 
-    This function
+    This function returns dictionaries to hold the atoms, charges, coordinates.
     """
 
     # atom_dict, charge_dict, ref_coords = {}, {}, {}
