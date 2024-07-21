@@ -24,11 +24,13 @@ __ComputeCanada(Graham)__: change path to _/home/bjb2chen/LOCAL/subgam.mrsftd_ (
 
 Video recording on how to run the diabatization code (assuming you have GAMESS with gmcpt module already): 
 
-- [x] C2v H2O diabatization - [https://www.youtube.com/watch?v=ILLrUSzR3YQ&ab_channel=BennyChen]
+- [x] $D_{3h}~RhF_3$ diabatization: [https://youtu.be/KJBxNBxqhHA] 
 
-- [x] D3h NH3 diabatization - [https://www.youtube.com/watch?v=zeKTlq3VHho&ab_channel=BennyChen]
+- [x] (old) $C_{2v}~H_2O$ diabatization - [https://www.youtube.com/watch?v=ILLrUSzR3YQ&ab_channel=BennyChen]
 
-- [x] D3h CoF3 diabatization - [https://www.youtube.com/watch?v=7tNUAFYKCQE&ab_channel=BennyChen]
+- [x] (old) $D_{3h}~NH_3$ diabatization - [https://www.youtube.com/watch?v=zeKTlq3VHho&ab_channel=BennyChen]
+
+- [x] (old) $D_{3h}~CoF_3$ diabatization - [https://www.youtube.com/watch?v=7tNUAFYKCQE&ab_channel=BennyChen]
 
 - [x] [Project Poster Reference](https://github.com/bjb2chen/vmodels/files/10171706/SCP2022_bjc_20685630_White.pdf)
 
