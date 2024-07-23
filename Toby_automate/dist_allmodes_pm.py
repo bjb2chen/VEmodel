@@ -845,11 +845,12 @@ def extract_DSOME_memmap(path, pattern, unit=None, cheat=False):
 def diabatization(**kwargs):
     """ Preform diabatization?
 
-    Returns a dictionary of dictionaries `dist_coord`
+    diabatization() will first perform a refG calculation. If that is successful,
+    it will proceed to distort along modes and calculate all the displaced
+    coordiantes accordingly. It will create all the input files and submit them
+    to GAMESS. If successful, returns a dictionary of dictionaries `dist_coord`
     Whose keys are `displacement_keys` and `bi_linear_keys`.
     Each of those individual dictionaries store ( ... ?)
-
-    (other info)
     """
 
     # -------------------------------------------------------------------------
