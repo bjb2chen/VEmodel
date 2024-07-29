@@ -3562,8 +3562,8 @@ def process_mode_freq(ndim, nof_cols=5, float_length=12):
         lines_freq = freq_file.readlines()
 
     freq_list = [[float(n) for n in line.strip().replace('I', '').split()] for line in lines_freq]
-    frequences = list(it.chain(*freq_list))  # single list
-    freq_array = np.array(frequences)
+    frequencies = list(it.chain(*freq_list))  # single list
+    freq_array = np.array(frequencies)
 
     # -------------------------------------------------------------------------
     if False and __debug__:   # print all frequencies
