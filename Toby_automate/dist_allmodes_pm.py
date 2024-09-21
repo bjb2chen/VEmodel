@@ -3550,11 +3550,12 @@ def process_mode_freq(ndim, nof_cols=5, float_length=12):
     for i in range(ndim):
         for g in range(nof_groups):
 
-            # potential fix to Z = 5 or Z = 12...
-            # if nof_leftover_modes == 0:
-            #     mode_list[i].extend(mode_list[(ndim*(g+1))-1])
-            # else:
-            mode_list[i].extend(mode_list[i+(ndim*(g+1))])
+            #potential fix to Z = 5 or Z = 12...
+            #breakpoint()
+            if (nof_leftover_modes == 0) and (g == nof_groups-1):
+                continue
+            else:
+                mode_list[i].extend(mode_list[i+(ndim*(g+1))])
 
     # throw away the lists we don't need anymore
     mode_list = mode_list[:ndim]
