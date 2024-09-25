@@ -2606,7 +2606,11 @@ def mctdh(op_path, hessian_path, all_frequencies_cm, A, N, **kwargs):
 
             for line in selected_lines:
                 try:
-                    dst, src, x, y, z = line.strip().split()
+                    dst = line[0:5].strip()
+                    src = line[5:10].strip()
+                    x = line[10:20].strip()
+                    y = line[20:30].strip()
+                    z = line[30:40].strip()
                     dst, src = int(dst), int(src)
                     if dst == src:  # transition from the fictitious ground state (0) -> to `state` #
                         src = 0
